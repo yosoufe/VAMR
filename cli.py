@@ -1,6 +1,7 @@
 import pexpect
 import typer
 from pathlib import Path
+import os
 
 app = typer.Typer()
 
@@ -31,7 +32,6 @@ def run():
     """
     bash_cmd("xhost +")
     bash_cmd("docker run "
-             "--rm "
              "-it "
              "--device /dev/video0 "
              "--network host "
@@ -39,8 +39,9 @@ def run():
              "--privileged "
              "--runtime=nvidia "
              "--gpus all "
+             "--rm "
              f"-v {Path(__file__).parent.resolve()}:/code "
-             "vamr-base ")
+             "vamr-base")
 
 @app.command()
 def push():

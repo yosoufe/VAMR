@@ -21,7 +21,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
         x264 v4l-utils \
         libprotobuf-dev protobuf-compiler \
         libgoogle-glog-dev libgflags-dev \
-        libgphoto2-dev libeigen3-dev libhdf5-dev doxygen \
+        libgphoto2-dev libhdf5-dev doxygen \
         python3.8 python3.8-dev
 
 RUN ln -s /usr/bin/python3.8 /usr/bin/python
@@ -32,9 +32,16 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 RUN python3 -m pip install numpy 
 
 RUN mkdir 3rdparty
+
 WORKDIR 3rdparty
-RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git
-RUN git clone -b 4.5.0 https://github.com/opencv/opencv.git
+
+# install eigen
+RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
+    cd eigen && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j`nproc` install
 
 # install cudnn ibcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
 RUN apt-get install -y wget
@@ -44,9 +51,12 @@ RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_
     dpkg -i libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb &&\
     dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
 
-#       -D CMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-#       -D CUDNN_LIBRARY=/usr/lib/x86_64-linux-gnu/libcudnn.so \
-RUN cd opencv && \
+
+# opencv
+RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
+    git clone -b 4.5.0 https://github.com/opencv/opencv.git && \
+    wait && \
+    cd opencv && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE \
