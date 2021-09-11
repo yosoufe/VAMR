@@ -1,4 +1,0 @@
-/code/exercises/build/CMakeFiles/rebuild_cache.dir
-/code/exercises/build/CMakeFiles/edit_cache.dir
-/code/exercises/build/CMakeFiles/imageBasics.dir
-/code/exercises/build/CMakeFiles/eigenMatrix.dir
