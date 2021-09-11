@@ -29,7 +29,15 @@ def run():
     run the docker image
     """
     bash_cmd("xhost +")
-    bash_cmd("docker run --rm -it --device /dev/video0 --network host -e DISPLAY --runtime=nvidia --gpus all vamr-base")
+    bash_cmd("docker run "
+             "--rm "
+             "-it "
+             "--device /dev/video0 "
+             "--network host "
+             "-e DISPLAY "
+             "--runtime=nvidia "
+             "--gpus all "
+             "vamr-base ")
 
 
 if __name__ == "__main__":

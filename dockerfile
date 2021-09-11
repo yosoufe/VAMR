@@ -66,3 +66,23 @@ RUN cd opencv && \
       -D PYTHON3_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
       .. && \
       make -j`nproc` install
+
+# install terminator
+RUN apt-get update && apt-get autoremove -y \
+    && apt-get install -y \
+        python3-gi gir1.2-keybinder-3.0 gettext intltool dbus-x11 x11-apps\
+        gobject-introspection \
+        gir1.2-gtk-3.0 \
+        libvte-2.91-dev \
+        python-gobject \
+        python3-gi-cairo \
+        libcanberra-gtk-module \
+        libcanberra-gtk3-module \
+    && /usr/bin/python3 -m pip install psutil configobj && \
+    git clone -b v1.92 --single-branch https://github.com/gnome-terminator/terminator.git \
+    && cd terminator \
+    && python3 setup.py build \
+    && python3 setup.py install --record=install-files.txt \
+    && cd ..
+
+CMD [ "/usr/local/bin/terminator" ]
