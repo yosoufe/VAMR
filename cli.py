@@ -32,6 +32,7 @@ def run():
     """
     bash_cmd("xhost +")
     bash_cmd("docker run "
+             "--name vamr "
              "-it "
              "--device /dev/video0 "
              "--network host "
