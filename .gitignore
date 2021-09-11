@@ -1,4 +1,7 @@
-# Lectures and large files
+# pyenv files
+.python-version
+
+# Lectures
 lectures
 
 # Prerequisites
