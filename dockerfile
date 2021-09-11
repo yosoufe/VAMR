@@ -85,4 +85,7 @@ RUN apt-get update && apt-get autoremove -y \
     && python3 setup.py install --record=install-files.txt \
     && cd ..
 
+RUN mkdir -p /code
+WORKDIR /code
+
 CMD [ "/usr/local/bin/terminator" ]
