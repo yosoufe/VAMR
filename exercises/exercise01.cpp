@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream> // ifstream
 #include <Eigen/Core>
 #include <Eigen/Geometry> // AngleAxis
@@ -9,6 +10,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
 
 std::ifstream read_file(std::string path)
 {
@@ -145,7 +147,7 @@ void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness)
 int main(int argc, char **argv)
 {
     std::string in_data_root = "../../data/ex01/";
-    std::ctring out_data_root = "../../output/ex01";
+    std::string out_data_root = "../../output/ex01";
     auto poses = read_pose_file(in_data_root + "poses.txt");
     if (poses.size() == 0)
     {
@@ -163,23 +165,41 @@ int main(int argc, char **argv)
 
     Eigen::Vector2d principal_pt = K.block(0, 2, 2, 1);
 
-    auto pts_in_camera_frame = project_2_camera_frame(K, poses[0], grid);
-    // std::cout << pts_in_camera_frame.block(0,0,2,5) << std::endl;
 
-    auto pts_in_distorted_img = distorted_pixel(d1, d2, principal_pt, pts_in_camera_frame);
 
-    // load image
-    auto image = load_image(in_data_root + "images/img_0001.jpg");
+    cv::VideoWriter outputVideo;
+    bool outputVideo_initialized = false;
 
-    // draw circles on points on the image
-    draw_circles(image, pts_in_distorted_img, 3);
+    for (size_t image_idx = 1 ; image_idx <= 736; image_idx++){
+        std::stringstream image_path;
+        image_path << "images/img_" << std::setfill('0') << std::setw(4) << image_idx << ".jpg";
 
-    // save the image
-    cv::
+        // load image
+        auto image = load_image(in_data_root + image_path.str());
 
-    // create a movie of all images.
+        auto pts_in_camera_frame = project_2_camera_frame(K, poses[image_idx-1], grid);
+        // std::cout << pts_in_camera_frame.block(0,0,2,5) << std::endl;
 
+        auto pts_in_distorted_img = distorted_pixel(d1, d2, principal_pt, pts_in_camera_frame);
+        // draw circles on points on the image
+        draw_circles(image, pts_in_distorted_img, 3);
+
+        if (!outputVideo_initialized){
+            auto output_pth = out_data_root+"distorted.avi";
+            int fps = 30;
+            outputVideo.open(output_pth , cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, image.size(), true); 
+            if (!outputVideo.isOpened()){
+                std::cout  << "Could not open the output video for write: " << output_pth << std::endl;
+                return -1;
+            }
+            outputVideo_initialized = true;
+        }
+        outputVideo << image;
+    }
+
+    std::cout << "Finished writing" << std::endl;
+    return 0;
     // show the image
-    cv::imshow("Display window", image);
-    cv::waitKey(0); // Wait for a keystroke in the window
+    // cv::imshow("Display window", image);
+    // cv::waitKey(0); // Wait for a keystroke in the window
 }
