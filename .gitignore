@@ -1,5 +1,12 @@
-# Lectures and large files
+# compile 
+build
+
+# pyenv files
+.python-version
+
+# Lectures
 lectures
+output
 
 # Prerequisites
 *.d
