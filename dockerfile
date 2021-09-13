@@ -95,7 +95,7 @@ RUN apt-get update && apt-get autoremove -y \
     && python3 setup.py install --record=install-files.txt \
     && cd ..
 
-RUN apt-get install -y gdb
+RUN apt-get install -y gdb cmake-curses-gui
 
 RUN mkdir -p /code
 WORKDIR /code
