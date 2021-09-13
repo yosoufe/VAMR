@@ -38,3 +38,20 @@ cd build
 cmake ..
 make -j`nproc`
 ```
+
+## Exercises
+
+### Exercise 1 - Augmented Reality Wireframe Cube
+
+To learn about camera models and Distortion.
+
+![Output](exercises/statements/Exercise%201%20-%20Augmented%20Reality%20Wireframe%20Cube/output.gif)
+
+solution is in `exercises/exercise01.cpp`.
+
+## useful command
+
+Convert to gif
+```
+ffmpeg -ss 0 -t 3 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
+```
