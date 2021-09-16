@@ -19,7 +19,7 @@ void print_shape(T m)
     std::cout << m.rows() << " x " << m.cols() << std::endl;
 }
 
-Eigen::MatrixXd read_matrix(std::string file_path)
+Eigen::MatrixXd read_matrix(std::string file_path, char delimiter)
 {
     std::vector<std::vector<double>> data;
 
@@ -35,10 +35,13 @@ Eigen::MatrixXd read_matrix(std::string file_path)
         std::vector<double> row;
         std::stringstream line_stream(line);
 
-        double element;
-        while (line_stream >> element)
+        while (line_stream)
         {
-            row.push_back(element);
+            std::string section;
+            if (!std::getline(line_stream, section, delimiter))
+                break;
+            if (section.empty()) continue; // ignore multiple delimiter 
+            row.push_back(std::stod(section.c_str()));
         }
         data.push_back(row);
     }
@@ -48,7 +51,7 @@ Eigen::MatrixXd read_matrix(std::string file_path)
     res.resize(rows, cols);
     for (size_t row_idx = 0; row_idx < rows; row_idx++)
     {
-        res.row(row_idx) = Eigen::VectorXd::Map(&data[row_idx][0],cols);
+        res.row(row_idx) = Eigen::VectorXd::Map(&data[row_idx][0], cols);
     }
     return res;
 }
@@ -87,7 +90,7 @@ void read_distortion_param(std::string file_path, double &k1, double &k2)
 Eigen::Matrix3d
 read_K_matrix(std::string file_path)
 {
-    auto mat = read_matrix(file_path);
+    auto mat = read_matrix(file_path, ' ');
     return Eigen::Matrix3d(mat);
 }
 

@@ -59,6 +59,7 @@
         "iomanip": "cpp",
         "codecvt": "cpp",
         "list": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "cassert": "cpp"
     }
 }

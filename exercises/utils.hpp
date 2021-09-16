@@ -3,12 +3,15 @@
 #include <iostream>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
+#include <string>
+#include <cassert>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry> // AngleAxis
 #include <Eigen/Dense>
-#include <vector>
-#include <cassert>
+#include <Eigen/SVD>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -22,12 +25,13 @@ template <class T>
 void print_shape(T m);
 
 Eigen::MatrixXd
-read_matrix(std::string file_path);
+read_matrix(std::string file_path, char delimiter=' ');
 
 std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>>
 read_pose_file(std::string file_path);
 
-void read_distortion_param(std::string file_path, double &k1, double &k2);
+void
+read_distortion_param(std::string file_path, double &k1, double &k2);
 
 Eigen::Matrix3d
 read_K_matrix(std::string file_path);
