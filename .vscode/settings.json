@@ -56,6 +56,9 @@
         "cinttypes": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "codecvt": "cpp",
+        "list": "cpp",
+        "cfenv": "cpp"
     }
 }

@@ -6,6 +6,7 @@
 
 ## requirements
 
+- Developed on Ubuntu 20.04
 - Nvidia GPU
 - latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
 - docker
@@ -52,6 +53,7 @@ solution is in `exercises/exercise01.cpp`.
 ## useful command
 
 Convert to gif
-```
+
+```bash
 ffmpeg -ss 0 -t 3 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
 ```

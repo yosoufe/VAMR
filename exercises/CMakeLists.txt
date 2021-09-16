@@ -7,6 +7,10 @@ find_package (Eigen3 REQUIRED NO_MODULE)
 add_executable(eigenMatrix eigenMatrix.cpp)
 target_link_libraries (eigenMatrix Eigen3::Eigen)
 
+# utils library
+add_library(utils SHARED utils.cpp utils.hpp)
+target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
+
 
 # opencv example
 find_package(OpenCV REQUIRED)
@@ -18,4 +22,9 @@ target_link_libraries(imageBasics ${OpenCV_LIBS})
 # exercise 01
 add_executable(exercise01 exercise01.cpp)
 include_directories(${OpenCV_INCLUDE_DIRS})
-target_link_libraries (exercise01 Eigen3::Eigen ${OpenCV_LIBS})
+target_link_libraries (exercise01 utils Eigen3::Eigen ${OpenCV_LIBS})
+
+
+# exercise 02
+add_executable(exercise02 exercise02.cpp)
+target_link_libraries (exercise02 utils Eigen3::Eigen ${OpenCV_LIBS})
