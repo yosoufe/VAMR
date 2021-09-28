@@ -61,5 +61,8 @@
         "list": "cpp",
         "cfenv": "cpp",
         "cassert": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "Eigen"
+    ]
 }

@@ -17,7 +17,7 @@
 
 We are using docker, We are installing all the requirements inside the docker and run everything inside the docker.
 
-`cli.py` is a helper command line tool to build and run docker images.
+`cli.py` is a helper command line tool to build and run docker image.
 
 ```sh
 # to install the cli.py's dependencies
@@ -26,7 +26,13 @@ python -m pip install -r requirements.txt
 # to build the docker image
 python cli.py build
 
-# to run the docker image and have a terminal inside the docker image, compile everything in the image
+# or to pull the image from the dockerhub
+# instead of building it,
+# It can be faster than building
+python cli.py pull
+
+# to run the docker image and have a terminal inside the docker image, we compile everything in the container
+# It will pull my image if you do not build it yourself.
 python cli.py run
 ```
 
