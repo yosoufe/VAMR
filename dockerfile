@@ -2,34 +2,55 @@ FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y apt-utils && \
-    apt-get install -y mesa-utils
-
-RUN DEBIAN_FRONTEND=noninteractive \
-        apt-get install -y \
-        build-essential checkinstall cmake pkg-config yasm \
-        gfortran git\
-        libtiff5-dev \
-        libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev \
-        libxine2-dev libv4l-dev \
-        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-        qt5-default libgtk2.0-dev libtbb-dev \
-        libatlas-base-dev \
-        libfaac-dev libmp3lame-dev libtheora-dev \
-        libvorbis-dev libxvidcore-dev \
-        libopencore-amrnb-dev libopencore-amrwb-dev \
-        x264 v4l-utils \
-        libprotobuf-dev protobuf-compiler \
-        libgoogle-glog-dev libgflags-dev \
-        libgphoto2-dev libhdf5-dev doxygen \
-        python3.8 python3.8-dev
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y apt-utils \
+    mesa-utils \
+    wget \
+    build-essential \
+    checkinstall \
+    cmake \
+    pkg-config \
+    yasm \
+    gfortran git\
+    libtiff5-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libdc1394-22-dev \
+    libxine2-dev \
+    libv4l-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    qt5-default \
+    libgtk2.0-dev \
+    libtbb-dev \
+    libatlas-base-dev \
+    libfaac-dev \
+    libmp3lame-dev \
+    libtheora-dev \
+    libvorbis-dev \
+    libxvidcore-dev \
+    libopencore-amrnb-dev \
+    libopencore-amrwb-dev \
+    x264 \
+    v4l-utils \
+    libprotobuf-dev \
+    protobuf-compiler \
+    libgoogle-glog-dev \
+    libgflags-dev \
+    libgphoto2-dev \
+    libhdf5-dev doxygen \
+    python3.8 \
+    python3.8-dev \
+    gdb \
+    cmake-curses-gui
 
 RUN ln -s /usr/bin/python3.8 /usr/bin/python
 
 # install pip
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
-RUN python3 -m pip install numpy 
+RUN python3 -m pip install numpy
 
 RUN mkdir 3rdparty
 
@@ -43,8 +64,7 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     cmake .. && \
     make -j`nproc` install
 
-# install cudnn ibcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
-RUN apt-get install -y wget
+# install cudnn libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
 RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb & \
     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb && \
     wait && \
@@ -94,8 +114,6 @@ RUN apt-get update && apt-get autoremove -y \
     && python3 setup.py build \
     && python3 setup.py install --record=install-files.txt \
     && cd ..
-
-RUN apt-get install -y gdb cmake-curses-gui
 
 RUN mkdir -p /code
 WORKDIR /code
