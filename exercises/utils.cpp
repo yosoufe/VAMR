@@ -13,12 +13,6 @@ std::ifstream read_file(std::string path)
     return fin;
 }
 
-template <class T>
-void print_shape(T m)
-{
-    std::cout << m.rows() << " x " << m.cols() << std::endl;
-}
-
 Eigen::MatrixXd read_matrix(std::string file_path, char delimiter)
 {
     std::vector<std::vector<double>> data;
@@ -40,7 +34,7 @@ Eigen::MatrixXd read_matrix(std::string file_path, char delimiter)
             std::string section;
             if (!std::getline(line_stream, section, delimiter))
                 break;
-            if (section.empty()) continue; // ignore multiple delimiter 
+            if (section.empty()) continue; // ignore multiple delimiter
             row.push_back(std::stod(section.c_str()));
         }
         data.push_back(row);
@@ -151,12 +145,13 @@ cv::Mat load_image(std::string image_path)
     return img;
 }
 
-void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness)
+void
+draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color, int lineType)
 {
     int num_pts = pts.cols();
     for (size_t pt_idx = 0; pt_idx < num_pts; pt_idx++)
     {
-        cv::circle(src_img, cv::Point2d(pts(0, pt_idx), pts(1, pt_idx)), thinkness, cv::Scalar(0, 0, 255), cv::FILLED);
+        cv::circle(src_img, cv::Point2d(pts(0, pt_idx), pts(1, pt_idx)), thinkness, color, lineType);
     }
 }
 
@@ -206,7 +201,7 @@ cv::Mat undistort_image(const cv::Mat &src_img,
 cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string &file_path)
 {
     cv::VideoWriter vid_writer;
-    std::string out_data_root = "../../output/ex01/";
+    std::string out_data_root = "../../output/";
     auto output_pth = out_data_root + file_path;
     int fps = 30;
     vid_writer.open(output_pth, cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, img_size, true);

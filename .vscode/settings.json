@@ -63,6 +63,7 @@
         "cassert": "cpp"
     },
     "cSpell.words": [
-        "Eigen"
+        "Eigen",
+        "extrinsics"
     ]
 }

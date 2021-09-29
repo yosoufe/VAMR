@@ -17,6 +17,9 @@
 
 We are using docker, We are installing all the requirements inside the docker and run everything inside the docker.
 
+The container has [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) inside which you can open multiple terminals
+as tabs or split windows. Read the documentation of the [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) to learn short keys.
+
 `cli.py` is a helper command line tool to build and run docker image.
 
 ```sh
@@ -28,7 +31,8 @@ python cli.py build
 
 # or to pull the image from the dockerhub
 # instead of building it,
-# It can be faster than building
+# It can be faster than building,
+# Compiling opencv can take a long time.
 python cli.py pull
 
 # to run the docker image and have a terminal inside the docker image, we compile everything in the container

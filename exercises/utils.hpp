@@ -22,7 +22,10 @@
 std::ifstream read_file(std::string path);
 
 template <class T>
-void print_shape(T m);
+void print_shape(T m)
+{
+    std::cout << m.rows() << " x " << m.cols() << std::endl;
+};
 
 Eigen::MatrixXd
 read_matrix(std::string file_path, char delimiter=' ');
@@ -56,7 +59,8 @@ project_2_camera_frame(const Eigen::Matrix3d &intrinsics,
 cv::Mat
 load_image(std::string image_path);
 
-void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness);
+void
+draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color = cv::Scalar(0, 0, 255), int lineType=cv::FILLED);
 
 void draw_cube(cv::Mat &src_img, const Eigen::Matrix2Xd &pts);
 

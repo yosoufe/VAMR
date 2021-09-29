@@ -73,6 +73,13 @@ RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_
     dpkg -i libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb &&\
     dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
 
+# vtk, required for the 3d viz in opencv
+RUN git clone https://github.com/Kitware/VTK.git && \
+    cd VTK && \
+    mkdir build && \
+    cd build && \
+    cmake -D BUILD_SHARED_LIBS=ON .. && \
+    make -j`nproc` install
 
 # opencv
 RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
@@ -86,6 +93,7 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
       -D INSTALL_PYTHON_EXAMPLES=ON \
       -D WITH_TBB=ON \
       -D WITH_V4L=ON \
+      -D WITH_VTK=ON \
       -D WITH_QT=ON \
       -D WITH_OPENGL=ON \
       -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \

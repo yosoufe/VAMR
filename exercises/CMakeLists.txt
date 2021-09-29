@@ -28,3 +28,8 @@ target_link_libraries (exercise01 utils Eigen3::Eigen ${OpenCV_LIBS})
 # exercise 02
 add_executable(exercise02 exercise02.cpp)
 target_link_libraries (exercise02 utils Eigen3::Eigen ${OpenCV_LIBS})
+
+# practice OpenCV Viz3d
+# https://docs.opencv.org/4.5.3/d7/df9/tutorial_table_of_content_viz.html
+add_executable(viz3d_practice viz3d_practice.cpp)
+target_link_libraries (viz3d_practice utils Eigen3::Eigen ${OpenCV_LIBS})

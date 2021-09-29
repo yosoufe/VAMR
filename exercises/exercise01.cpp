@@ -24,8 +24,8 @@ int main(int argc, char **argv)
     auto image = load_image(in_data_root + "images/img_0001.jpg");
     auto img_size = image.size();
 
-    cv::VideoWriter grid_video_distorted = create_video_writer(img_size, "distorted_grid.mp4");
-    cv::VideoWriter video_undistorted = create_video_writer(img_size, "undistorted.mp4");
+    cv::VideoWriter grid_video_distorted = create_video_writer(img_size, "ex01/distorted_grid.mp4");
+    cv::VideoWriter video_undistorted = create_video_writer(img_size, "ex01/undistorted.mp4");
 
     for (size_t image_idx = 1; image_idx <= 736; image_idx++)
     {
