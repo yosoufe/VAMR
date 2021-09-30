@@ -5,6 +5,8 @@ import os
 
 app = typer.Typer()
 
+DOCKER_IMAGE = "yosoufe/opencv_cuda:4.5.0_11.4.1"
+
 
 def bash_cmd(command: str):
     """
@@ -22,7 +24,7 @@ def build():
     """
     build the docker image
     """
-    bash_cmd("docker build . -t vamr-base")
+    bash_cmd(f"docker build . -t {DOCKER_IMAGE}")
 
 
 @app.command()
@@ -41,16 +43,26 @@ def run():
              "--runtime=nvidia "
              "--gpus all "
              "--rm "
+             "--network host "
+             "--name vamr_container "
              f"-v {Path(__file__).parent.resolve()}:/code "
-             "vamr-base")
+             f"{DOCKER_IMAGE}")
+
 
 @app.command()
 def push():
     """
     push the docker image to docker hub as yosoufe/opencv_cuda
     """
-    bash_cmd("docker tag vamr-base:latest yosoufe/opencv_cuda:4.5.0_11.4.1")
-    bash_cmd("docker push yosoufe/opencv_cuda:4.5.0_11.4.1")
+    bash_cmd(f"docker push {DOCKER_IMAGE}")
+
+
+@app.command()
+def pull():
+    """
+    pull the docker image from the docker hub
+    """
+    bash_cmd(f'docker pull {DOCKER_IMAGE}')
 
 
 if __name__ == "__main__":

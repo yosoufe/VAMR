@@ -2,34 +2,57 @@ FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y apt-utils && \
-    apt-get install -y mesa-utils
-
-RUN DEBIAN_FRONTEND=noninteractive \
-        apt-get install -y \
-        build-essential checkinstall cmake pkg-config yasm \
-        gfortran git\
-        libtiff5-dev \
-        libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev \
-        libxine2-dev libv4l-dev \
-        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-        qt5-default libgtk2.0-dev libtbb-dev \
-        libatlas-base-dev \
-        libfaac-dev libmp3lame-dev libtheora-dev \
-        libvorbis-dev libxvidcore-dev \
-        libopencore-amrnb-dev libopencore-amrwb-dev \
-        x264 v4l-utils \
-        libprotobuf-dev protobuf-compiler \
-        libgoogle-glog-dev libgflags-dev \
-        libgphoto2-dev libhdf5-dev doxygen \
-        python3.8 python3.8-dev
+    DEBIAN_FRONTEND=noninteractive \
+        apt-get install -y apt-utils \
+            mesa-utils \
+            curl \
+            wget \
+            build-essential \
+            checkinstall \
+            cmake \
+            pkg-config \
+            yasm \
+            gfortran git\
+            libtiff5-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libswscale-dev \
+            libdc1394-22-dev \
+            libxine2-dev \
+            libv4l-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            qt5-default \
+            libgtk2.0-dev \
+            libtbb-dev \
+            libatlas-base-dev \
+            libfaac-dev \
+            libmp3lame-dev \
+            libtheora-dev \
+            libvorbis-dev \
+            libxvidcore-dev \
+            libopencore-amrnb-dev \
+            libopencore-amrwb-dev \
+            x264 \
+            v4l-utils \
+            libprotobuf-dev \
+            protobuf-compiler \
+            libgoogle-glog-dev \
+            libgflags-dev \
+            libgphoto2-dev \
+            libhdf5-dev \
+            doxygen \
+            python3.8 \
+            python3.8-dev \
+            gdb \
+            cmake-curses-gui
 
 RUN ln -s /usr/bin/python3.8 /usr/bin/python
 
 # install pip
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
-RUN python3 -m pip install numpy 
+RUN python3 -m pip install numpy
 
 RUN mkdir 3rdparty
 
@@ -41,15 +64,27 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     mkdir build && \
     cd build && \
     cmake .. && \
-    make -j`nproc` install
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf eigen
 
-# install cudnn ibcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
-RUN apt-get install -y wget
+# install cudnn libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
 RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb & \
     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb && \
     wait && \
     dpkg -i libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb &&\
-    dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
+    dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb && \
+    rm -rf libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
+
+# vtk, required for the 3d viz in opencv
+RUN git clone https://github.com/Kitware/VTK.git && \
+    cd VTK && \
+    mkdir build && \
+    cd build && \
+    cmake -D BUILD_SHARED_LIBS=ON .. && \
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf VTK
 
 
 # opencv
@@ -64,6 +99,7 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
       -D INSTALL_PYTHON_EXAMPLES=ON \
       -D WITH_TBB=ON \
       -D WITH_V4L=ON \
+      -D WITH_VTK=ON \
       -D WITH_QT=ON \
       -D WITH_OPENGL=ON \
       -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
@@ -75,7 +111,9 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
       -D CUDNN_INCLUDE_DIR=/usr/include/ \
       -D PYTHON3_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
       .. && \
-      make -j`nproc` install
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf opencv opencv_contrib
 
 # install terminator
 RUN apt-get update && apt-get autoremove -y \
@@ -94,8 +132,6 @@ RUN apt-get update && apt-get autoremove -y \
     && python3 setup.py build \
     && python3 setup.py install --record=install-files.txt \
     && cd ..
-
-RUN apt-get install -y gdb cmake-curses-gui
 
 RUN mkdir -p /code
 WORKDIR /code
