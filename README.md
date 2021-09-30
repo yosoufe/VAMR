@@ -59,11 +59,21 @@ make -j`nproc`
 
 ### Exercise 1 - Augmented Reality Wireframe Cube
 
-To learn about camera models and Distortion.
+This is about camera and distortion models.
+- Problem statement is in `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
+- solution is in `exercises/exercise01.cpp`.
 
-![Output](exercises/statements/Exercise%201%20-%20Augmented%20Reality%20Wireframe%20Cube/output.gif)
+![Output](exercises/statements/outputs/ex01.gif)
 
-solution is in `exercises/exercise01.cpp`.
+
+
+### Exercise 2 - PnP Problem
+
+This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known correspondences.
+- Problem statement is in `exercises/statements/Exercise 2 - PnP/statement.pdf`.
+- solution is in `exercises/exercise02.cpp`.
+
+![Output](exercises/statements/outputs/ex02.gif)
 
 ## useful command
 
