@@ -12,6 +12,11 @@
 - docker
 - [Nvidia docker container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#)
 - Python 3 and pip
+- **NO** MATLAB:
+  - The official course is doing all the exercises in MATLAB and since I do not have MATLAB License, I am doing it in C++. The second reason is, **all the jobs in robotics require strong C++ knowledge**, so I am practicing C++.
+  The followings are inside the docker image:
+    - Using Eigen library for linear algebra.
+    - Using OpenCV and VTK only for reading, writing of image and video files and visualization. The rest are coded from scratch.
 
 ## Usage
 

@@ -64,14 +64,17 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     mkdir build && \
     cd build && \
     cmake .. && \
-    make -j`nproc` install
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf eigen
 
 # install cudnn libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
 RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb & \
     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb && \
     wait && \
     dpkg -i libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb &&\
-    dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
+    dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb && \
+    rm -rf libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
 
 # vtk, required for the 3d viz in opencv
 RUN git clone https://github.com/Kitware/VTK.git && \
@@ -79,7 +82,10 @@ RUN git clone https://github.com/Kitware/VTK.git && \
     mkdir build && \
     cd build && \
     cmake -D BUILD_SHARED_LIBS=ON .. && \
-    make -j`nproc` install
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf VTK
+
 
 # opencv
 RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
@@ -105,7 +111,9 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
       -D CUDNN_INCLUDE_DIR=/usr/include/ \
       -D PYTHON3_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
       .. && \
-      make -j`nproc` install
+    make -j`nproc` install && \
+    cd ../.. && \
+    rm -rf opencv opencv_contrib
 
 # install terminator
 RUN apt-get update && apt-get autoremove -y \
