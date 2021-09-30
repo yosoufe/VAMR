@@ -48,6 +48,7 @@ python cli.py run
 ## compile
 
 ```bash
+mkdir -p output/ex{01..09}
 cd exercise
 mkdir build
 cd build
