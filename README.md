@@ -1,4 +1,4 @@
-# Vision Algorithm for Mobile Robotics (Fall 2020)
+# Vision Algorithms for Mobile Robotics (Fall 2020)
 
 ## Links
 
