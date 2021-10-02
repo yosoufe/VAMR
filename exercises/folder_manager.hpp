@@ -15,10 +15,8 @@ public:
     std::string path() const;
     int number() const;
 
-    class comperator
+    struct comperator
     {
-    public:
-        comperator() = default;
         inline bool operator()(const ImageFile &file1, const ImageFile &file2)
         {
             return (file1.number() < file2.number());
@@ -52,6 +50,6 @@ public:
 
     FileIterator begin();
     FileIterator end();
-
+    const ImageFile &operator[](int index) const;
     size_t size() const;
 };

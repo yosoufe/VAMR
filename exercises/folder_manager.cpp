@@ -6,6 +6,7 @@ using namespace std;
 namespace fs = std::filesystem;
 
 // **************** ImageFile ****************
+
 ImageFile::ImageFile(fs::path path, int number) : m_path(path), m_image_number(number)
 {
 }
@@ -21,6 +22,7 @@ int ImageFile::number() const
 }
 
 // **************** SortedFiles ****************
+
 SortedImageFiles::SortedImageFiles(std::string folder_path) : m_folder_path(folder_path)
 {
     for (auto &file_ptr : fs::directory_iterator(m_folder_path))
@@ -67,4 +69,9 @@ ImageFile &SortedImageFiles::FileIterator::operator*()
 size_t SortedImageFiles::size() const
 {
     return m_files.size();
+}
+
+const ImageFile &SortedImageFiles::operator[](int index) const
+{
+    return m_files[index];
 }

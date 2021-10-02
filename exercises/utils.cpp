@@ -138,7 +138,7 @@ Eigen::Matrix2Xd project_2_camera_frame(const Eigen::Matrix3d &intrinsics,
     return res;
 }
 
-cv::Mat load_image(std::string image_path)
+cv::Mat load_image_color(std::string image_path)
 {
     cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
     // std::cout << img.dims << std::endl;
@@ -212,4 +212,13 @@ cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string 
         throw std::runtime_error(err_msg.str());
     }
     return vid_writer;
+}
+
+cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
+{
+    cv::Mat img_cv;
+    cv::Mat img_cv_uchar;
+    cv::eigen2cv(eigen_img, img_cv);
+    cv::normalize(img_cv,img_cv_uchar , 255,0, cv::NORM_MINMAX, 0);
+    return img_cv_uchar;
 }

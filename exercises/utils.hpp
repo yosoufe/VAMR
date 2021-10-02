@@ -18,6 +18,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/core/eigen.hpp>
 
 std::ifstream read_file(std::string path);
 
@@ -57,7 +58,7 @@ project_2_camera_frame(const Eigen::Matrix3d &intrinsics,
                        const Eigen::Matrix3Xd &points);
 
 cv::Mat
-load_image(std::string image_path);
+load_image_color(std::string image_path);
 
 void
 draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color = cv::Scalar(0, 0, 255), int lineType=cv::FILLED);
@@ -72,3 +73,5 @@ undistort_image(const cv::Mat &src_img,
 
 cv::VideoWriter
 create_video_writer(const cv::Size &img_size, const std::string &file_path);
+
+cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img);
