@@ -220,5 +220,8 @@ cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
     cv::Mat img_cv_uchar;
     cv::eigen2cv(eigen_img, img_cv);
     cv::normalize(img_cv,img_cv_uchar , 255,0, cv::NORM_MINMAX, 0);
+    // img_cv.convertTo(img_cv_uchar, 0);
+    // img_cv_uchar = img_cv;
     return img_cv_uchar;
 }
+

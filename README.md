@@ -1,5 +1,7 @@
 # Vision Algorithms for Mobile Robotics (Fall 2020)
 
+This repository contains all the exercises of the course "Vision Algorithm for Mobile Robotics" in C++.
+
 ## Links
 
 [The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html).
@@ -48,8 +50,10 @@ python cli.py run
 ## compile
 
 ```bash
+cv VAMR
 mkdir -p output/ex{01..09}
-cd exercise
+python cli.py run
+cd exercises
 mkdir build
 cd build
 cmake ..
@@ -70,15 +74,25 @@ This is about camera and distortion models.
 
 ### Exercise 2 - PnP Problem
 
-This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known correspondences.
+This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known points in world and their known correspondences in the image frame.
 - Problem statement is in `exercises/statements/Exercise 2 - PnP/statement.pdf`.
-- solution is in `exercises/exercise02.cpp`.
+- Solution is in `exercises/exercise02.cpp`.
 
+The following video shows the calculated pose and orientation of the camera relative to the pattern of April Tags.
 ![Output](exercises/statements/outputs/ex02.gif)
 
-## useful command
+### Exercise 3 - Simple Keypoint Tracker
 
-Convert to gif
+- Problem statement is in `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
+- Solution is in `exercises/exercise03.cpp`.
+
+The following image shows the harris and shi-tomasi score for the first frame.
+![Output](exercises/statements/outputs/ex03-harris_shitomasi_scores.png)
+
+
+## Useful Commands
+
+### Convert to gif
 
 ```bash
 ffmpeg -ss 0 -t 3 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
