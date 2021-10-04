@@ -79,6 +79,7 @@ This exercise is about the PnP (Perspective-n-Point) problem. We basically find 
 - Solution is in `exercises/exercise02.cpp`.
 
 The following video shows the calculated pose and orientation of the camera relative to the pattern of April Tags.
+
 ![Output](exercises/statements/outputs/ex02.gif)
 
 ### Exercise 3 - Simple Keypoint Tracker
@@ -86,8 +87,9 @@ The following video shows the calculated pose and orientation of the camera rela
 - Problem statement is in `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
 - Solution is in `exercises/exercise03.cpp`.
 
-The following image shows the harris and shi-tomasi score for the first frame.
-![Output](exercises/statements/outputs/ex03-harris_shitomasi_scores.png)
+The following image shows the harris and shi-tomasi scores and key points for the first frame.
+
+![Output](exercises/statements/outputs/ex03-harris_shitomasi.png)
 
 
 ## Useful Commands
