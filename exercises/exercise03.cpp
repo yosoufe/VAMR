@@ -2,6 +2,9 @@
 #include "folder_manager.hpp"
 #include <cassert>
 #include <cmath>
+#include <limits>
+#include <unordered_map>
+
 
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
 {
@@ -163,8 +166,8 @@ private:
             Eigen::MatrixXd patch_eigen = desc.col(idx);
             patch_eigen.resize(descriptor_size, descriptor_size);
             cv::Mat patch = eigen_2_cv(patch_eigen);
-            cv::resize(patch, patch, cv::Size(descriptor_size_img, descriptor_size_img),0,0, cv::INTER_NEAREST);
-            size_t row_start = (descriptor_size_img + v_space) * (idx_row + 1) - descriptor_size_img ;
+            cv::resize(patch, patch, cv::Size(descriptor_size_img, descriptor_size_img), 0, 0, cv::INTER_NEAREST);
+            size_t row_start = (descriptor_size_img + v_space) * (idx_row + 1) - descriptor_size_img;
             size_t row_end = (descriptor_size_img + v_space) * (idx_row + 1);
             size_t col_start = grid_w * (idx_col + 1) - descriptor_size_img / 2;
             size_t col_end = grid_w * (idx_col + 1) + descriptor_size_img / 2;
@@ -284,6 +287,7 @@ public:
             throw std::runtime_error("first call 'select_harris_keypoints' function");
 
         m_harris_descriptors = get_descriptors(m_harris_kps, descriptor_radius);
+
         return m_harris_descriptors;
     }
 
@@ -311,11 +315,94 @@ public:
         if (show_img)
         {
             cv::imshow("Image", res);
-            cv::waitKey(0);
+            cv::waitKey(1);
         }
         return res;
     }
 };
+
+typedef Eigen::Matrix<size_t, Eigen::Dynamic, 1> VectorXuI;
+
+VectorXuI index_of_uniques(const VectorXuI &src)
+{
+    std::unordered_map<size_t, size_t> mappp;
+    VectorXuI uniques = VectorXuI::Ones(src.size());
+    for (size_t idx = 0; idx < src.size(); idx++)
+    {
+        if (mappp.find(src(idx)) != mappp.end())
+        {
+            uniques(mappp[src(idx)]) = 0;
+            uniques(src(idx)) = 0;
+        }
+        else
+        {
+            mappp[src(idx)] = idx;
+        }
+    }
+    return uniques;
+}
+
+VectorXuI match_descriptors(
+    const Eigen::MatrixXd &curr, // query_descriptors,          num_kp X desc_size
+    const Eigen::MatrixXd &prev, // database_descriptors        num_kp X desc_size
+    double match_lambda)
+{
+    Eigen::VectorXd dists(curr.cols());
+    VectorXuI matches(curr.cols());
+    double min_non_zero_dist = 1000; // std::numeric_limits<double>::max() 1000
+    for (size_t idx = 0; idx < curr.cols(); idx++)
+    {
+        // dist is 1x200
+        Eigen::MatrixXd diff = prev.colwise() - curr.col(idx);
+        Eigen::VectorXd dist = diff.colwise().norm();
+
+        Eigen::MatrixXd::Index closest_kp_idx = 0;
+        dists(idx) = dist.minCoeff(&closest_kp_idx);
+        matches(idx) = (size_t)(closest_kp_idx);
+
+        double min_dist = dists.minCoeff();
+        if (min_dist < min_non_zero_dist && std::fabs(min_dist) > 1e-3)
+        {
+            min_non_zero_dist = min_dist;
+            std::cout << "updatintg min_non_zero_dist to " << min_non_zero_dist << std::endl;
+        }
+    }
+
+    matches = (matches.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
+    auto idx_uniques = index_of_uniques(matches);
+    Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic> temp(idx_uniques.size(), 2);
+    temp << idx_uniques, matches;
+    // std::cout << temp << std::endl;
+    std::cout << "+++++++++++++++++++" << min_non_zero_dist << std::endl;
+    matches = (idx_uniques.array() == 1).select(matches, 0);
+
+    return matches;
+}
+
+void viz_matches(const cv::Mat &src_img,
+                 const VectorXuI &matches,
+                 const Eigen::MatrixXd &curr_kps,
+                 const Eigen::MatrixXd &prev_kps)
+{
+    cv::Mat color_img;
+    cv::cvtColor(src_img, color_img, cv::COLOR_GRAY2BGR);
+    for (size_t idx = 0; idx < matches.size(); idx++)
+    {
+        cv::drawMarker(color_img,
+                       cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
+                       cv::Scalar(0, 0, 255),
+                       cv::MARKER_TILTED_CROSS, 10, 2);
+        if (matches(idx) == 0)
+            continue;
+        cv::line(color_img,
+                 cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
+                 cv::Point(prev_kps(0, matches(idx)), prev_kps(1, matches(idx))),
+                 cv::Scalar(0, 255, 0),
+                 2);
+    }
+    cv::imshow("image", color_img);
+    cv::waitKey(0);
+}
 
 int main()
 {
@@ -334,24 +421,46 @@ int main()
     size_t descriptor_radius = 9;
     double match_lambda = 4;
 
-    // Part 1: calculate corner response functions
-    auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
-    ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
-    auto shi_tomasi_score = tracker.shi_tomasi_score();
-    auto harris_score = tracker.harris_score();
-    // tracker.viz_harris_shitomasi_scores();
+    {
+        // Part 1: calculate corner response functions
+        auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
+        ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
+        auto shi_tomasi_score = tracker.shi_tomasi_score();
+        auto harris_score = tracker.harris_score();
+        // tracker.viz_harris_shitomasi_scores();
 
-    // Part 2: Select keypoints
-    auto harris_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
-    auto shi_tomasi_kps = tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
-    // tracker.viz_key_points();
+        // Part 2: Select keypoints
+        auto harris_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
+        auto shi_tomasi_kps = tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
+        // tracker.viz_key_points();
 
-    // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
-    tracker.harris_descriptors(descriptor_radius);
-    tracker.shi_tomasi_descriptors(descriptor_radius);
-    tracker.viz_descriptors();
+        // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
+        tracker.harris_descriptors(descriptor_radius);
+        tracker.shi_tomasi_descriptors(descriptor_radius);
+        // tracker.viz_descriptors();
+    }
 
-
+    // Part 4 and 5 - Match descriptors between all images
+    Eigen::MatrixXd prev_desc;
+    Eigen::MatrixXd prev_kps;
+    for (auto &image_path : image_files)
+    {
+        cv::Mat src_img = cv::imread(image_path.path(), cv::IMREAD_GRAYSCALE);
+        ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
+        Eigen::MatrixXd curr_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
+        Eigen::MatrixXd desc = tracker.harris_descriptors(descriptor_radius);
+        // tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
+        // tracker.shi_tomasi_descriptors(descriptor_radius);
+        // tracker.viz_descriptors();
+        if (prev_desc.size() != 0)
+        {
+            auto matches = match_descriptors(desc, prev_desc, match_lambda);
+            viz_matches(src_img, matches, curr_kps, prev_kps);
+            // break;
+        }
+        prev_desc = desc;
+        prev_kps = curr_kps;
+    }
 
     return 0;
 }
