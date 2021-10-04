@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "folder_manager.hpp"
 #include <cassert>
+#include <cmath>
 
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
 {
@@ -24,10 +25,18 @@ Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd 
 
 Eigen::MatrixXd cv_2_eigen(const cv::Mat &img)
 {
-    cv::Mat img_double;
     Eigen::MatrixXd eigen_img;
     cv::cv2eigen(img, eigen_img);
     return eigen_img;
+}
+
+cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
+{
+    cv::Mat img;
+    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXuc;
+    MatrixXuc temp = eigen.cast<unsigned char>();
+    cv::eigen2cv(temp, img);
+    return img;
 }
 
 void visualize_matrix_as_image(Eigen::MatrixXd mat)
@@ -56,6 +65,7 @@ private:
     cv::Mat src_img;
     Eigen::MatrixXd eigen_img, m_harris_score, m_shi_tomasi_score;
     Eigen::MatrixXd sI_xx, sI_yy, sI_xy;
+    Eigen::MatrixXd m_harris_descriptors, m_shi_tomasi_descriptors;
     size_t patch_size;
     double harris_kappa;
     Eigen::MatrixXd m_harris_kps, m_shi_tomasi_kps;
@@ -80,7 +90,6 @@ private:
     {
         if (sI_xx.size() == 0)
         {
-            eigen_img = cv_2_eigen(src_img);
             auto I_x = correlation(eigen_img, sobel_x_kernel());
             auto I_y = correlation(eigen_img, sobel_y_kernel());
             auto I_xx = I_x.array().square().matrix();
@@ -112,10 +121,58 @@ private:
 
     void add_keypoints(cv::Mat &src, const Eigen::MatrixXd &keypoints) const
     {
-        for (size_t idx= 0 ; idx< keypoints.cols(); idx++)
+        for (size_t idx = 0; idx < keypoints.cols(); idx++)
         {
-            cv::drawMarker(src, cv::Point(keypoints(0,idx), keypoints(1,idx)), cv::Scalar(0,0,255),cv::MARKER_TILTED_CROSS, 10, 2);
+            cv::drawMarker(src, cv::Point(keypoints(0, idx), keypoints(1, idx)), cv::Scalar(0, 0, 255), cv::MARKER_TILTED_CROSS, 10, 2);
         }
+    }
+
+    Eigen::MatrixXd get_descriptors(Eigen::MatrixXd kps, size_t descriptor_radius)
+    {
+        size_t descriptor_len = descriptor_radius * descriptor_radius;
+        Eigen::MatrixXd res(descriptor_len, kps.cols());
+        Eigen::MatrixXd padded_img = Eigen::MatrixXd::Zero(eigen_img.rows() + 2 * descriptor_radius, eigen_img.cols() + 2 * descriptor_radius);
+        padded_img.block(descriptor_radius, descriptor_radius, eigen_img.rows(), eigen_img.cols()) = eigen_img;
+        for (size_t idx = 0; idx < kps.cols(); idx++)
+        {
+            size_t row = kps(1, idx) + descriptor_radius, col = kps(0, idx) + descriptor_radius;
+            Eigen::MatrixXd patch = padded_img.block(row - descriptor_radius,
+                                                     col - descriptor_radius,
+                                                     descriptor_radius,
+                                                     descriptor_radius);
+            patch.resize(descriptor_len, 1);
+            res.block(0, idx, descriptor_len, 1) = patch;
+        }
+        return res;
+    }
+
+    cv::Mat viz_dscr(const Eigen::MatrixXd desc)
+    {
+        size_t cols = src_img.cols;
+        size_t descriptor_size = std::lround(std::sqrt(desc.rows()));
+        size_t descriptor_size_img = 10 * descriptor_size;
+        size_t v_space = descriptor_size_img / 2;
+        size_t grid_w = cols / 5;
+        size_t rows = 4 * descriptor_size_img + 5 * v_space;
+        cv::Mat res(rows, cols, CV_8U, cv::Scalar(0));
+
+        for (size_t idx = 0; idx < 16; idx++)
+        {
+            size_t idx_col = idx % 4;
+            size_t idx_row = idx / 4;
+            Eigen::MatrixXd patch_eigen = desc.col(idx);
+            patch_eigen.resize(descriptor_size, descriptor_size);
+            cv::Mat patch = eigen_2_cv(patch_eigen);
+            cv::resize(patch, patch, cv::Size(descriptor_size_img, descriptor_size_img),0,0, cv::INTER_NEAREST);
+            size_t row_start = (descriptor_size_img + v_space) * (idx_row + 1) - descriptor_size_img ;
+            size_t row_end = (descriptor_size_img + v_space) * (idx_row + 1);
+            size_t col_start = grid_w * (idx_col + 1) - descriptor_size_img / 2;
+            size_t col_end = grid_w * (idx_col + 1) + descriptor_size_img / 2;
+            patch.copyTo(
+                res(cv::Range(row_start, row_end),
+                    cv::Range(col_start, col_end)));
+        }
+        return res;
     }
 
 public:
@@ -123,7 +180,10 @@ public:
                       size_t patch_size,
                       double harris_kappa) : src_img(img.clone()),
                                              patch_size(patch_size),
-                                             harris_kappa(harris_kappa) {}
+                                             harris_kappa(harris_kappa)
+    {
+        eigen_img = cv_2_eigen(src_img);
+    }
 
     Eigen::MatrixXd harris_score()
     {
@@ -196,22 +256,58 @@ public:
 
     cv::Mat viz_key_points(bool show_img = true)
     {
-        if (m_harris_kps.size()==0 || m_shi_tomasi_kps.size() == 0)
-        {
+        if (m_harris_kps.size() == 0 || m_shi_tomasi_kps.size() == 0)
             throw std::runtime_error("first call 'select_harris_keypoints' and 'select_shi_tomasi_keypoints' functions");
-        }
+
         cv::Mat score_img = viz_harris_shitomasi_scores(false);
         cv::Mat color_src;
-        cv::cvtColor (src_img, color_src, cv::COLOR_GRAY2BGR);
+        cv::cvtColor(src_img, color_src, cv::COLOR_GRAY2BGR);
         cv::Mat harris_kps_img = color_src.clone();
         cv::Mat shi_tomasi_kps_img = color_src.clone();
         add_keypoints(harris_kps_img, m_harris_kps);
         add_keypoints(shi_tomasi_kps_img, m_shi_tomasi_kps);
-        cv::Mat temp;
-        cv::hconcat(shi_tomasi_kps_img, harris_kps_img, temp);
         cv::Mat res;
-        cv::cvtColor (score_img, score_img, cv::COLOR_GRAY2BGR);
-        cv::vconcat(score_img, temp, res);
+        cv::hconcat(shi_tomasi_kps_img, harris_kps_img, res);
+        cv::cvtColor(score_img, score_img, cv::COLOR_GRAY2BGR);
+        cv::vconcat(score_img, res, res);
+        if (show_img)
+        {
+            cv::imshow("Image", res);
+            cv::waitKey(0);
+        }
+        return res;
+    }
+
+    Eigen::MatrixXd harris_descriptors(size_t descriptor_radius)
+    {
+        if (m_harris_kps.size() == 0)
+            throw std::runtime_error("first call 'select_harris_keypoints' function");
+
+        m_harris_descriptors = get_descriptors(m_harris_kps, descriptor_radius);
+        return m_harris_descriptors;
+    }
+
+    Eigen::MatrixXd shi_tomasi_descriptors(size_t descriptor_radius)
+    {
+        if (m_shi_tomasi_kps.size() == 0)
+            throw std::runtime_error("first call 'select_shi_tomasi_keypoints' function");
+
+        m_shi_tomasi_descriptors = get_descriptors(m_shi_tomasi_kps, descriptor_radius);
+        return m_shi_tomasi_descriptors;
+    }
+
+    cv::Mat viz_descriptors(bool show_img = true)
+    {
+        if (m_shi_tomasi_descriptors.size() == 0 || m_harris_kps.size() == 0)
+            throw std::runtime_error("first call 'harris_descriptors' and 'shi_tomasi_descriptors' functions");
+
+        cv::Mat key_pts_img = viz_key_points(false);
+        cv::Mat desc_harris = viz_dscr(m_harris_descriptors);
+        cv::Mat desc_shi_tomasi = viz_dscr(m_shi_tomasi_descriptors);
+        cv::Mat res;
+        cv::hconcat(desc_shi_tomasi, desc_harris, res);
+        cv::cvtColor(res, res, cv::COLOR_GRAY2BGR);
+        cv::vconcat(key_pts_img, res, res);
         if (show_img)
         {
             cv::imshow("Image", res);
@@ -248,6 +344,14 @@ int main()
     // Part 2: Select keypoints
     auto harris_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
     auto shi_tomasi_kps = tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
-    tracker.viz_key_points();
+    // tracker.viz_key_points();
+
+    // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
+    tracker.harris_descriptors(descriptor_radius);
+    tracker.shi_tomasi_descriptors(descriptor_radius);
+    tracker.viz_descriptors();
+
+
+
     return 0;
 }
