@@ -2,22 +2,6 @@
 #include "folder_manager.hpp"
 #include <cassert>
 
-Eigen::MatrixXd sobel_x_kernel()
-{
-    return Eigen::Matrix3d(
-        {{-1.0, 0.0, 1.0},
-         {-2.0, 0.0, 2.0},
-         {-1.0, 0.0, 1.0}});
-}
-
-Eigen::MatrixXd sobel_y_kernel()
-{
-    return Eigen::Matrix3d(
-        {{-1.0, -2.0, -1.0},
-         {0.0, 0.0, 0.0},
-         {1.0, 2.0, 1.0}});
-}
-
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
 {
     assert(kernel.cols() == kernel.rows());
@@ -66,46 +50,76 @@ void viz_score_image(const Eigen::MatrixXd &score, const cv::Mat &img)
     cv::waitKey(0);
 }
 
-auto shi_tomasi(const cv::Mat &img, size_t patch_size)
+class ShiTomasAndHarris
 {
-    Eigen::MatrixXd eigen_img = cv_2_eigen(img);
-    auto I_x = correlation(eigen_img, sobel_x_kernel());
-    auto I_y = correlation(eigen_img, sobel_y_kernel());
-    auto I_xx = I_x.array().square().matrix();
-    auto I_yy = I_y.array().square().matrix();
-    auto I_xy = (I_x.array() * I_y.array()).matrix();
-    auto sI_xx = correlation(I_xx, Eigen::MatrixXd::Ones(patch_size, patch_size));
-    auto sI_yy = correlation(I_yy, Eigen::MatrixXd::Ones(patch_size, patch_size));
-    auto sI_xy = correlation(I_xy, Eigen::MatrixXd::Ones(patch_size, patch_size));
+private:
+    cv::Mat src_img;
+    Eigen::MatrixXd eigen_img, m_shi_tomasi_score, m_harris_score;
+    Eigen::MatrixXd sI_xx, sI_yy, sI_xy;
+    size_t patch_size;
+    double harris_kappa;
 
-    auto trace = (sI_xx + sI_yy).array();
-    auto determinant = (sI_xx.array() * sI_yy.array()) - sI_xy.array().square();
-    Eigen::MatrixXd score = (trace / 2.0 - ((trace / 2.0).square() - determinant).sqrt()).matrix();
-    score = (score.array() < 0).select(0, score);
-    //viz_score_image(score, img);
-    return score;
-}
+    Eigen::MatrixXd sobel_x_kernel()
+    {
+        return Eigen::Matrix3d(
+            {{-1.0, 0.0, 1.0},
+             {-2.0, 0.0, 2.0},
+             {-1.0, 0.0, 1.0}});
+    }
 
-auto harris(cv::Mat &img, size_t patch_size, double kappa)
-{
-    Eigen::MatrixXd eigen_img = cv_2_eigen(img);
+    Eigen::MatrixXd sobel_y_kernel()
+    {
+        return Eigen::Matrix3d(
+            {{-1.0, -2.0, -1.0},
+             {0.0, 0.0, 0.0},
+             {1.0, 2.0, 1.0}});
+    }
 
-    auto I_x = correlation(eigen_img, sobel_x_kernel());
-    auto I_y = correlation(eigen_img, sobel_y_kernel());
-    auto I_xx = I_x.array().square().matrix();
-    auto I_yy = I_y.array().square().matrix();
-    auto I_xy = (I_x.array() * I_y.array()).matrix();
-    auto sI_xx = correlation(I_xx, Eigen::MatrixXd::Ones(patch_size, patch_size));
-    auto sI_yy = correlation(I_yy, Eigen::MatrixXd::Ones(patch_size, patch_size));
-    auto sI_xy = correlation(I_xy, Eigen::MatrixXd::Ones(patch_size, patch_size));
-    Eigen::MatrixXd score = ((sI_xx.array() * sI_yy.array() - 2 * sI_xy.array()) -
-                             kappa * (sI_xx.array() + sI_yy.array()).square())
-                                .matrix();
-    score = (score.array() < 0).select(0, score);
+    void calculate_Is()
+    {
+        if (sI_xx.size() == 0)
+        {
+            eigen_img = cv_2_eigen(src_img);
+            auto I_x = correlation(eigen_img, sobel_x_kernel());
+            auto I_y = correlation(eigen_img, sobel_y_kernel());
+            auto I_xx = I_x.array().square().matrix();
+            auto I_yy = I_y.array().square().matrix();
+            auto I_xy = (I_x.array() * I_y.array()).matrix();
+            sI_xx = correlation(I_xx, Eigen::MatrixXd::Ones(patch_size, patch_size));
+            sI_yy = correlation(I_yy, Eigen::MatrixXd::Ones(patch_size, patch_size));
+            sI_xy = correlation(I_xy, Eigen::MatrixXd::Ones(patch_size, patch_size));
+        }
+    }
 
-    // viz_score_image(score, img);
-    return score;
-}
+public:
+    ShiTomasAndHarris(const cv::Mat &img,
+                      size_t patch_size,
+                      double harris_kappa) : src_img(img.clone()),
+                                             patch_size(patch_size),
+                                             harris_kappa(harris_kappa) {}
+
+    Eigen::MatrixXd harris_score()
+    {
+        calculate_Is();
+        Eigen::MatrixXd score = ((sI_xx.array() * sI_yy.array() - 2 * sI_xy.array()) -
+                                 harris_kappa * (sI_xx.array() + sI_yy.array()).square())
+                                    .matrix();
+        m_harris_score = (score.array() < 0).select(0, score);
+        // viz_score_image(score, img);
+        return m_harris_score;
+    }
+
+    Eigen::MatrixXd shi_tomasi_score()
+    {
+        calculate_Is();
+        auto trace = (sI_xx + sI_yy).array();
+        auto determinant = (sI_xx.array() * sI_yy.array()) - sI_xy.array().square();
+        Eigen::MatrixXd score = (trace / 2.0 - ((trace / 2.0).square() - determinant).sqrt()).matrix();
+        m_shi_tomasi_score = (score.array() < 0).select(0, score);
+        //viz_score_image(score, img);
+        return m_shi_tomasi_score;
+    }
+};
 
 void viz_harris_shitomasi_scores(Eigen::MatrixXd harris, Eigen::MatrixXd shi_tomasi, cv::Mat src_img)
 {
@@ -113,10 +127,10 @@ void viz_harris_shitomasi_scores(Eigen::MatrixXd harris, Eigen::MatrixXd shi_tom
     auto shi_tomasi_cv = convet_to_cv_to_show(shi_tomasi);
     cv::Mat shi_merged;
     cv::vconcat(src_img, shi_tomasi_cv, shi_merged);
-    cv::putText(shi_merged, "shi tomasi", cv::Point(50,shi_merged.rows * 0.95), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255),false);
+    cv::putText(shi_merged, "shi tomasi score", cv::Point(50, shi_merged.rows * 0.95), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255), false);
     cv::Mat harris_merged;
     cv::vconcat(src_img, harris_cv, harris_merged);
-    cv::putText(harris_merged, "harris", cv::Point(50,harris_merged.rows * 0.95), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255),false);
+    cv::putText(harris_merged, "harris score", cv::Point(50, harris_merged.rows * 0.95), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255), false);
     cv::Mat res;
     cv::hconcat(shi_merged, harris_merged, res);
     cv::imshow("Image", res);
@@ -139,10 +153,14 @@ int main()
     size_t descriptor_radius = 9;
     double match_lambda = 4;
 
+    // Part 1: calculate corner response functions
     auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
-    auto shi_tomasi_score = shi_tomasi(src_img, patch_size);
-    auto harris_score = harris(src_img, patch_size, harris_kappa);
+    ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
+    auto shi_tomasi_score = tracker.shi_tomasi_score();
+    auto harris_score = tracker.harris_score();
     viz_harris_shitomasi_scores(harris_score, shi_tomasi_score, src_img);
+
+    // Part 2: Select keypoints
 
     return 0;
 }
