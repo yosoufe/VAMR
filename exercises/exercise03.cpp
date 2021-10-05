@@ -132,20 +132,28 @@ private:
 
     Eigen::MatrixXd get_descriptors(Eigen::MatrixXd kps, size_t descriptor_radius)
     {
-        size_t descriptor_len = descriptor_radius * descriptor_radius;
-        Eigen::MatrixXd res(descriptor_len, kps.cols());
+        size_t descriptor_dia = 2 * descriptor_radius + 1;
+        size_t descriptor_len = descriptor_dia * descriptor_dia;
+        Eigen::MatrixXd res = Eigen::MatrixXd::Zero(descriptor_len, kps.cols());
         Eigen::MatrixXd padded_img = Eigen::MatrixXd::Zero(eigen_img.rows() + 2 * descriptor_radius, eigen_img.cols() + 2 * descriptor_radius);
-        padded_img.block(descriptor_radius, descriptor_radius, eigen_img.rows(), eigen_img.cols()) = eigen_img;
+        padded_img.block(descriptor_radius, descriptor_radius, eigen_img.rows(), eigen_img.cols()) = eigen_img; // eigen_img; eigen_img.cast<double>()
+
+        // std::cout << "test value " << padded_img(descriptor_radius+21, descriptor_radius+31) << " " << eigen_img(21,31) << std::endl;
         for (size_t idx = 0; idx < kps.cols(); idx++)
         {
             size_t row = kps(1, idx) + descriptor_radius, col = kps(0, idx) + descriptor_radius;
             Eigen::MatrixXd patch = padded_img.block(row - descriptor_radius,
                                                      col - descriptor_radius,
-                                                     descriptor_radius,
-                                                     descriptor_radius);
+                                                     descriptor_dia,
+                                                     descriptor_dia);
+            // std::cout << patch.size() << " patch: " << std::endl << patch << std::endl;
             patch.resize(descriptor_len, 1);
             res.block(0, idx, descriptor_len, 1) = patch;
+
+            // std::cout << patch.size()  << " patch resized: " << std::endl << patch << std::endl;
+            // std::cout << "res: " << std::endl << res << std::endl;
         }
+        // std::cout << "descs: " << std::endl << res << std::endl;
         return res;
     }
 
@@ -315,7 +323,7 @@ public:
         if (show_img)
         {
             cv::imshow("Image", res);
-            cv::waitKey(1);
+            cv::waitKey(0);
         }
         return res;
     }
@@ -347,39 +355,47 @@ VectorXuI match_descriptors(
     const Eigen::MatrixXd &prev, // database_descriptors        num_kp X desc_size
     double match_lambda)
 {
+    // std::cout << "curr" << std::endl << curr << std::endl;
+    // std::cout << "prev" << std::endl << prev << std::endl;
+
     Eigen::VectorXd dists(curr.cols());
     VectorXuI matches(curr.cols());
-    double min_non_zero_dist = 1000; // std::numeric_limits<double>::max() 1000
+
     for (size_t idx = 0; idx < curr.cols(); idx++)
     {
         // dist is 1x200
         Eigen::MatrixXd diff = prev.colwise() - curr.col(idx);
         Eigen::VectorXd dist = diff.colwise().norm();
 
+
         Eigen::MatrixXd::Index closest_kp_idx = 0;
         dists(idx) = dist.minCoeff(&closest_kp_idx);
         matches(idx) = (size_t)(closest_kp_idx);
-
-        double min_dist = dists.minCoeff();
-        if (min_dist < min_non_zero_dist && std::fabs(min_dist) > 1e-3)
-        {
-            min_non_zero_dist = min_dist;
-            std::cout << "updatintg min_non_zero_dist to " << min_non_zero_dist << std::endl;
-        }
     }
 
-    matches = (matches.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
+    // std::cout << "dists: " << std::endl << dists << std::endl;
+
+    double big_double = std::numeric_limits<double>::max(); // std::numeric_limits<double>::max() 1000
+    auto temp_score = (dists.array() == 0).select(big_double, dists);
+    double min_non_zero_dist = temp_score.minCoeff();
+
+    // std::cout << "min_dist: " << std::endl << min_dist << std::endl;
+
+    // std::cout << "updating min_non_zero_dist to " << min_non_zero_dist << std::endl;
+
+    matches = (dists.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
     auto idx_uniques = index_of_uniques(matches);
-    Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic> temp(idx_uniques.size(), 2);
-    temp << idx_uniques, matches;
+    // Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic> temp(idx_uniques.size(), 2);
+    // temp << idx_uniques, matches;
     // std::cout << temp << std::endl;
-    std::cout << "+++++++++++++++++++" << min_non_zero_dist << std::endl;
+    // std::cout << "+++++++++++++++++++" << min_non_zero_dist << std::endl;
+    // std::cout << "+++++++++++++++++++" << std::endl;
     matches = (idx_uniques.array() == 1).select(matches, 0);
 
     return matches;
 }
 
-void viz_matches(const cv::Mat &src_img,
+cv::Mat viz_matches(const cv::Mat &src_img,
                  const VectorXuI &matches,
                  const Eigen::MatrixXd &curr_kps,
                  const Eigen::MatrixXd &prev_kps)
@@ -401,7 +417,8 @@ void viz_matches(const cv::Mat &src_img,
                  2);
     }
     cv::imshow("image", color_img);
-    cv::waitKey(0);
+    cv::waitKey(1);
+    return color_img;
 }
 
 int main()
@@ -409,21 +426,19 @@ int main()
     std::string in_data_root = "../../data/ex03/";
     SortedImageFiles image_files(in_data_root);
 
-    // for (auto & image_path : image_files)
-    // {
-    //     std::cout << image_path.number() << " " << image_path.path() << std::endl;
-    // }
+    cv::Size img_size;
 
     size_t patch_size = 9;
     double harris_kappa = 0.08;
     size_t non_maximum_suppression_radius = 9;
-    size_t num_keypoints = 200;
-    size_t descriptor_radius = 9;
-    double match_lambda = 4;
+    size_t num_keypoints = 200; // 200
+    size_t descriptor_radius = 9; // 9
+    double match_lambda = 4; // 4
 
     {
         // Part 1: calculate corner response functions
         auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
+        img_size = src_img.size();
         ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
         auto shi_tomasi_score = tracker.shi_tomasi_score();
         auto harris_score = tracker.harris_score();
@@ -440,6 +455,8 @@ int main()
         // tracker.viz_descriptors();
     }
 
+    cv::VideoWriter video = create_video_writer(img_size, "ex03/keypoint_tracking.mp4");
+
     // Part 4 and 5 - Match descriptors between all images
     Eigen::MatrixXd prev_desc;
     Eigen::MatrixXd prev_kps;
@@ -455,8 +472,11 @@ int main()
         if (prev_desc.size() != 0)
         {
             auto matches = match_descriptors(desc, prev_desc, match_lambda);
-            viz_matches(src_img, matches, curr_kps, prev_kps);
-            // break;
+            video << viz_matches(src_img, matches, curr_kps, prev_kps);
+            if (image_path.number() == 2)
+            {
+                int temp = system("read temp");
+            }
         }
         prev_desc = desc;
         prev_kps = curr_kps;

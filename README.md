@@ -67,9 +67,12 @@ make -j`nproc`
 This is about camera and distortion models.
 - Problem statement is in `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
 - solution is in `exercises/exercise01.cpp`.
+- Videos:
+  - https://youtu.be/RD8uO2pETIE
+  - https://youtu.be/Ba9SmGKgBmU
+
 
 ![Output](exercises/statements/outputs/ex01.gif)
-
 
 
 ### Exercise 2 - PnP Problem
@@ -77,6 +80,8 @@ This is about camera and distortion models.
 This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known points in world and their known correspondences in the image frame.
 - Problem statement is in `exercises/statements/Exercise 2 - PnP/statement.pdf`.
 - Solution is in `exercises/exercise02.cpp`.
+- Video:
+  - https://youtu.be/nbFseP4vRTU
 
 The following video shows the calculated pose and orientation of the camera relative to the pattern of April Tags.
 
@@ -86,10 +91,20 @@ The following video shows the calculated pose and orientation of the camera rela
 
 - Problem statement is in `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
 - Solution is in `exercises/exercise03.cpp`.
+- Videos:
+  - https://youtu.be/8O97v3q7bC4
+  - https://youtu.be/T8WX1ktlg8E
+
+Tracking:
+
+![Output](exercises/statements/outputs/ex03-tracking.gif)
 
 The following image shows the Harris and Shi-Tomasi scores, key points and descriptors for the first frame of the dataset.
 
 ![Output](exercises/statements/outputs/ex03-harris_shitomasi.png)
+
+
+
 
 
 ## Useful Commands
@@ -97,5 +112,5 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 ### Convert to gif
 
 ```bash
-ffmpeg -ss 0 -t 3 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
+ffmpeg -ss 0 -t 5 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
 ```
