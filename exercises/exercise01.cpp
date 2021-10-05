@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     Eigen::Vector2d principal_pt = K.block(0, 2, 2, 1);
 
     // load single image to get image size
-    auto image = load_image(in_data_root + "images/img_0001.jpg");
+    auto image = load_image_color(in_data_root + "images/img_0001.jpg");
     auto img_size = image.size();
 
     cv::VideoWriter grid_video_distorted = create_video_writer(img_size, "ex01/distorted_grid.mp4");
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     {
         std::stringstream image_path;
         image_path << "images/img_" << std::setfill('0') << std::setw(4) << image_idx << ".jpg";
-        image = load_image(in_data_root + image_path.str());
+        image = load_image_color(in_data_root + image_path.str());
 
         // make a video of grid points on distorted images
         auto grid_in_camera_frame = project_2_camera_frame(K, poses[image_idx - 1], grid);

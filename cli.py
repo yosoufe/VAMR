@@ -43,7 +43,6 @@ def run():
              "--runtime=nvidia "
              "--gpus all "
              "--rm "
-             "--network host "
              "--name vamr_container "
              f"-v {Path(__file__).parent.resolve()}:/code "
              f"{DOCKER_IMAGE}")

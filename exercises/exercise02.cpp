@@ -251,7 +251,7 @@ int main(int argc, char **argv)
     auto all_detected_corners = read_detected_corners(in_data_root + "detected_corners.txt");
 
     // load single image to get image size
-    auto image = load_image(in_data_root + "images_undistorted/img_0001.jpg");
+    auto image = load_image_color(in_data_root + "images_undistorted/img_0001.jpg");
     auto img_size = image.size();
     cv::VideoWriter re_projected_vid_writer = create_video_writer(
         img_size,
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 
         std::stringstream image_path;
         image_path << "images_undistorted/img_" << std::setfill('0') << std::setw(4) << image_idx + 1 << ".jpg";
-        image = load_image(in_data_root + image_path.str());
+        image = load_image_color(in_data_root + image_path.str());
 
         draw_circles(image, detected_corners.block(0, 0, 2, detected_corners.cols()), 3, cv::Scalar(0, 0, 255), cv::LINE_8);
 

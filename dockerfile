@@ -63,7 +63,7 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     cd eigen && \
     mkdir build && \
     cd build && \
-    cmake .. && \
+    cmake -D CMAKE_BUILD_TYPE=Debug .. && \
     make -j`nproc` install && \
     cd ../.. && \
     rm -rf eigen
@@ -81,7 +81,7 @@ RUN git clone https://github.com/Kitware/VTK.git && \
     cd VTK && \
     mkdir build && \
     cd build && \
-    cmake -D BUILD_SHARED_LIBS=ON .. && \
+    cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_SHARED_LIBS=ON .. && \
     make -j`nproc` install && \
     cd ../.. && \
     rm -rf VTK
@@ -94,7 +94,7 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
     cd opencv && \
     mkdir build && \
     cd build && \
-    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+    cmake -D CMAKE_BUILD_TYPE=Debug \
       -D INSTALL_C_EXAMPLES=ON \
       -D INSTALL_PYTHON_EXAMPLES=ON \
       -D WITH_TBB=ON \

@@ -60,7 +60,9 @@
         "codecvt": "cpp",
         "list": "cpp",
         "cfenv": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "unordered_set": "cpp",
+        "specialfunctions": "cpp"
     },
     "cSpell.words": [
         "Eigen",
