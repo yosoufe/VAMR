@@ -5,43 +5,6 @@
 #include <limits>
 #include <unordered_map>
 
-
-Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
-{
-    assert(kernel.cols() == kernel.rows());
-    assert(kernel.cols() % 2 == 1);
-
-    size_t kernel_r = kernel.cols() / 2;
-    size_t kernel_s = kernel.cols();
-
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
-    for (size_t v = kernel_r; v < input.rows() - kernel_r; v++)
-    {
-        for (size_t u = kernel_r; u < input.cols() - kernel_r; u++)
-        {
-            auto element_wise_prod = input.block(v - kernel_r, u - kernel_r, kernel_s, kernel_s).array() * kernel.array();
-            res(v, u) = element_wise_prod.sum();
-        }
-    }
-    return res;
-}
-
-Eigen::MatrixXd cv_2_eigen(const cv::Mat &img)
-{
-    Eigen::MatrixXd eigen_img;
-    cv::cv2eigen(img, eigen_img);
-    return eigen_img;
-}
-
-cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
-{
-    cv::Mat img;
-    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXuc;
-    MatrixXuc temp = eigen.cast<unsigned char>();
-    cv::eigen2cv(temp, img);
-    return img;
-}
-
 void visualize_matrix_as_image(Eigen::MatrixXd mat)
 {
     auto mat_cv = convet_to_cv_to_show(mat);

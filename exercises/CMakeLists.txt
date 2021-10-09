@@ -51,3 +51,7 @@ target_link_libraries (exercise02 utils Eigen3::Eigen ${OpenCV_LIBS})
 # exercise 03
 add_executable(exercise03 exercise03.cpp)
 target_link_libraries (exercise03 utils Eigen3::Eigen ${OpenCV_LIBS})
+
+# exercise 03
+add_executable(exercise04 exercise04.cpp)
+target_link_libraries (exercise04 utils Eigen3::Eigen ${OpenCV_LIBS})
