@@ -47,6 +47,37 @@ Eigen::MatrixXd gaussian_blur(const Eigen::MatrixXd &src, double sigma)
     return blured;
 }
 
+/**
+ * @brief calculates kye points locations and scale from DoGs
+ *
+ * @param DoGs
+ * @return Eigen::MatrixXd (scale, u, v)
+ */
+Eigen::MatrixXd find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs)
+{
+    int num_scales = DoGs.size() - 2;
+    int cols = DoGs[0].cols();
+    int rows = DoGs[0].cols();
+    Eigen::MatrixXd res;
+    const std::vector<Eigen::MatrixXd> kernel = {Eigen::MatrixXd::Ones(3, 3),
+                                                 Eigen::MatrixXd::Ones(3, 3),
+                                                 Eigen::MatrixXd::Ones(3, 3)};
+    for (int scale = 0; scale < num_scales; scale++)
+    {
+        for (int u = 0; u < cols; u++)
+        {
+            for (int v = 0; v < rows; v++)
+            {
+                if (is_max_in_window(DoGs, scale, u, v))
+                {
+
+                }
+            }
+        }
+    }
+    return res;
+}
+
 int main()
 {
     bool rotation_inv = false;
@@ -74,10 +105,10 @@ int main()
     {
         // Write code to compute:
         // 1)    image pyramid. Number of images in the pyramid equals 'num_octaves'.
-        std::vector<Eigen::MatrixXd> DoGs;
 
         for (size_t octave = 0; octave < num_octaves; octave++)
         {
+            std::vector<Eigen::MatrixXd> DoGs;
             // 2)    blurred images for each octave. Each octave contains
             //       'num_scales + 3' blurred images.
             cv::Mat octave_img;
@@ -100,10 +131,11 @@ int main()
                 DoGs.push_back(DoG);
                 blured_down = blured_up;
             }
-        }
 
-        // 4)    Compute the keypoints with non-maximum suppression and
-        //       discard candidates with the contrast threshold.
+            // 4)    Compute the keypoints with non-maximum suppression and
+            //       discard candidates with the contrast threshold.
+            auto kpts = find_keypoints(DoGs);
+        }
 
         // 5)    Given the blurred images and keypoints, compute the
         //       descriptors. Discard keypoints/descriptors that are too close

@@ -62,7 +62,8 @@
         "cfenv": "cpp",
         "cassert": "cpp",
         "unordered_set": "cpp",
-        "specialfunctions": "cpp"
+        "specialfunctions": "cpp",
+        "csignal": "cpp"
     },
     "cSpell.words": [
         "Eigen",
