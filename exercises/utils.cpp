@@ -243,18 +243,21 @@ cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
 
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
 {
-    assert(kernel.cols() == kernel.rows());
-    assert(kernel.cols() % 2 == 1);
+    // assert(kernel.cols() == kernel.rows());
+    // assert(kernel.cols() % 2 == 1);
 
-    size_t kernel_r = kernel.cols() / 2;
-    size_t kernel_s = kernel.cols();
+    size_t kernel_rv = kernel.rows() / 2;
+    size_t kernel_sv = kernel.rows();
+
+    size_t kernel_ru = kernel.cols() / 2;
+    size_t kernel_su = kernel.cols();
 
     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
-    for (size_t v = kernel_r; v < input.rows() - kernel_r; v++)
+    for (size_t v = kernel_rv; v < input.rows() - kernel_rv; v++)
     {
-        for (size_t u = kernel_r; u < input.cols() - kernel_r; u++)
+        for (size_t u = kernel_ru; u < input.cols() - kernel_ru; u++)
         {
-            auto element_wise_prod = input.block(v - kernel_r, u - kernel_r, kernel_s, kernel_s).array() * kernel.array();
+            auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
             res(v, u) = element_wise_prod.sum();
         }
     }

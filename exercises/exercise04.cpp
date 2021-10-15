@@ -47,35 +47,75 @@ Eigen::MatrixXd gaussian_blur(const Eigen::MatrixXd &src, double sigma)
     return blured;
 }
 
-/**
- * @brief calculates kye points locations and scale from DoGs
- *
- * @param DoGs
- * @return Eigen::MatrixXd (scale, u, v)
- */
-Eigen::MatrixXd find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs)
+bool is_max_in_window(const std::vector<Eigen::MatrixXd> &DoGs,
+                      const int &scale,
+                      const int &u,
+                      const int &v,
+                      double contrast_threshold)
 {
-    int num_scales = DoGs.size() - 2;
-    int cols = DoGs[0].cols();
-    int rows = DoGs[0].cols();
-    Eigen::MatrixXd res;
-    const std::vector<Eigen::MatrixXd> kernel = {Eigen::MatrixXd::Ones(3, 3),
-                                                 Eigen::MatrixXd::Ones(3, 3),
-                                                 Eigen::MatrixXd::Ones(3, 3)};
-    for (int scale = 0; scale < num_scales; scale++)
+    bool res = true;
+    double center_val = DoGs[scale + 1](u, v);
+    if (center_val < contrast_threshold)
+        return false;
+    for (int s = scale; s < scale + 3; s++)
     {
-        for (int u = 0; u < cols; u++)
+        for (int ui = u - 1; ui < u + 2; ui++)
         {
-            for (int v = 0; v < rows; v++)
+            for (int vi = v - 1; vi < v + 2; vi++)
             {
-                if (is_max_in_window(DoGs, scale, u, v))
-                {
-
-                }
+                res = res && (center_val > DoGs[s](vi, ui));
+                if (!res)
+                    return res;
             }
         }
     }
     return res;
+}
+
+typedef Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> MatrixXS;
+
+/**
+ * @brief calculates kye points locations and scale from DoGs
+ *
+ * @param DoGs
+ * @return Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> (scale, u, v)
+ */
+MatrixXS find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs,
+                        double contrast_threshold)
+{
+    int num_scales = DoGs.size() - 2;
+    int cols = DoGs[0].cols();
+    int rows = DoGs[0].cols();
+    std::vector<size_t> res_vector;
+
+    std::vector<size_t> kps;
+    size_t kernel_r = 1;
+    for (int scale = 0; scale < num_scales; scale++)
+    {
+        for (int u = kernel_r; u < cols - kernel_r; u++)
+        {
+            for (int v = kernel_r; v < rows - kernel_r; v++)
+            {
+                if (is_max_in_window(DoGs, scale, u, v, contrast_threshold))
+                {
+                    kps.push_back(scale);
+                    kps.push_back(u);
+                    kps.push_back(v);
+                }
+            }
+        }
+    }
+
+    if (kps.size())
+    {
+        size_t* ptr = &kps[0];
+        Eigen::Map<MatrixXS>res(ptr, 3, kps.size()/3);
+        size_t num_kps = kps.size() / 3;
+        res.resize(3, num_kps);
+        return res;
+
+    }
+    return MatrixXS();
 }
 
 int main()
@@ -134,7 +174,8 @@ int main()
 
             // 4)    Compute the keypoints with non-maximum suppression and
             //       discard candidates with the contrast threshold.
-            auto kpts = find_keypoints(DoGs);
+            auto kpts = find_keypoints(DoGs, contrast_threshold);
+            print_shape(kpts);
         }
 
         // 5)    Given the blurred images and keypoints, compute the
