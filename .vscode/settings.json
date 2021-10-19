@@ -68,5 +68,7 @@
     "cSpell.words": [
         "Eigen",
         "extrinsics"
-    ]
+    ],
+    "cmake.sourceDirectory": "${workspaceFolder}/exercises",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

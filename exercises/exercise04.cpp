@@ -62,20 +62,7 @@ int main()
 
             // convert OpenCV image to Eigen Matrix
             Eigen::MatrixXd eigen_octave_img = cv_2_eigen(octave_img);
-            Eigen::MatrixXd blured_down;
-            for (int scale = -1; scale < int(num_scales + 1); scale++)
-            {
-                if (blured_down.size() == 0)
-                {
-                    blured_down = gaussian_blur(eigen_octave_img, std::pow(2.0, double(scale) / num_scales));
-                }
-                Eigen::MatrixXd blured_up = gaussian_blur(eigen_octave_img,
-                                                          std::pow(2.0, double(scale + 1) / num_scales));
-                // 3)    'num_scales + 2' difference of Gaussians for each octave.
-                Eigen::MatrixXd DoG = blured_up - blured_down;
-                DoGs.push_back(DoG);
-                blured_down = blured_up;
-            }
+            calculate_DoGs(num_scales, eigen_octave_img, DoGs);
 
             // print_shape(DoGs[0]);
             // show(eigen_2_cv(DoGs[0]));
