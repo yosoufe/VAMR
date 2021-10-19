@@ -1,6 +1,6 @@
 #include <string>
 #include <vector>
-#include "utils.hpp"
+#include "sift.hpp"
 #include "folder_manager.hpp"
 
 cv::Mat imrotate(const cv::Mat &src, double angle_deg)
@@ -21,101 +21,6 @@ void show(const cv::Mat &img, std::string window_name = "image")
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
     cv::imshow(window_name, img);
     cv::waitKey(0);
-}
-
-Eigen::MatrixXd gaussian_vector(double sigma)
-{
-    size_t radius = std::ceil(3.0 * sigma);
-    Eigen::MatrixXd kernel(2 * radius + 1, 1);
-    for (int x = 0; x <= radius; x++)
-    {
-        double cst = 1.0 / (2.0 * M_PI * sigma * sigma);
-        double exponent = (-1.0) * ((x * x) / (2 * sigma * sigma));
-        double val = cst * std::exp(exponent);
-        kernel(radius + x, 0) = val;
-        kernel(radius - x, 0) = val;
-    }
-    kernel = kernel / kernel.sum();
-    return kernel;
-}
-
-Eigen::MatrixXd gaussian_blur(const Eigen::MatrixXd &src, double sigma)
-{
-    auto kernel = gaussian_vector(sigma);
-    Eigen::MatrixXd temp = correlation(src, kernel);
-    Eigen::MatrixXd blured = correlation(temp, kernel.transpose());
-    return blured;
-}
-
-bool is_max_in_window(const std::vector<Eigen::MatrixXd> &DoGs,
-                      const int &scale,
-                      const int &u,
-                      const int &v,
-                      double contrast_threshold)
-{
-    bool res = true;
-    double center_val = DoGs[scale + 1](u, v);
-    if (center_val < contrast_threshold)
-        return false;
-    for (int s = scale; s < scale + 3; s++)
-    {
-        for (int ui = u - 1; ui < u + 2; ui++)
-        {
-            for (int vi = v - 1; vi < v + 2; vi++)
-            {
-                res = res && (center_val > DoGs[s](vi, ui));
-                if (!res)
-                    return res;
-            }
-        }
-    }
-    return res;
-}
-
-typedef Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> MatrixXS;
-
-/**
- * @brief calculates kye points locations and scale from DoGs
- *
- * @param DoGs
- * @return Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> (scale, u, v)
- */
-MatrixXS find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs,
-                        double contrast_threshold)
-{
-    int num_scales = DoGs.size() - 2;
-    int cols = DoGs[0].cols();
-    int rows = DoGs[0].cols();
-    std::vector<size_t> res_vector;
-
-    std::vector<size_t> kps;
-    size_t kernel_r = 1;
-    for (int scale = 0; scale < num_scales; scale++)
-    {
-        for (int u = kernel_r; u < cols - kernel_r; u++)
-        {
-            for (int v = kernel_r; v < rows - kernel_r; v++)
-            {
-                if (is_max_in_window(DoGs, scale, u, v, contrast_threshold))
-                {
-                    kps.push_back(scale);
-                    kps.push_back(u);
-                    kps.push_back(v);
-                }
-            }
-        }
-    }
-
-    if (kps.size())
-    {
-        size_t* ptr = &kps[0];
-        Eigen::Map<MatrixXS>res(ptr, 3, kps.size()/3);
-        size_t num_kps = kps.size() / 3;
-        res.resize(3, num_kps);
-        return res;
-
-    }
-    return MatrixXS();
 }
 
 int main()
@@ -171,6 +76,9 @@ int main()
                 DoGs.push_back(DoG);
                 blured_down = blured_up;
             }
+
+            // print_shape(DoGs[0]);
+            // show(eigen_2_cv(DoGs[0]));
 
             // 4)    Compute the keypoints with non-maximum suppression and
             //       discard candidates with the contrast threshold.

@@ -436,10 +436,10 @@ int main()
         {
             auto matches = match_descriptors(desc, prev_desc, match_lambda);
             video << viz_matches(src_img, matches, curr_kps, prev_kps);
-            if (image_path.number() == 2)
-            {
-                int temp = system("read temp");
-            }
+        //     if (image_path.number() == 2)
+        //     {
+        //         int temp = system("read temp");
+        //     }
         }
         prev_desc = desc;
         prev_kps = curr_kps;
