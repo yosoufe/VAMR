@@ -81,3 +81,5 @@ Eigen::MatrixXd cv_2_eigen(const cv::Mat &img);
 cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen);
 
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel);
+
+void show(const cv::Mat &img, std::string window_name = "image");

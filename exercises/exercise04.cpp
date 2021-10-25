@@ -3,6 +3,11 @@
 #include "sift.hpp"
 #include "folder_manager.hpp"
 
+// DELETE, OPENCV SIFT Detector
+#include <opencv2/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/xfeatures2d/nonfree.hpp>
+
 cv::Mat imrotate(const cv::Mat &src, double angle_deg)
 {
     cv::Point2f center((src.cols - 1) / 2.0, (src.rows - 1) / 2.0);
@@ -16,22 +21,21 @@ cv::Mat imrotate(const cv::Mat &src, double angle_deg)
     return res;
 }
 
-void show(const cv::Mat &img, std::string window_name = "image")
-{
-    cv::namedWindow(window_name, cv::WINDOW_NORMAL);
-    cv::imshow(window_name, img);
-    cv::waitKey(0);
-}
-
 int main()
 {
+    std::cout << std::endl;
+    std::cout << "==================================" << std::endl;
+    std::cout << "======= Exercise 04 - SIFT =======" << std::endl;
+    std::cout << "==================================" << std::endl;
+    std::cout << std::endl;
+
     bool rotation_inv = false;
     double rotation_img2_deg = 0;
 
-    size_t num_scales = 3;  // Scales per octave.
+    size_t num_scales_in_octave = 3;  // Scales per octave.
     size_t num_octaves = 5; // Number of octaves.
     double sigma = 1.6;
-    double contrast_threshold = 0.04;
+    double contrast_threshold = 0.4;
     std::string image_file_1 = "../../data/ex04/img_1.jpg";
     std::string image_file_2 = "../../data/ex04/img_2.jpg";
     double rescale_factor = 0.2; // Rescaling of the original image for speed.
@@ -48,35 +52,49 @@ int main()
 
     for (auto &img : images)
     {
+        std::vector<Eigen::MatrixXd> DoGs;
         // Write code to compute:
         // 1)    image pyramid. Number of images in the pyramid equals 'num_octaves'.
 
         for (size_t octave = 0; octave < num_octaves; octave++)
         {
-            std::vector<Eigen::MatrixXd> DoGs;
-            // 2)    blurred images for each octave. Each octave contains
-            //       'num_scales + 3' blurred images.
             cv::Mat octave_img;
             double scale = 1.0 / std::pow(2, octave);
-            cv::resize(img, octave_img, cv::Size(), scale, scale);
+            cv::resize(img, octave_img, cv::Size(), scale, scale, cv::INTER_CUBIC);
 
             // convert OpenCV image to Eigen Matrix
             Eigen::MatrixXd eigen_octave_img = cv_2_eigen(octave_img);
-            calculate_DoGs(num_scales, eigen_octave_img, DoGs);
 
-            // print_shape(DoGs[0]);
-            // show(eigen_2_cv(DoGs[0]));
-
-            // 4)    Compute the keypoints with non-maximum suppression and
-            //       discard candidates with the contrast threshold.
-            auto kpts = find_keypoints(DoGs, contrast_threshold);
-            print_shape(kpts);
+            // 3) calculate DOGs
+            calculate_DoGs(num_scales_in_octave, eigen_octave_img, DoGs, sigma);
         }
+        //// opencv SIFT keypoints, uncomment the headers on the top if
+        //// required for testing
+
+        cv::Ptr<cv::FeatureDetector> detector = cv::SIFT::create();
+        std::vector<cv::KeyPoint> keypoints;
+        detector->detect(img, keypoints);
+        cv::Mat output;
+        cv::drawKeypoints(img, keypoints, output);
+        std::cout << "number of cv keypoints " << keypoints.size() << std::endl;
+        show(output, "CV SIFT");
+
+        // 4)    Compute the keypoints with non-maximum suppression and
+        //       discard candidates with the contrast threshold.
+        auto kpts = find_keypoints(DoGs,
+                                   contrast_threshold,
+                                   num_octaves);
+
+        std::cout << "number of keypoints " << kpts.cols() << std::endl;
 
         // 5)    Given the blurred images and keypoints, compute the
         //       descriptors. Discard keypoints/descriptors that are too close
         //       to the boundary of the image. Hence, you will most likely
         //       lose some keypoints that you have computed earlier.
+
+        show_kpts_in_images(kpts, img, num_octaves, num_scales_in_octave);
+
+        break;
     }
 
     // Finally, match the descriptors using the function 'matchFeatures' and

@@ -263,3 +263,10 @@ Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd 
     }
     return res;
 }
+
+void show(const cv::Mat &img, std::string window_name)
+{
+    cv::namedWindow(window_name, cv::WINDOW_NORMAL);
+    cv::imshow(window_name, img);
+    cv::waitKey(0);
+}
