@@ -32,8 +32,8 @@ int main()
     bool rotation_inv = false;
     double rotation_img2_deg = 0;
 
-    size_t num_scales_in_octave = 3;  // Scales per octave.
-    size_t num_octaves = 5; // Number of octaves.
+    size_t num_scales_in_octave = 3; // Scales per octave.
+    size_t num_octaves = 5;          // Number of octaves.
     double sigma = 1.6;
     double contrast_threshold = 0.4;
     std::string image_file_1 = "../../data/ex04/img_1.jpg";
@@ -52,47 +52,44 @@ int main()
 
     for (auto &img : images)
     {
-        std::vector<Eigen::MatrixXd> DoGs;
         // Write code to compute:
         // 1)    image pyramid. Number of images in the pyramid equals 'num_octaves'.
 
-        for (size_t octave = 0; octave < num_octaves; octave++)
-        {
-            cv::Mat octave_img;
-            double scale = 1.0 / std::pow(2, octave);
-            cv::resize(img, octave_img, cv::Size(), scale, scale, cv::INTER_CUBIC);
+        auto image_pyramid = compute_image_pyramid(img, num_octaves);
+        auto blurred_imgs = compute_blurred_images(image_pyramid, num_scales_in_octave, sigma);
+        auto DoGs = compute_DoGs(blurred_imgs);
 
-            // convert OpenCV image to Eigen Matrix
-            Eigen::MatrixXd eigen_octave_img = cv_2_eigen(octave_img);
-
-            // 3) calculate DOGs
-            calculate_DoGs(num_scales_in_octave, eigen_octave_img, DoGs, sigma);
-        }
         //// opencv SIFT keypoints, uncomment the headers on the top if
         //// required for testing
 
-        cv::Ptr<cv::FeatureDetector> detector = cv::SIFT::create();
-        std::vector<cv::KeyPoint> keypoints;
-        detector->detect(img, keypoints);
-        cv::Mat output;
-        cv::drawKeypoints(img, keypoints, output);
-        std::cout << "number of cv keypoints " << keypoints.size() << std::endl;
-        show(output, "CV SIFT");
+        // cv::Ptr<cv::FeatureDetector> detector = cv::SIFT::create();
+        // std::vector<cv::KeyPoint> keypoints;
+        // detector->detect(img, keypoints);
+        // cv::Mat output;
+        // cv::drawKeypoints(img, keypoints, output);
+        // std::cout << "number of cv keypoints " << keypoints.size() << std::endl;
+        // show(output, "CV SIFT");
 
         // 4)    Compute the keypoints with non-maximum suppression and
         //       discard candidates with the contrast threshold.
-        auto kpts = find_keypoints(DoGs,
-                                   contrast_threshold,
-                                   num_octaves);
+        auto kpts = extract_keypoints(DoGs,
+                                      contrast_threshold);
 
-        std::cout << "number of keypoints " << kpts.cols() << std::endl;
+        std::cout << "number of keypoints: ";
+        for (auto & kpts_in_octave: kpts){
+            std::cout << kpts_in_octave.cols() << ", ";
+        }
+        std::cout << std::endl;
 
         // 5)    Given the blurred images and keypoints, compute the
         //       descriptors. Discard keypoints/descriptors that are too close
         //       to the boundary of the image. Hence, you will most likely
         //       lose some keypoints that you have computed earlier.
 
-        show_kpts_in_images(kpts, img, num_octaves, num_scales_in_octave);
+        show_kpts_in_images(kpts, img, num_scales_in_octave);
+
+        // MatrixXS final_locations;
+        // compute_descriptors(resi)
 
         break;
     }

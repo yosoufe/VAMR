@@ -66,7 +66,10 @@ TEST(SiftTest, find_keypoints)
     DoGs.push_back(Eigen::MatrixXd::Ones(20, 20));
     DoGs.push_back(Eigen::MatrixXd::Zero(20, 20));
     DoGs[1](11, 10) = 5;
-    MatrixXS res = find_keypoints(DoGs, 4, 1);
+    std::vector<std::vector<Eigen::MatrixXd>> DoGs_all;
+    DoGs_all.push_back(DoGs);
+    auto kpts = extract_keypoints(DoGs_all, 4);
+    MatrixXS res = kpts[0];
     EXPECT_EQ(res.cols(), 1);
     EXPECT_EQ(res.rows(), 4);
     EXPECT_EQ(res(0, 0), 1);  // scale

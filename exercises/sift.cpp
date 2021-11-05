@@ -1,6 +1,7 @@
 #include "sift.hpp"
 
-std::vector<double> sift_sigmas(size_t num_scales, double sigma_0)
+std::vector<double>
+sift_sigmas(size_t num_scales, double sigma_0)
 {
     std::vector<double> res;
     for (int scale = -1; scale <= int(num_scales + 1); scale++)
@@ -10,7 +11,8 @@ std::vector<double> sift_sigmas(size_t num_scales, double sigma_0)
     return res;
 }
 
-Eigen::MatrixXd gaussian_vector(double sigma, size_t radius)
+Eigen::MatrixXd
+gaussian_vector(double sigma, size_t radius)
 {
     if (radius == 0)
     {
@@ -33,7 +35,8 @@ Eigen::MatrixXd gaussian_vector(double sigma, size_t radius)
     return kernel;
 }
 
-Eigen::MatrixXd gaussian_blur(const Eigen::MatrixXd &src, double sigma)
+Eigen::MatrixXd
+gaussian_blur(const Eigen::MatrixXd &src, double sigma)
 {
     // Just to confirm:
     // https://github.com/mikepound/convolve/blob/master/run.gaussian.py
@@ -45,6 +48,68 @@ Eigen::MatrixXd gaussian_blur(const Eigen::MatrixXd &src, double sigma)
     // show(convet_to_cv_to_show(blured));
     // std::cout << "shown" << std::endl;
     return blured;
+}
+
+std::vector<Eigen::MatrixXd>
+compute_image_pyramid(const cv::Mat &img,
+                      size_t num_octaves)
+{
+    std::vector<Eigen::MatrixXd> pyramid;
+
+    for (size_t octave = 0; octave < num_octaves; octave++)
+    {
+        cv::Mat octave_img;
+        double scale = 1.0 / std::pow(2, octave);
+        cv::resize(img, octave_img, cv::Size(), scale, scale, cv::INTER_CUBIC);
+        Eigen::MatrixXd eigen_octave_img = cv_2_eigen(octave_img);
+        pyramid.push_back(eigen_octave_img);
+    }
+    return pyramid;
+}
+
+std::vector<std::vector<Eigen::MatrixXd>>
+compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
+                       size_t num_scales,
+                       double sigma_zero)
+{
+    size_t num_octaves = image_pyramid.size();
+    std::vector<std::vector<Eigen::MatrixXd>> blurred_images;
+    std::vector<double> sigmas = sift_sigmas(num_scales, sigma_zero);
+
+    for (size_t octave = 0; octave < num_octaves; octave++)
+    {
+        std::vector<Eigen::MatrixXd> blurred_images_in_octave;
+        Eigen::MatrixXd eigen_octave_img = image_pyramid[octave];
+        for (int scale = 0; scale < int(num_scales + 3); scale++)
+        {
+            Eigen::MatrixXd blured_img = gaussian_blur(eigen_octave_img, sigmas[scale]);
+            blurred_images_in_octave.push_back(blured_img);
+        }
+        blurred_images.push_back(blurred_images_in_octave);
+    }
+    return blurred_images;
+}
+
+std::vector<std::vector<Eigen::MatrixXd>>
+compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> blurred_images)
+{
+    std::vector<std::vector<Eigen::MatrixXd>> DoGs;
+    size_t num_octaves = blurred_images.size();
+    for (size_t octave = 0; octave < num_octaves; octave++)
+    {
+        std::vector<Eigen::MatrixXd> blurred_images_in_octave = blurred_images[octave];
+        size_t num_dogs_per_octave = blurred_images_in_octave.size() - 1;
+        std::vector<Eigen::MatrixXd> octave_dogs;
+        for (int idx = 0; idx < int(num_dogs_per_octave); idx++)
+        {
+            Eigen::MatrixXd blured_up = blurred_images_in_octave[idx];
+            Eigen::MatrixXd blured_down = blurred_images_in_octave[idx + 1];
+            Eigen::MatrixXd DoG = (blured_up - blured_down).cwiseAbs();
+            octave_dogs.push_back(DoG);
+        }
+        DoGs.push_back(octave_dogs);
+    }
+    return DoGs;
 }
 
 void calculate_DoGs(
@@ -96,8 +161,6 @@ bool is_max_in_window(const std::vector<Eigen::MatrixXd> &DoGs,
     return true;
 }
 
-typedef Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> MatrixXS;
-
 /**
  * @brief calculates scale, octave and location of key points from DoGs.
  *
@@ -106,14 +169,13 @@ typedef Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> M
  * @param num_octaves
  * @return Eigen::Matrix<size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> (scale, u, v)
  */
-MatrixXS find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs,
-                        double contrast_threshold,
-                        size_t num_octaves)
+std::vector<MatrixXS>
+extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
+                  double contrast_threshold)
 {
-    int num_scales_in_octave = DoGs.size() / num_octaves - 2;
-    int num_dogs_in_octave = DoGs.size() / num_octaves;
+    std::vector<MatrixXS> keypoints;
+    size_t num_octaves = DoGs.size();
 
-    std::vector<size_t> kps;
     int kernel_r = 1;
     double cut_ratio = 0.05; // lazy hack to ignore the edges, we should calculate how much we would like to ignore
     int scale = 1;
@@ -123,12 +185,17 @@ MatrixXS find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs,
 
     for (int octave = 0; octave < num_octaves; ++octave)
     {
-        int cols = DoGs[num_dogs_in_octave * octave].cols();
-        int rows = DoGs[num_dogs_in_octave * octave].rows();
+        std::vector<size_t> kps;
+        auto &octave_dogs = DoGs[octave];
+        int num_dogs_in_octave = octave_dogs.size();
+        int num_scales_in_octave = num_dogs_in_octave - 2;
+
+        int cols = octave_dogs[0].cols();
+        int rows = octave_dogs[0].rows();
 
         for (int scale_in_octave = 0; scale_in_octave < num_scales_in_octave; ++scale, ++scale_in_octave)
         {
-            int dog_idx = num_dogs_in_octave * octave + scale_in_octave + 1;
+            int dog_idx = scale_in_octave + 1;
             // ignore close to borders
             for (int u = std::max(kernel_r, int(cut_ratio * cols));
                  u < std::min(cols - kernel_r, int((1 - cut_ratio) * cols));
@@ -138,55 +205,65 @@ MatrixXS find_keypoints(const std::vector<Eigen::MatrixXd> &DoGs,
                      v < std::min(rows - kernel_r, int((1 - cut_ratio) * rows));
                      ++v)
                 {
-                    if (is_max_in_window(DoGs, dog_idx, u, v, contrast_threshold, kernel_r))
+                    if (is_max_in_window(octave_dogs, dog_idx, u, v, contrast_threshold, kernel_r))
                     {
                         kps.push_back(scale);
-                        kps.push_back(octave);
                         kps.push_back(u);
                         kps.push_back(v);
                     }
                 }
             }
         }
+
+        if (kps.size())
+        {
+            size_t *ptr = &kps[0];
+            Eigen::Map<MatrixXS> res(ptr, 3, kps.size() / 3);
+            size_t num_kps = kps.size() / 3;
+            res.resize(3, num_kps);
+            MatrixXS res_mat = res;
+            keypoints.push_back(res_mat);
+        }
+        else
+        {
+            keypoints.push_back(MatrixXS());
+        }
     }
 
-    if (kps.size())
-    {
-        size_t *ptr = &kps[0];
-        Eigen::Map<MatrixXS> res(ptr, 4, kps.size() / 4);
-        size_t num_kps = kps.size() / 4;
-        res.resize(4, num_kps);
-        return res;
-    }
-    return MatrixXS();
+    return keypoints;
 }
 
-void show_kpts_in_images(const MatrixXS &kpts,
+void show_kpts_in_images(const std::vector<MatrixXS> &kpts,
                          const cv::Mat &img,
-                         int num_octaves,
                          int num_scales_in_octave)
 {
-    size_t num_kpts = kpts.cols();
-    size_t kpts_idx = 0;
-    int scl = 1;
+    int num_octaves = kpts.size();
 
     for (int octave = 0; octave < num_octaves; ++octave)
     {
-        // for (int scale_in_octave = 0; scale_in_octave < num_scales_in_octave; ++scale_in_octave, ++scl)
-        // {
         cv::Mat octave_img;
         double scale = 1.0 / std::pow(2, octave);
         cv::resize(img, octave_img, cv::Size(), scale, scale);
         cv::cvtColor(octave_img, octave_img, cv::COLOR_GRAY2BGR);
 
-        for (; kpts_idx < kpts.cols() && kpts(1, kpts_idx) == octave; ++kpts_idx) //  && kpts(0, kpts_idx) == scl
+        auto & octave_kpts = kpts[octave];
+
+        for (size_t kpt_idx = 0 ; kpt_idx < octave_kpts.cols(); ++kpt_idx)
         {
-            cv::circle(octave_img, cv::Point2d(kpts(2, kpts_idx), kpts(3, kpts_idx)), 3, cv::Scalar(0, 0, 255));
+            cv::circle(octave_img, cv::Point2d(octave_kpts(1, kpt_idx), octave_kpts(2, kpt_idx)), 3, cv::Scalar(0, 0, 255));
         }
 
         std::stringstream s;
-        s << "octave " << octave << " scale " << scl;
+        s << "octave " << octave;
         show(octave_img, s.str());
-        // }
     }
+}
+
+Eigen::MatrixXd
+compute_descriptors(const std::vector<Eigen::MatrixXd> &blurred_images,
+                    const MatrixXS &kpts,
+                    bool rot_invariant,
+                    MatrixXS &final_locations)
+{
+    return Eigen::MatrixXd();
 }
