@@ -112,28 +112,6 @@ compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> blurred_images)
     return DoGs;
 }
 
-void calculate_DoGs(
-    size_t num_scales,
-    const Eigen::MatrixXd &eigen_octave_img,
-    std::vector<Eigen::MatrixXd> &DoGs_out,
-    double sigma_zero)
-{
-    Eigen::MatrixXd blured_down;
-    std::vector<double> sigmas = sift_sigmas(num_scales, sigma_zero);
-
-    for (int scale = -1; scale < int(num_scales + 1); scale++)
-    {
-        if (blured_down.size() == 0)
-        {
-            blured_down = gaussian_blur(eigen_octave_img, sigmas[scale + 1]);
-        }
-        Eigen::MatrixXd blured_up = gaussian_blur(eigen_octave_img, sigmas[scale + 2]);
-        Eigen::MatrixXd DoG = (blured_up - blured_down).cwiseAbs();
-        DoGs_out.push_back(DoG);
-        blured_down = blured_up;
-    }
-}
-
 bool is_max_in_window(const std::vector<Eigen::MatrixXd> &DoGs,
                       int dog_idx,
                       int u,

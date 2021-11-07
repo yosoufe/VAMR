@@ -19,12 +19,6 @@ Eigen::MatrixXd
 gaussian_blur(const Eigen::MatrixXd &src,
               double sigma);
 
-void calculate_DoGs(
-    size_t num_scales,
-    const Eigen::MatrixXd &eigen_octave_img,
-    std::vector<Eigen::MatrixXd> &DoGs_out,
-    double sigma_zero);
-
 bool is_max_in_window(const std::vector<Eigen::MatrixXd> &DoGs,
                       int dog_idx,
                       int u,
