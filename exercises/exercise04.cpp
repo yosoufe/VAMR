@@ -24,9 +24,9 @@ cv::Mat imrotate(const cv::Mat &src, double angle_deg)
 int main()
 {
     std::cout << std::endl;
-    std::cout << "==================================" << std::endl;
-    std::cout << "======= Exercise 04 - SIFT =======" << std::endl;
-    std::cout << "==================================" << std::endl;
+    std::cout << "===============================" << std::endl;
+    std::cout << "== Exercise 04 - Simple SIFT ==" << std::endl;
+    std::cout << "===============================" << std::endl;
     std::cout << std::endl;
 
     bool rotation_inv = false;
@@ -59,6 +59,7 @@ int main()
         auto blurred_imgs = compute_blurred_images(image_pyramid, num_scales_in_octave, sigma);
         auto DoGs = compute_DoGs(blurred_imgs);
 
+
         //// opencv SIFT keypoints, uncomment the headers on the top if
         //// required for testing
 
@@ -76,7 +77,8 @@ int main()
                                       contrast_threshold);
 
         std::cout << "number of keypoints: ";
-        for (auto & kpts_in_octave: kpts){
+        for (auto &kpts_in_octave : kpts)
+        {
             std::cout << kpts_in_octave.cols() << ", ";
         }
         std::cout << std::endl;
@@ -86,12 +88,16 @@ int main()
         //       to the boundary of the image. Hence, you will most likely
         //       lose some keypoints that you have computed earlier.
 
-        show_kpts_in_images(kpts, img, num_scales_in_octave);
+        // show_kpts_in_images(kpts, img, num_scales_in_octave);
 
         // MatrixXS final_locations;
-        // compute_descriptors(resi)
+        std::vector<MatrixXS> final_kpts_locations;
+        auto descriptors = compute_descriptors(blurred_imgs,
+                                               kpts,
+                                               false,
+                                               num_scales_in_octave,
+                                               final_kpts_locations);
 
-        break;
     }
 
     // Finally, match the descriptors using the function 'matchFeatures' and

@@ -54,8 +54,9 @@ add_executable(exercise03 exercise03.cpp)
 target_link_libraries (exercise03 utils)
 
 ###### exercise 03
-add_library(sift sift.cpp sift.hpp)
+add_library(sift sift.cpp sift.hpp image_gradient.cpp image_gradient.hpp)
 get_filename_component(SIFT_HEADER_DIR "./" ABSOLUTE)
+# message (FATAL_ERROR "${SIFT_HEADER_DIR}")
 target_include_directories(sift PUBLIC ${SIFT_HEADER_DIR})
 target_link_libraries (sift utils)
 

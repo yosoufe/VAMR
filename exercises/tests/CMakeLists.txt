@@ -2,7 +2,7 @@
 ####################### GTEST
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
-message ('${GTEST_BOTH_LIBRARIES}')
+# message ('${GTEST_BOTH_LIBRARIES}')
 
 ##################### Tests
 

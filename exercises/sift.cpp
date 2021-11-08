@@ -1,4 +1,9 @@
 #include "sift.hpp"
+#include <cassert>
+#include "image_gradient.hpp"
+
+#include <chrono>
+using namespace std::chrono;
 
 std::vector<double>
 sift_sigmas(size_t num_scales, double sigma_0)
@@ -12,24 +17,34 @@ sift_sigmas(size_t num_scales, double sigma_0)
 }
 
 Eigen::MatrixXd
-gaussian_vector(double sigma, size_t radius)
+gaussian_kernel(double sigma,
+                size_t rows,
+                size_t cols)
 {
-    if (radius == 0)
+    if (rows == 0)
     {
         // from lecture:
         // radius = std::ceil(3.0 * sigma);
-
         // from opencv:
         // https://github.com/opencv/opencv/blob/master/modules/imgproc/src/smooth.dispatch.cpp#L288
-        radius = std::ceil(4.0 * sigma);
+        rows = std::ceil(4.0 * sigma);
     }
-    Eigen::MatrixXd kernel(2 * radius + 1, 1);
-    for (int x = 0; x <= radius; x++)
+    if (cols == 0)
     {
-        double exponent = (-1.0) * ((x * x) / (2.0 * sigma * sigma));
-        double val = std::exp(exponent);
-        kernel(radius + x, 0) = val;
-        kernel(radius - x, 0) = val;
+        cols = std::ceil(4.0 * sigma);
+    }
+    Eigen::MatrixXd kernel(rows, cols);
+    double row_center = (rows + 1) / 2.0;
+    double col_center = (cols + 1) / 2.0;
+    for (int row = 0; row < rows; row++)
+    {
+        for (int col = 0; col < cols; col++)
+        {
+            double dist_sq = std::pow(col_center - col, 2) + std::pow(row_center - row, 2);
+            double exponent = (-1.0) * (dist_sq / (2.0 * sigma * sigma));
+            double val = std::exp(exponent);
+            kernel(row, col) = val;
+        }
     }
     kernel = kernel / kernel.sum();
     return kernel;
@@ -40,7 +55,7 @@ gaussian_blur(const Eigen::MatrixXd &src, double sigma)
 {
     // Just to confirm:
     // https://github.com/mikepound/convolve/blob/master/run.gaussian.py
-    auto kernel = gaussian_vector(sigma);
+    auto kernel = gaussian_kernel(sigma, 0, 1);
     Eigen::MatrixXd kernel_transpose = kernel.transpose();
     Eigen::MatrixXd temp = correlation(src, kernel);
     Eigen::MatrixXd blured = correlation(temp, kernel_transpose);
@@ -69,18 +84,18 @@ compute_image_pyramid(const cv::Mat &img,
 
 std::vector<std::vector<Eigen::MatrixXd>>
 compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
-                       size_t num_scales,
+                       size_t num_scales_in_octave,
                        double sigma_zero)
 {
     size_t num_octaves = image_pyramid.size();
     std::vector<std::vector<Eigen::MatrixXd>> blurred_images;
-    std::vector<double> sigmas = sift_sigmas(num_scales, sigma_zero);
+    std::vector<double> sigmas = sift_sigmas(num_scales_in_octave, sigma_zero);
 
     for (size_t octave = 0; octave < num_octaves; octave++)
     {
         std::vector<Eigen::MatrixXd> blurred_images_in_octave;
         Eigen::MatrixXd eigen_octave_img = image_pyramid[octave];
-        for (int scale = 0; scale < int(num_scales + 3); scale++)
+        for (int scale = 0; scale < int(num_scales_in_octave + 3); scale++)
         {
             Eigen::MatrixXd blured_img = gaussian_blur(eigen_octave_img, sigmas[scale]);
             blurred_images_in_octave.push_back(blured_img);
@@ -156,7 +171,7 @@ extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
 
     int kernel_r = 1;
     double cut_ratio = 0.05; // lazy hack to ignore the edges, we should calculate how much we would like to ignore
-    int scale = 1;
+    int scale = 0;
 
     // contrast_threshold = std::floor(0.5 * contrast_threshold / num_scales_in_octave * 255);
     // std::cout << contrast_threshold << std::endl;
@@ -171,8 +186,9 @@ extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
         int cols = octave_dogs[0].cols();
         int rows = octave_dogs[0].rows();
 
-        for (int scale_in_octave = 0; scale_in_octave < num_scales_in_octave; ++scale, ++scale_in_octave)
+        for (int scale_in_octave = 0; scale_in_octave < num_scales_in_octave; ++scale_in_octave)
         {
+            ++scale;
             int dog_idx = scale_in_octave + 1;
             // ignore close to borders
             for (int u = std::max(kernel_r, int(cut_ratio * cols));
@@ -224,11 +240,15 @@ void show_kpts_in_images(const std::vector<MatrixXS> &kpts,
         cv::resize(img, octave_img, cv::Size(), scale, scale);
         cv::cvtColor(octave_img, octave_img, cv::COLOR_GRAY2BGR);
 
-        auto & octave_kpts = kpts[octave];
+        auto &octave_kpts = kpts[octave];
 
-        for (size_t kpt_idx = 0 ; kpt_idx < octave_kpts.cols(); ++kpt_idx)
+        for (size_t kpt_idx = 0; kpt_idx < octave_kpts.cols(); ++kpt_idx)
         {
-            cv::circle(octave_img, cv::Point2d(octave_kpts(1, kpt_idx), octave_kpts(2, kpt_idx)), 3, cv::Scalar(0, 0, 255));
+            cv::circle(octave_img,
+                       cv::Point2d(octave_kpts(1, kpt_idx),
+                                   octave_kpts(2, kpt_idx)),
+                       3,
+                       cv::Scalar(0, 0, 255));
         }
 
         std::stringstream s;
@@ -237,11 +257,101 @@ void show_kpts_in_images(const std::vector<MatrixXS> &kpts,
     }
 }
 
-Eigen::MatrixXd
-compute_descriptors(const std::vector<Eigen::MatrixXd> &blurred_images,
-                    const MatrixXS &kpts,
-                    bool rot_invariant,
-                    MatrixXS &final_locations)
+Eigen::VectorXd
+weightedhistc(const Eigen::MatrixXd &vals,
+              const Eigen::MatrixXd &weights,
+              const Eigen::VectorXd &edges)
 {
-    return Eigen::MatrixXd();
+    Eigen::VectorXd hist = Eigen::VectorXd::Zero(edges.size() - 1);
+
+    for (size_t val_idx = 0; val_idx < vals.size(); ++val_idx)
+    {
+        for (size_t hist_idx = 0; hist_idx < hist.size(); ++hist_idx)
+        {
+            if (vals(val_idx) >= edges(hist_idx) && vals(val_idx) <= edges(hist_idx + 1))
+            {
+                hist(hist_idx) += weights(val_idx);
+                continue;
+            }
+        }
+    }
+    return hist;
+}
+
+Eigen::MatrixXd concat_h(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b)
+{
+    assert(a.rows() == b.rows());
+    Eigen::MatrixXd res(a.rows(), a.cols() + b.cols());
+    res << a, b;
+    return res;
+}
+
+Eigen::MatrixXd concat_v(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b)
+{
+    assert(a.cols() == b.cols());
+    Eigen::MatrixXd res(a.rows() + b.rows(), a.cols());
+    res << a, b;
+    return res;
+}
+
+std::vector<Eigen::VectorXd>
+compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_images,
+                    const std::vector<MatrixXS> &kpts,
+                    bool rot_invariant,
+                    size_t num_scales_in_octave,
+                    std::vector<MatrixXS> &final_locations)
+{
+    assert(kpts.size() == blurred_images.size()); // number of octaves
+    ImageGradient grads(blurred_images);
+    auto gausswindow = gaussian_kernel(16 * 1.5, 16, 16);
+    size_t border = 8;
+    Eigen::VectorXd bin_edges = Eigen::VectorXd::LinSpaced(9, -1.0 * M_PI, M_PI);
+    std::vector<Eigen::VectorXd> descs;
+    for (size_t octave = 0; octave < kpts.size(); ++octave)
+    {
+        for (auto &kpt : kpts[octave].colwise())
+        {
+            size_t scale = kpt(0);
+            size_t col = kpt(1);
+            size_t row = kpt(2);
+
+            size_t s_index = (scale - 1) - num_scales_in_octave * octave;
+            auto &img = blurred_images[octave][s_index];
+            if (col > img.cols() - border ||
+                col < border ||
+                row < border ||
+                row > img.rows() - border)
+            {
+                continue;
+            }
+
+            auto &g_mag = grads.get_grad_mag(octave, s_index);
+            auto &g_dir = grads.get_grad_mag(octave, s_index);
+
+            size_t s_col = col - 7;
+            size_t s_row = row - 7;
+            Eigen::MatrixXd patch_mag = g_mag.block(s_row, s_col, 16, 16);
+            Eigen::MatrixXd patch_dir = g_dir.block(s_row, s_col, 16, 16);
+            patch_mag = (patch_mag.array() * gausswindow.array()).matrix();
+            Eigen::VectorXd desc(128);
+            for (size_t idx_col = 0; idx_col < 4; idx_col++)
+            {
+                for (size_t idx_row = 0; idx_row < 4; idx_row++)
+                {
+                    desc.block(4 * idx_col + idx_row, 0, 8, 1) =
+                        weightedhistc(patch_dir.block(4 * idx_row, 4 * idx_col, 4, 4),
+                                      patch_mag.block(4 * idx_row, 4 * idx_col, 4, 4),
+                                      bin_edges);
+                }
+            }
+            desc.normalize();
+            descs.push_back(desc);
+
+            MatrixXS loc(2, 1);
+            loc << kpt(2) * std::pow(2, octave),
+                kpt(1) * std::pow(2, octave); // row, col
+            final_locations.push_back(loc);
+        }
+    }
+    return descs;
 }

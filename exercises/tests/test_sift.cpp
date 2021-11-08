@@ -14,10 +14,10 @@ TEST(SiftTest, sift_sigmas)
     }
 }
 
-TEST(SiftTest, gaussian_vector)
+TEST(SiftTest, gaussian_kernel)
 {
     double sigma = std::sqrt(1.0/(2*std::log(2.0)));
-    auto v = gaussian_vector(sigma, 1);
+    auto v = gaussian_kernel(sigma, 1);
     std::cout << "gaussian filter for sigma: " << sigma << " is ";
     std::cout << v.transpose() << std::endl;
 }
@@ -34,7 +34,7 @@ TEST(SiftTest, gaussian_generation)
         size_t expected_size = sigma_vector_sizes[idx];
         double sigma = sigmas[idx];
 
-        auto kernel_vector = gaussian_vector(sigma);
+        auto kernel_vector = gaussian_kernel(sigma);
         EXPECT_EQ(expected_size, kernel_vector.rows());
 
         // std::cout << "-------" << sigma << "---------" << std::endl;
@@ -77,4 +77,29 @@ TEST(SiftTest, find_keypoints)
     EXPECT_EQ(res(1, 0), 0);  // ocatve
     EXPECT_EQ(res(2, 0), 10); // u
     EXPECT_EQ(res(3, 0), 11); // v
+}
+
+
+TEST(SiftTest, weightedhistc)
+{
+    Eigen::MatrixXd vals(2,2);
+    vals << 1,2,3,4;
+    Eigen::MatrixXd weights(2,2);
+    weights << 1,1,1,1;
+    Eigen::VectorXd bin_edges = Eigen::VectorXd::LinSpaced(3, 1, 4);
+    std::cout << bin_edges.transpose() << std::endl;
+    auto hist = weightedhistc(vals, weights, bin_edges);
+    std::cout << "hist:\n" << hist.transpose() << std::endl;
+}
+
+TEST(SiftTest, concatenate)
+{
+    Eigen::MatrixXd vals(2,2);
+    vals << 1,2,3,4;
+    Eigen::MatrixXd weights(2,2);
+    weights << -1,-2,-3,-4;
+    std::cout << "concat_h\n" << concat_h(vals, weights) << std::endl;
+    vals = concat_v(vals, weights);
+    vals = concat_v(vals, weights);
+    std::cout << "concat_v\n" << vals << std::endl;
 }
