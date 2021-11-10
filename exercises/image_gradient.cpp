@@ -23,7 +23,9 @@ std::tuple<size_t, size_t> ImageGradient::make_key(size_t octave, size_t scale)
 
 double my_atan2(double a, double b)
 {
-    return std::atan2(a, b);
+    double res = std::atan2(b, a);
+    // std::cout << "atan2(" << b << ", " << a << ") = " << res << std::endl;
+    return res;
 }
 
 void ImageGradient::calculate_grads(size_t octave, size_t scale)

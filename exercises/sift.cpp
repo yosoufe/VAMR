@@ -326,22 +326,23 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
             }
 
             auto &g_mag = grads.get_grad_mag(octave, s_index);
-            auto &g_dir = grads.get_grad_mag(octave, s_index);
+            auto &g_dir = grads.get_grad_dir(octave, s_index);
 
             size_t s_col = col - 7;
             size_t s_row = row - 7;
             Eigen::MatrixXd patch_mag = g_mag.block(s_row, s_col, 16, 16);
             Eigen::MatrixXd patch_dir = g_dir.block(s_row, s_col, 16, 16);
-            patch_mag = (patch_mag.array() * gausswindow.array()).matrix();
+            Eigen::MatrixXd patch_mag_smoothed = (patch_mag.array() * gausswindow.array()).matrix();
             Eigen::VectorXd desc(128);
-            for (size_t idx_col = 0; idx_col < 4; idx_col++)
+            for (size_t idx_col = 0; idx_col < 4; ++idx_col)
             {
-                for (size_t idx_row = 0; idx_row < 4; idx_row++)
+                for (size_t idx_row = 0; idx_row < 4; ++idx_row)
                 {
-                    desc.block(4 * idx_col + idx_row, 0, 8, 1) =
-                        weightedhistc(patch_dir.block(4 * idx_row, 4 * idx_col, 4, 4),
-                                      patch_mag.block(4 * idx_row, 4 * idx_col, 4, 4),
+                    auto hist = weightedhistc(patch_dir.block(4 * idx_row, 4 * idx_col, 4, 4),
+                                      patch_mag_smoothed.block(4 * idx_row, 4 * idx_col, 4, 4),
                                       bin_edges);
+                    size_t index_in_desc = ((4 * idx_col) + idx_row)*8;
+                    desc.block(index_in_desc, 0, 8, 1) = hist;
                 }
             }
             desc.normalize();
