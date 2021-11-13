@@ -385,7 +385,7 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
                 best_idx[0] = idx2;
                 best_dist[0] = dist;
             }
-            else if (valid[0])
+            else if (valid[0] && !valid[1])
             {
                 if (dist < best_dist[0])
                 {
@@ -395,7 +395,7 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
                     best_idx[0] = idx2;
                     best_dist[0] = dist;
                 }
-                else if (!valid[1])
+                else // if (!valid[1])
                 {
                     best_idx[1] = idx2;
                     best_dist[1] = dist;
@@ -404,7 +404,18 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
             }
             else if (valid[1])
             {
-                if (dist < best_dist[1])
+                if (dist < best_dist[0])
+                {
+                    best_idx[1] = best_idx[0];
+                    best_dist[1] = best_dist[0];
+                    best_idx[0] = idx2;
+                    best_dist[0] = dist;
+                }
+                else if (dist >= best_dist[1])
+                {
+                    continue;
+                }
+                else
                 {
                     best_idx[1] = idx2;
                     best_dist[1] = dist;
@@ -416,7 +427,8 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
         {
             if (best_dist[1] > 1e-6) // non zero denominator
             {
-                if (best_dist[0] / best_dist[1] > max_ratio)
+                double ratio = best_dist[0] / best_dist[1];
+                if (ratio > max_ratio)
                 {
                     // reject the match
                     continue;
@@ -443,7 +455,6 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
             // this match is not seen before;
             matches[best_idx[0]] = std::make_tuple(idx1, best_dist[0]);
         }
-
     }
     return matches;
 }
