@@ -1,5 +1,8 @@
 #pragma once
+#include <tuple>
+#include <map>
 #include "utils.hpp"
+
 
 typedef Eigen::Matrix<size_t,
                       Eigen::Dynamic,
@@ -70,3 +73,7 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
                     bool rot_invariant,
                     size_t num_scales_in_octave,
                     std::vector<MatrixXS> &final_locations);
+
+std::map<size_t, std::tuple<size_t, double>>
+match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
+               double max_ratio);

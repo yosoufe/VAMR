@@ -49,6 +49,8 @@ int main()
     }
 
     std::vector<cv::Mat> images = {left_img, right_img};
+    std::vector<std::vector<MatrixXS>> kpts_locations;
+    std::vector<std::vector<Eigen::VectorXd>> descriptors;
 
     for (auto &img : images)
     {
@@ -58,7 +60,6 @@ int main()
         auto image_pyramid = compute_image_pyramid(img, num_octaves);
         auto blurred_imgs = compute_blurred_images(image_pyramid, num_scales_in_octave, sigma);
         auto DoGs = compute_DoGs(blurred_imgs);
-
 
         //// opencv SIFT keypoints, uncomment the headers on the top if
         //// required for testing
@@ -92,13 +93,18 @@ int main()
 
         // MatrixXS final_locations;
         std::vector<MatrixXS> final_kpts_locations;
-        auto descriptors = compute_descriptors(blurred_imgs,
-                                               kpts,
-                                               false,
-                                               num_scales_in_octave,
-                                               final_kpts_locations);
+        auto descs = compute_descriptors(blurred_imgs,
+                                         kpts,
+                                         false,
+                                         num_scales_in_octave,
+                                         final_kpts_locations);
 
+        kpts_locations.push_back(final_kpts_locations);
+        descriptors.push_back(descs);
     }
+
+    double match_ratio = 0.7;
+    auto res = match_features(descriptors, match_ratio);
 
     // Finally, match the descriptors using the function 'matchFeatures' and
     // visualize the matches with the function 'showMatchedFeatures'.

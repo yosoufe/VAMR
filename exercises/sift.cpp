@@ -339,9 +339,9 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
                 for (size_t idx_row = 0; idx_row < 4; ++idx_row)
                 {
                     auto hist = weightedhistc(patch_dir.block(4 * idx_row, 4 * idx_col, 4, 4),
-                                      patch_mag_smoothed.block(4 * idx_row, 4 * idx_col, 4, 4),
-                                      bin_edges);
-                    size_t index_in_desc = ((4 * idx_col) + idx_row)*8;
+                                              patch_mag_smoothed.block(4 * idx_row, 4 * idx_col, 4, 4),
+                                              bin_edges);
+                    size_t index_in_desc = ((4 * idx_col) + idx_row) * 8;
                     desc.block(index_in_desc, 0, 8, 1) = hist;
                 }
             }
@@ -355,4 +355,95 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
         }
     }
     return descs;
+}
+
+std::map<size_t, std::tuple<size_t, double>>
+match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
+               double max_ratio)
+{
+    assert(descriptors.size() == 2);
+    assert(max_ratio <= 1.0 && max_ratio > 0);
+    auto &descs1 = descriptors[0];
+    auto &descs2 = descriptors[1];
+
+    std::map<size_t, std::tuple<size_t, double>> matches;
+
+    for (size_t idx1 = 0; idx1 < descs1.size(); ++idx1)
+    {
+        bool valid[2] = {false, false};
+        size_t best_idx[2];
+        double best_dist[2];
+
+        auto &desc1 = descs1[idx1];
+        for (size_t idx2 = 0; idx2 < descs2.size(); ++idx2)
+        {
+            auto &desc2 = descs2[idx2];
+            double dist = (desc1 - desc2).norm();
+            if (!valid[0])
+            {
+                valid[0] = true;
+                best_idx[0] = idx2;
+                best_dist[0] = dist;
+            }
+            else if (valid[0])
+            {
+                if (dist < best_dist[0])
+                {
+                    best_idx[1] = best_idx[0];
+                    best_dist[1] = best_dist[0];
+                    valid[1] = true;
+                    best_idx[0] = idx2;
+                    best_dist[0] = dist;
+                }
+                else if (!valid[1])
+                {
+                    best_idx[1] = idx2;
+                    best_dist[1] = dist;
+                    valid[1] = true;
+                }
+            }
+            else if (valid[1])
+            {
+                if (dist < best_dist[1])
+                {
+                    best_idx[1] = idx2;
+                    best_dist[1] = dist;
+                }
+            }
+        }
+
+        if (valid[0] && valid[1])
+        {
+            if (best_dist[1] > 1e-6) // non zero denominator
+            {
+                if (best_dist[0] / best_dist[1] > max_ratio)
+                {
+                    // reject the match
+                    continue;
+                }
+            }
+        }
+
+        // accept the match and check for uniqueness
+        // matches is the map from the index of feature in descs2 to
+        // pair of < index in descs1, best_dist>
+        auto iter = matches.find(best_idx[0]);
+        if (iter != matches.end())
+        {
+            // There is already a match for the best_idx;
+            double prev_dist;
+            std::tie(std::ignore, prev_dist) = iter->second;
+            if (best_dist[0] < prev_dist)
+            {
+                iter->second = std::make_tuple(idx1, best_dist[0]);
+            }
+        }
+        else
+        {
+            // this match is not seen before;
+            matches[best_idx[0]] = std::make_tuple(idx1, best_dist[0]);
+        }
+
+    }
+    return matches;
 }
