@@ -3,7 +3,6 @@
 #include <map>
 #include "utils.hpp"
 
-
 typedef Eigen::Matrix<size_t,
                       Eigen::Dynamic,
                       Eigen::Dynamic,
@@ -74,6 +73,12 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
                     size_t num_scales_in_octave,
                     std::vector<MatrixXS> &final_locations);
 
-std::map<size_t, std::tuple<size_t, double>>
+typedef std::map<size_t, std::tuple<size_t, double>> matches_t;
+
+matches_t
 match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
                double max_ratio);
+
+cv::Mat viz_matches(const std::vector<cv::Mat> &src_imgs,
+                    const matches_t &matches,
+                    const std::vector<std::vector<MatrixXS>> &keypoints_locations);

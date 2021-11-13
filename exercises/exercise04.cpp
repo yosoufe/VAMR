@@ -103,15 +103,19 @@ int main()
         descriptors.push_back(descs);
     }
 
-
     // Finally, match the descriptors using the function 'matchFeatures' and
     // visualize the matches with the function 'showMatchedFeatures'.
     // If you want, you can also implement the matching procedure yourself using
     // 'knnsearch'.
 
     double match_ratio = 0.7;
-    auto matches = match_features(descriptors, match_ratio);
+    auto matches = match_features(descriptors,
+                                  match_ratio);
     std::cout << "number of matches: " << matches.size() << std::endl;
+
+    viz_matches(images,
+                matches,
+                kpts_locations);
 
     return 0;
 }

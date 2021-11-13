@@ -202,8 +202,8 @@ extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
                     if (is_max_in_window(octave_dogs, dog_idx, u, v, contrast_threshold, kernel_r))
                     {
                         kps.push_back(scale);
-                        kps.push_back(u);
-                        kps.push_back(v);
+                        kps.push_back(u); // col
+                        kps.push_back(v); // row
                     }
                 }
             }
@@ -357,7 +357,7 @@ compute_descriptors(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_ima
     return descs;
 }
 
-std::map<size_t, std::tuple<size_t, double>>
+matches_t
 match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
                double max_ratio)
 {
@@ -366,7 +366,7 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
     auto &descs1 = descriptors[0];
     auto &descs2 = descriptors[1];
 
-    std::map<size_t, std::tuple<size_t, double>> matches;
+    matches_t matches;
 
     for (size_t idx1 = 0; idx1 < descs1.size(); ++idx1)
     {
@@ -457,4 +457,51 @@ match_features(const std::vector<std::vector<Eigen::VectorXd>> &descriptors,
         }
     }
     return matches;
+}
+
+cv::Mat viz_matches(const std::vector<cv::Mat> &src_imgs,
+                    const matches_t &matches,
+                    const std::vector<std::vector<MatrixXS>> &keypoints_locations)
+{
+    assert(src_imgs.size() == 2);
+    assert(src_imgs.size() == 2);
+    assert(src_imgs[0].type() == src_imgs[1].type());
+    assert(keypoints_locations.size() == 2);
+
+    cv::Mat color_img(
+        cv::Size(
+            src_imgs[0].cols + src_imgs[1].cols,
+            std::max(src_imgs[0].rows,
+                     src_imgs[1].rows)),
+        src_imgs[0].type());
+    src_imgs[0].copyTo(
+        color_img(
+            cv::Range(0, src_imgs[0].rows),
+            cv::Range(0, src_imgs[0].cols)));
+    src_imgs[1].copyTo(
+        color_img(cv::Range(0, src_imgs[1].rows),
+                  cv::Range(src_imgs[0].cols, src_imgs[0].cols + src_imgs[1].cols)));
+
+    cv::cvtColor(color_img, color_img, cv::COLOR_GRAY2BGR);
+
+    for (auto const &match : matches)
+    {
+        size_t idx0 = std::get<0>(match.second);
+        size_t idx1 = match.first;
+        size_t kpt0_row = keypoints_locations[0][idx0](0);
+        size_t kpt0_col = keypoints_locations[0][idx0](1);
+        size_t kpt1_row = keypoints_locations[1][idx1](0);
+        size_t kpt1_col = keypoints_locations[1][idx1](1);
+
+        std::cout << kpt0_col << ", " << kpt0_row << " - " << kpt1_col + src_imgs[0].cols << ", " << kpt1_row << std::endl;
+
+        cv::line(color_img,
+                 cv::Point(kpt0_col, kpt0_row),
+                 cv::Point(kpt1_col + src_imgs[0].cols, kpt1_row),
+                 cv::Scalar(0, 255, 0),
+                 2);
+    }
+    show(color_img);
+    cv::waitKey(0);
+    return color_img;
 }
