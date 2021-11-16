@@ -133,7 +133,14 @@ RUN apt-get update && apt-get autoremove -y \
     && python3 setup.py install --record=install-files.txt \
     && cd ..
 
+# install google tests
+RUN git clone https://github.com/google/googletest.git && \
+    cd googletest && cmake . && \
+    make -j`nproc` install && \
+    cd .. && rm -rf googletest
+
+
 RUN mkdir -p /code
-WORKDIR /code
+WORKDIR /code/exercises
 
 CMD [ "/usr/local/bin/terminator" ]

@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <vector>
-#include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <string>
 #include <cassert>
+#include <math.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry> // AngleAxis
@@ -75,3 +75,11 @@ cv::VideoWriter
 create_video_writer(const cv::Size &img_size, const std::string &file_path);
 
 cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img);
+
+Eigen::MatrixXd cv_2_eigen(const cv::Mat &img);
+
+cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen);
+
+Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel);
+
+void show(const cv::Mat &img, std::string window_name = "image");

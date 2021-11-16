@@ -62,10 +62,15 @@
         "cfenv": "cpp",
         "cassert": "cpp",
         "unordered_set": "cpp",
-        "specialfunctions": "cpp"
+        "specialfunctions": "cpp",
+        "csignal": "cpp",
+        "any": "cpp",
+        "variant": "cpp"
     },
     "cSpell.words": [
         "Eigen",
         "extrinsics"
-    ]
+    ],
+    "cmake.sourceDirectory": "${workspaceFolder}/exercises",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

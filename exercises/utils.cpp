@@ -225,3 +225,46 @@ cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
     return img_cv_uchar;
 }
 
+Eigen::MatrixXd cv_2_eigen(const cv::Mat &img)
+{
+    Eigen::MatrixXd eigen_img;
+    cv::cv2eigen(img, eigen_img);
+    return eigen_img;
+}
+
+cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
+{
+    cv::Mat img;
+    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXuc;
+    MatrixXuc temp = eigen.cast<unsigned char>();
+    cv::eigen2cv(temp, img);
+    return img;
+}
+
+Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
+{
+    size_t kernel_rv = kernel.rows() / 2;
+    size_t kernel_sv = kernel.rows();
+
+    size_t kernel_ru = kernel.cols() / 2;
+    size_t kernel_su = kernel.cols();
+
+    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
+    for (size_t v = kernel_rv; v < input.rows() - kernel_rv; v++)
+    {
+        for (size_t u = kernel_ru; u < input.cols() - kernel_ru; u++)
+        {
+            auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
+            res(v, u) = element_wise_prod.sum();
+        }
+    }
+    return res;
+}
+
+void show(const cv::Mat &img, std::string window_name)
+{
+    cv::namedWindow(window_name, cv::WINDOW_NORMAL);
+    cv::imshow(window_name, img);
+    cv::resizeWindow(window_name, 1920, 1080);
+    cv::waitKey(0);
+}
