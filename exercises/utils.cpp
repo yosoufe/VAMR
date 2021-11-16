@@ -243,9 +243,6 @@ cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
 
 Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
 {
-    // assert(kernel.cols() == kernel.rows());
-    // assert(kernel.cols() % 2 == 1);
-
     size_t kernel_rv = kernel.rows() / 2;
     size_t kernel_sv = kernel.rows();
 

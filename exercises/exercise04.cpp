@@ -34,8 +34,8 @@ int main()
 
     size_t num_scales_in_octave = 3;  // Scales per octave.
     size_t num_octaves = 5;           // Number of octaves.
-    double sigma = 2;                 // 1.6
-    double contrast_threshold = 0.04; // 0.04
+    double sigma = 1.6;               // 1.6
+    double contrast_threshold = 0.8; // 0.04
     std::string image_file_1 = "../../data/ex04/img_1.jpg";
     std::string image_file_2 = "../../data/ex04/img_2.jpg";
 
@@ -103,7 +103,7 @@ int main()
         //       to the boundary of the image. Hence, you will most likely
         //       lose some keypoints that you have computed earlier.
 
-        show_kpts_in_images(kpts, img, num_scales_in_octave);
+        // show_kpts_in_images(kpts, img, num_scales_in_octave);
 
         // MatrixXS final_locations;
         std::vector<MatrixXS> final_kpts_locations;

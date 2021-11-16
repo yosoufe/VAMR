@@ -103,6 +103,12 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
 ![Output](exercises/statements/outputs/ex03-harris_shitomasi.png)
 
+### Exercise 4 - Simple SIFT Keypoint Detection and Matching
+
+- Problem statement is in `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
+- Solution is in `exercises/exercise04.cpp`.
+
+![Output](exercises/statements/outputs/ex04-simple_sift.png)
 
 ## Useful Commands
 

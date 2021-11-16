@@ -51,9 +51,6 @@ void show_kpts_in_images(const std::vector<MatrixXS> &kpts,
                          const cv::Mat &img,
                          int num_scales_in_octave);
 
-Eigen::MatrixXd concat_h(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b);
-Eigen::MatrixXd concat_v(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b);
-
 Eigen::VectorXd
 weightedhistc(const Eigen::MatrixXd &vals,
               const Eigen::MatrixXd &weights,

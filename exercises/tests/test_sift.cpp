@@ -91,15 +91,3 @@ TEST(SiftTest, weightedhistc)
     auto hist = weightedhistc(vals, weights, bin_edges);
     std::cout << "hist:\n" << hist.transpose() << std::endl;
 }
-
-TEST(SiftTest, concatenate)
-{
-    Eigen::MatrixXd vals(2,2);
-    vals << 1,2,3,4;
-    Eigen::MatrixXd weights(2,2);
-    weights << -1,-2,-3,-4;
-    std::cout << "concat_h\n" << concat_h(vals, weights) << std::endl;
-    vals = concat_v(vals, weights);
-    vals = concat_v(vals, weights);
-    std::cout << "concat_v\n" << vals << std::endl;
-}

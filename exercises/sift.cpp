@@ -29,16 +29,18 @@ gaussian_kernel(double sigma,
         // from opencv:
         // https://github.com/opencv/opencv/blob/master/modules/imgproc/src/smooth.dispatch.cpp#L288
         rows = std::ceil(4.0 * sigma);
-        if (rows % 2 == 0) ++rows;
+        if (rows % 2 == 0)
+            ++rows;
     }
     if (cols == 0)
     {
         cols = std::ceil(4.0 * sigma);
-        if (cols % 2 == 0) ++cols;
+        if (cols % 2 == 0)
+            ++cols;
     }
     Eigen::MatrixXd kernel(rows, cols);
-    double row_center = (rows + 1) / 2.0;
-    double col_center = (cols + 1) / 2.0;
+    double row_center = (rows - 1) / 2.0;
+    double col_center = (cols - 1) / 2.0;
     for (int row = 0; row < rows; row++)
     {
         for (int col = 0; col < cols; col++)
@@ -95,7 +97,7 @@ compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
     {
         std::vector<Eigen::MatrixXd> blurred_images_in_octave;
         Eigen::MatrixXd eigen_octave_img = image_pyramid[octave];
-        for (int scale = 0; scale < int(num_scales_in_octave + 3); scale++)
+        for (int scale = 0; scale < int(num_scales_in_octave + 3); ++scale)
         {
             Eigen::MatrixXd blured_img = gaussian_blur(eigen_octave_img, sigmas[scale]);
             blurred_images_in_octave.push_back(blured_img);
@@ -107,9 +109,10 @@ compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
 
 void show_blurred_images(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images)
 {
-    for (auto const & octave : blurred_images)
+    for (auto const &octave : blurred_images)
     {
-        for (auto const & img_eigen : octave){
+        for (auto const &img_eigen : octave)
+        {
             cv::Mat img_cv = eigen_2_cv(img_eigen);
             show(img_cv, "blurred_image");
         }
@@ -126,11 +129,11 @@ compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images)
         std::vector<Eigen::MatrixXd> blurred_images_in_octave = blurred_images[octave];
         size_t num_dogs_per_octave = blurred_images_in_octave.size() - 1;
         std::vector<Eigen::MatrixXd> octave_dogs;
-        for (int idx = 0; idx < int(num_dogs_per_octave); idx++)
+        for (int idx = 0; idx < int(num_dogs_per_octave); ++idx)
         {
-            Eigen::MatrixXd & blured_up = blurred_images_in_octave[idx + 1];
-            Eigen::MatrixXd & blured_down = blurred_images_in_octave[idx];
-            Eigen::MatrixXd DoG = (blured_up - blured_down).cwiseAbs();
+            Eigen::MatrixXd DoG = (blurred_images_in_octave[idx] -
+                                   blurred_images_in_octave[idx + 1])
+                                      .cwiseAbs();
             octave_dogs.push_back(DoG);
         }
         DoGs.push_back(octave_dogs);
@@ -181,7 +184,7 @@ extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
     size_t num_octaves = DoGs.size();
 
     int kernel_r = 5;
-    double cut_ratio = 0.05; // lazy hack to ignore the edges, we should calculate how much we would like to ignore
+    double cut_ratio = 0.05; // lazy hack to ignore the edges, we should calculate how much it should be ignored
     int scale = 0;
 
     // contrast_threshold = std::floor(0.5 * contrast_threshold / num_scales_in_octave * 255);
@@ -287,22 +290,6 @@ weightedhistc(const Eigen::MatrixXd &vals,
         }
     }
     return hist;
-}
-
-Eigen::MatrixXd concat_h(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b)
-{
-    assert(a.rows() == b.rows());
-    Eigen::MatrixXd res(a.rows(), a.cols() + b.cols());
-    res << a, b;
-    return res;
-}
-
-Eigen::MatrixXd concat_v(const Eigen::MatrixXd &a, const Eigen::MatrixXd &b)
-{
-    assert(a.cols() == b.cols());
-    Eigen::MatrixXd res(a.rows() + b.rows(), a.cols());
-    res << a, b;
-    return res;
 }
 
 std::vector<Eigen::VectorXd>
@@ -499,16 +486,21 @@ cv::Mat viz_matches(const std::vector<cv::Mat> &src_imgs,
     {
         size_t idx0 = std::get<0>(match.second);
         size_t idx1 = match.first;
-        size_t kpt0_row = keypoints_locations[0][idx0](0);
-        size_t kpt0_col = keypoints_locations[0][idx0](1);
-        size_t kpt1_row = keypoints_locations[1][idx1](0);
-        size_t kpt1_col = keypoints_locations[1][idx1](1);
+        int kpt0_row = keypoints_locations[0][idx0](0);
+        int kpt0_col = keypoints_locations[0][idx0](1);
+        int kpt1_row = keypoints_locations[1][idx1](0);
+        int kpt1_col = keypoints_locations[1][idx1](1);
+
+        cv::Point p_left{kpt0_col, kpt0_row};
+        cv::Point p_right{kpt1_col + src_imgs[0].cols, kpt1_row};
 
         cv::line(color_img,
-                 cv::Point(kpt0_col, kpt0_row),
-                 cv::Point(kpt1_col + src_imgs[0].cols, kpt1_row),
+                 p_left,
+                 p_right,
                  cv::Scalar(0, 255, 0),
-                 2);
+                 1);
+        cv::circle(color_img, p_left, 5, cv::Scalar(0, 0, 255));
+        cv::circle(color_img, p_right, 5, cv::Scalar(255, 0, 0));
     }
     show(color_img);
     cv::waitKey(0);

@@ -30,7 +30,6 @@ double my_atan2(double a, double b)
 
 void ImageGradient::calculate_grads(size_t octave, size_t scale)
 {
-    static int counter = 0;
     auto key = make_key(octave, scale);
     Eigen::MatrixXd sobel_x = correlation(blurred[octave][scale], sobel_x_kernel);
     Eigen::MatrixXd sobel_y = correlation(blurred[octave][scale], sobel_y_kernel);
