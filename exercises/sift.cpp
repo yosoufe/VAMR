@@ -11,7 +11,8 @@ sift_sigmas(size_t num_scales, double sigma_0)
     std::vector<double> res;
     for (int scale = -1; scale <= int(num_scales + 1); scale++)
     {
-        res.push_back(sigma_0 * std::pow(2.0, double(scale) / double(num_scales)));
+        double si = sigma_0 * std::pow(2.0, double(scale) / double(num_scales));
+        res.push_back(si);
     }
     return res;
 }
@@ -28,10 +29,12 @@ gaussian_kernel(double sigma,
         // from opencv:
         // https://github.com/opencv/opencv/blob/master/modules/imgproc/src/smooth.dispatch.cpp#L288
         rows = std::ceil(4.0 * sigma);
+        if (rows % 2 == 0) ++rows;
     }
     if (cols == 0)
     {
         cols = std::ceil(4.0 * sigma);
+        if (cols % 2 == 0) ++cols;
     }
     Eigen::MatrixXd kernel(rows, cols);
     double row_center = (rows + 1) / 2.0;
@@ -59,9 +62,6 @@ gaussian_blur(const Eigen::MatrixXd &src, double sigma)
     Eigen::MatrixXd kernel_transpose = kernel.transpose();
     Eigen::MatrixXd temp = correlation(src, kernel);
     Eigen::MatrixXd blured = correlation(temp, kernel_transpose);
-    // std::cout << "sigma: " << sigma << std::endl;
-    // show(convet_to_cv_to_show(blured));
-    // std::cout << "shown" << std::endl;
     return blured;
 }
 
@@ -91,7 +91,7 @@ compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
     std::vector<std::vector<Eigen::MatrixXd>> blurred_images;
     std::vector<double> sigmas = sift_sigmas(num_scales_in_octave, sigma_zero);
 
-    for (size_t octave = 0; octave < num_octaves; octave++)
+    for (size_t octave = 0; octave < num_octaves; ++octave)
     {
         std::vector<Eigen::MatrixXd> blurred_images_in_octave;
         Eigen::MatrixXd eigen_octave_img = image_pyramid[octave];
@@ -105,8 +105,19 @@ compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
     return blurred_images;
 }
 
+void show_blurred_images(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images)
+{
+    for (auto const & octave : blurred_images)
+    {
+        for (auto const & img_eigen : octave){
+            cv::Mat img_cv = eigen_2_cv(img_eigen);
+            show(img_cv, "blurred_image");
+        }
+    }
+}
+
 std::vector<std::vector<Eigen::MatrixXd>>
-compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> blurred_images)
+compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images)
 {
     std::vector<std::vector<Eigen::MatrixXd>> DoGs;
     size_t num_octaves = blurred_images.size();
@@ -117,8 +128,8 @@ compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> blurred_images)
         std::vector<Eigen::MatrixXd> octave_dogs;
         for (int idx = 0; idx < int(num_dogs_per_octave); idx++)
         {
-            Eigen::MatrixXd blured_up = blurred_images_in_octave[idx];
-            Eigen::MatrixXd blured_down = blurred_images_in_octave[idx + 1];
+            Eigen::MatrixXd & blured_up = blurred_images_in_octave[idx + 1];
+            Eigen::MatrixXd & blured_down = blurred_images_in_octave[idx];
             Eigen::MatrixXd DoG = (blured_up - blured_down).cwiseAbs();
             octave_dogs.push_back(DoG);
         }
@@ -169,7 +180,7 @@ extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,
     std::vector<MatrixXS> keypoints;
     size_t num_octaves = DoGs.size();
 
-    int kernel_r = 1;
+    int kernel_r = 5;
     double cut_ratio = 0.05; // lazy hack to ignore the edges, we should calculate how much we would like to ignore
     int scale = 0;
 
@@ -492,8 +503,6 @@ cv::Mat viz_matches(const std::vector<cv::Mat> &src_imgs,
         size_t kpt0_col = keypoints_locations[0][idx0](1);
         size_t kpt1_row = keypoints_locations[1][idx1](0);
         size_t kpt1_col = keypoints_locations[1][idx1](1);
-
-        std::cout << kpt0_col << ", " << kpt0_row << " - " << kpt1_col + src_imgs[0].cols << ", " << kpt1_row << std::endl;
 
         cv::line(color_img,
                  cv::Point(kpt0_col, kpt0_row),

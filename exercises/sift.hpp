@@ -38,8 +38,10 @@ compute_blurred_images(const std::vector<Eigen::MatrixXd> &image_pyramid,
                        size_t num_scales_in_octave,
                        double sigma_zero);
 
+void show_blurred_images(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images);
+
 std::vector<std::vector<Eigen::MatrixXd>>
-compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> blurred_images);
+compute_DoGs(std::vector<std::vector<Eigen::MatrixXd>> const &blurred_images);
 
 std::vector<MatrixXS>
 extract_keypoints(const std::vector<std::vector<Eigen::MatrixXd>> &DoGs,

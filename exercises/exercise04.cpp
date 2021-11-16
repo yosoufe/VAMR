@@ -32,16 +32,29 @@ int main()
     bool rotation_inv = false;
     double rotation_img2_deg = 0;
 
-    size_t num_scales_in_octave = 3; // Scales per octave.
-    size_t num_octaves = 5;          // Number of octaves.
-    double sigma = 1.6;
-    double contrast_threshold = 0.4;
+    size_t num_scales_in_octave = 3;  // Scales per octave.
+    size_t num_octaves = 5;           // Number of octaves.
+    double sigma = 2;                 // 1.6
+    double contrast_threshold = 0.04; // 0.04
     std::string image_file_1 = "../../data/ex04/img_1.jpg";
     std::string image_file_2 = "../../data/ex04/img_2.jpg";
-    double rescale_factor = 0.2; // Rescaling of the original image for speed.
 
-    cv::Mat left_img = cv::imread(image_file_1, cv::IMREAD_GRAYSCALE);
-    cv::Mat right_img = cv::imread(image_file_2, cv::IMREAD_GRAYSCALE);
+    cv::Mat left_img, right_img;
+    double rescale_factor{0.3}; // Rescaling of the original image for speed.
+    cv::resize(cv::imread(image_file_1,
+                          cv::IMREAD_GRAYSCALE),
+               left_img,
+               cv::Size(),
+               rescale_factor,
+               rescale_factor,
+               cv::INTER_CUBIC);
+    cv::resize(cv::imread(image_file_2,
+                          cv::IMREAD_GRAYSCALE),
+               right_img,
+               cv::Size(),
+               rescale_factor,
+               rescale_factor,
+               cv::INTER_CUBIC);
 
     if (rotation_img2_deg != 0)
     {
@@ -59,6 +72,7 @@ int main()
 
         auto image_pyramid = compute_image_pyramid(img, num_octaves);
         auto blurred_imgs = compute_blurred_images(image_pyramid, num_scales_in_octave, sigma);
+        // show_blurred_images(blurred_imgs);
         auto DoGs = compute_DoGs(blurred_imgs);
 
         //// opencv SIFT keypoints, uncomment the headers on the top if
@@ -89,7 +103,7 @@ int main()
         //       to the boundary of the image. Hence, you will most likely
         //       lose some keypoints that you have computed earlier.
 
-        // show_kpts_in_images(kpts, img, num_scales_in_octave);
+        show_kpts_in_images(kpts, img, num_scales_in_octave);
 
         // MatrixXS final_locations;
         std::vector<MatrixXS> final_kpts_locations;

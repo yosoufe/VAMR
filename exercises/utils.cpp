@@ -268,5 +268,6 @@ void show(const cv::Mat &img, std::string window_name)
 {
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
     cv::imshow(window_name, img);
+    cv::resizeWindow(window_name, 1920, 1080);
     cv::waitKey(0);
 }
