@@ -108,7 +108,9 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 ### Exercise 4 - Simple SIFT Keypoint Detection and Matching
 
 - Problem statement is in `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
-- Solution is in `exercises/exercise04.cpp`.
+- Solution is in `exercises/exercise04.cpp`. :warning: **I guess there are still some bugs in my code** :warning:, but because of
+lack of time and relatively good results, I would go to the next exercise for now. I also skipped the
+optional part of the exercise. I might come back to it later. The descriptor matching could be optimized later.
 
 ![Output](exercises/statements/outputs/ex04-simple_sift.png)
 
