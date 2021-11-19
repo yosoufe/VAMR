@@ -27,7 +27,7 @@ TEST(SiftTest, gaussian_generation)
 {
     std::vector<double> sigmas = sift_sigmas(5, 1.6);
     sigmas.push_back(1.0);
-    std::vector<int> sigma_vector_sizes = {11, 11, 13, 15, 17, 19, 21, 25, 7};
+    std::vector<int> sigma_vector_sizes = {7, 7, 9, 9, 11, 13, 13, 15, 5};
 
     for (size_t idx; idx < sigmas.size(); idx++)
     {
@@ -72,11 +72,10 @@ TEST(SiftTest, find_keypoints)
     auto kpts = extract_keypoints(DoGs_all, 4);
     MatrixXS res = kpts[0];
     EXPECT_EQ(res.cols(), 1);
-    EXPECT_EQ(res.rows(), 4);
+    EXPECT_EQ(res.rows(), 3);
     EXPECT_EQ(res(0, 0), 1);  // scale
-    EXPECT_EQ(res(1, 0), 0);  // ocatve
-    EXPECT_EQ(res(2, 0), 10); // u
-    EXPECT_EQ(res(3, 0), 11); // v
+    EXPECT_EQ(res(1, 0), 10);  // ocatve
+    EXPECT_EQ(res(2, 0), 11); // u
 }
 
 
