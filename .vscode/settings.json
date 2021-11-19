@@ -65,7 +65,8 @@
         "specialfunctions": "cpp",
         "csignal": "cpp",
         "any": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "geometry": "cpp"
     },
     "cSpell.words": [
         "Eigen",
