@@ -1,7 +1,7 @@
 import pexpect
 import typer
 from pathlib import Path
-import os
+import os, pwd
 
 app = typer.Typer()
 
@@ -43,7 +43,8 @@ def run():
              "--runtime=nvidia "
              "--gpus all "
              "--rm "
-             "--name vamr_container "
+            #  "-v /etc/passwd:/etc/passwd "
+            #  f"-u {pwd.getpwnam(os.getenv('USER')).pw_uid}:{pwd.getpwnam(os.getenv('USER')).pw_gid} "
              f"-v {Path(__file__).parent.resolve()}:/code "
              f"{DOCKER_IMAGE}")
 

@@ -144,3 +144,4 @@ RUN mkdir -p /code
 WORKDIR /code/exercises
 
 CMD [ "/usr/local/bin/terminator" ]
+# CMD [ "bash" ]
