@@ -1,4 +1,4 @@
-# 🚧 Under Construction 🚧  
+# 🚧 Under Construction 🚧
 
 # Vision Algorithms for Mobile Robotics (Fall 2020)
 
@@ -62,12 +62,12 @@ cmake ..
 make -j`nproc`
 ```
 
-## Exercises
+# Exercises
 
-### Exercise 1 - Augmented Reality Wireframe Cube
+## Exercise 1 - Augmented Reality Wireframe Cube
 
 This is about camera and distortion models.
-- Problem statement is in `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
+- Problem statement: `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
 - solution is in `exercises/exercise01.cpp`.
 - Output Videos:
   - https://youtu.be/RD8uO2pETIE
@@ -77,11 +77,11 @@ This is about camera and distortion models.
 ![Output](exercises/statements/outputs/ex01.gif)
 
 
-### Exercise 2 - PnP Problem
+## Exercise 2 - PnP Problem
 
 This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known points in world and their known correspondences in the image frame.
-- Problem statement is in `exercises/statements/Exercise 2 - PnP/statement.pdf`.
-- Solution is in `exercises/exercise02.cpp`.
+- Problem statement: `exercises/statements/Exercise 2 - PnP/statement.pdf`.
+- Solution: `exercises/exercise02.cpp`.
 - Output Video:
   - https://youtu.be/nbFseP4vRTU
 
@@ -89,10 +89,10 @@ The following video shows the calculated pose and orientation of the camera rela
 
 ![Output](exercises/statements/outputs/ex02.gif)
 
-### Exercise 3 - Simple Keypoint Tracker
+## Exercise 3 - Simple Keypoint Tracker
 
-- Problem statement is in `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
-- Solution is in `exercises/exercise03.cpp`.
+- Problem statement: `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
+- Solution: `exercises/exercise03.cpp`.
 - Output Videos:
   - https://youtu.be/8O97v3q7bC4
   - https://youtu.be/T8WX1ktlg8E
@@ -105,18 +105,26 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
 ![Output](exercises/statements/outputs/ex03-harris_shitomasi.png)
 
-### Exercise 4 - Simple SIFT Keypoint Detection and Matching
+## Exercise 4 - Simple SIFT Keypoint Detection and Matching
 
-- Problem statement is in `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
-- Solution is in `exercises/exercise04.cpp`. :warning: **I guess there are still some bugs in my code** :warning:, but because of
+- Problem statement: `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
+- Solution: `exercises/exercise04.cpp`.
+  - :warning: **I guess there are still some bugs in my code** :warning:, but because of
 lack of time and relatively good results, I would go to the next exercise for now. I also skipped the
 optional part of the exercise. I might come back to it later. The descriptor matching could be optimized later.
 
-![Output](exercises/statements/outputs/ex04-simple_sift.png)
+  ![Output](exercises/statements/outputs/ex04-simple_sift.png)
 
-## Useful Commands
+## Exercise 5 - Stereo Dense Reconstruction
 
-### Convert to gif
+- Problem statement: `exercises/statements/Exercise 5 - Stereo Dense Reconstruction`.
+- Solution: `exercises/exercise05.cpp`.
+  - Disparity image
+  ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity.png)
+
+# Useful Commands
+
+## Convert to gif
 
 ```bash
 ffmpeg -ss 0 -t 5 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
