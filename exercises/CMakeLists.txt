@@ -69,7 +69,7 @@ add_library(stereo_reconst stereo_reconst.cpp stereo_reconst.hpp)
 get_filename_component(stereo_reconst_HEADER_DIR "./" ABSOLUTE)
 # message (FATAL_ERROR "${SIFT_HEADER_DIR}")
 target_include_directories(stereo_reconst PUBLIC ${stereo_reconst_HEADER_DIR})
-target_link_libraries (stereo_reconst utils)
+target_link_libraries (stereo_reconst utils tbb)
 
 
 add_executable(exercise05 exercise05.cpp)

@@ -59,5 +59,9 @@ int main()
                                   patch_radius,
                                   min_disp,
                                   max_disp);
+
+    // show(eigen_2_cv(disp_img * 255 / max_disp));
+
+
     return 0;
 }

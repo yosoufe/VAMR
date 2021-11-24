@@ -3,7 +3,6 @@
 #include <array>
 #include "utils.hpp"
 
-
 /**
  * @brief left_img and right_img are both H x W and this should return a H x W
  * matrix containing the disparity d for each pixel of left_img. Set
@@ -24,3 +23,16 @@ get_disparity(Eigen::MatrixXd const &left_img,
               size_t patch_radius,
               double min_disp,
               double max_disp);
+
+Eigen::MatrixXd
+get_disparity_backup(Eigen::MatrixXd const &left_img,
+                     Eigen::MatrixXd const &right_img,
+                     size_t patch_radius,
+                     double min_disp,
+                     double max_disp);
+
+Eigen::MatrixXd
+disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
+                        Eigen::MatrixXd const &K,
+                        double baseline,
+                        Eigen::MatrixXd const &left_img);
