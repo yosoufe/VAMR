@@ -25,7 +25,7 @@ double squaredeuclidean(Eigen::MatrixXd const &img1,
     return squaredeuclidean;
 }
 
-// get_disparity is 6 time faster than get_disparity_backup on my machine
+// get_disparity (0.131 s) is 6 time faster than get_disparity_backup (0.626s) on my machine
 Eigen::MatrixXd
 get_disparity(Eigen::MatrixXd const &left_img,
               Eigen::MatrixXd const &right_img,
@@ -37,35 +37,39 @@ get_disparity(Eigen::MatrixXd const &left_img,
         Eigen::MatrixXd::Zero(left_img.rows(),
                               left_img.cols());
 
-    Index_t start_idx = patch_radius + max_disp;
-    Index_t num_iteration = (left_img.cols() - patch_radius) - start_idx;
+    Index_t start_idx_row = patch_radius;
+    Index_t num_iteration_row = (left_img.rows() - patch_radius) - start_idx_row;
 
-    for (size_t row = patch_radius;
-         row < left_img.rows() - patch_radius;
-         ++row)
-    {
-        std::for_each_n(std::execution::par, counting_iterator(start_idx), num_iteration,
-                        [=, &left_disp,
-                         &left_img,
-                         &right_img](size_t col)
+    Index_t start_idx_col = patch_radius + max_disp;
+    Index_t num_iteration_col = (left_img.cols() - patch_radius) - start_idx_col;
+
+    std::for_each_n(
+        std::execution::par, counting_iterator(start_idx_row), num_iteration_row,
+        [=, &left_disp, &left_img, &right_img](size_t row)
+        {
+            std::for_each_n(
+                std::execution::par, counting_iterator(start_idx_col), num_iteration_col,
+                [=, &left_disp,
+                 &left_img,
+                 &right_img](size_t col)
+                {
+                    double min_dist = std::numeric_limits<double>::max();
+                    size_t disparity = 0;
+                    for (size_t d = min_disp; d <= max_disp; ++d)
+                    {
+                        double dist = squaredeuclidean(left_img, right_img,
+                                                       col, row,
+                                                       col - d, row,
+                                                       patch_radius);
+                        if (dist < min_dist)
                         {
-                            double min_dist = std::numeric_limits<double>::max();
-                            size_t disparity = 0;
-                            for (size_t d = min_disp; d <= max_disp; ++d)
-                            {
-                                double dist = squaredeuclidean(left_img, right_img,
-                                                               col, row,
-                                                               col - d, row,
-                                                               patch_radius);
-                                if (dist < min_dist)
-                                {
-                                    min_dist = dist;
-                                    disparity = d;
-                                }
-                            }
-                            left_disp(row, col) = static_cast<double>(disparity);
-                        });
-    }
+                            min_dist = dist;
+                            disparity = d;
+                        }
+                    }
+                    left_disp(row, col) = static_cast<double>(disparity);
+                });
+        });
     return left_disp;
 }
 
