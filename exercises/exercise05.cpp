@@ -45,8 +45,8 @@ int main()
 
     // Carefully tuned by the TAs:
     size_t patch_radius{5};
-    double min_disp{5};
-    double max_disp{50};
+    size_t min_disp{5};
+    size_t max_disp{50};
     std::vector<double> xlims = {7, 20},
                         ylims = {-6, 10},
                         zlims = {-5, 5};
@@ -62,6 +62,10 @@ int main()
 
     // show(eigen_2_cv(disp_img * 255 / max_disp));
 
+    disparity_to_pointcloud(disp_img,
+                            K,
+                            baseline,
+                            left_eigen);
 
     return 0;
 }

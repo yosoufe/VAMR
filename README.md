@@ -18,7 +18,7 @@ This repository contains all the exercises of the course "Vision Algorithm for M
 - Python 3 and pip
 - **NO** MATLAB:
   - The official course is doing all the exercises in MATLAB and since I do not have MATLAB License, I am doing it in C++. The second reason is, **all the jobs in robotics require strong C++ knowledge**, so I am practicing C++.
-  The followings are inside the docker image:
+    The followings are inside the docker image:
     - Using Eigen library for linear algebra.
     - Using OpenCV and VTK only for reading, writing of image and video files and visualization. The rest are coded from scratch.
 
@@ -67,19 +67,19 @@ make -j`nproc`
 ## Exercise 1 - Augmented Reality Wireframe Cube
 
 This is about camera and distortion models.
+
 - Problem statement: `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
 - solution is in `exercises/exercise01.cpp`.
 - Output Videos:
   - https://youtu.be/RD8uO2pETIE
   - https://youtu.be/Ba9SmGKgBmU
 
-
 ![Output](exercises/statements/outputs/ex01.gif)
-
 
 ## Exercise 2 - PnP Problem
 
 This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known points in world and their known correspondences in the image frame.
+
 - Problem statement: `exercises/statements/Exercise 2 - PnP/statement.pdf`.
 - Solution: `exercises/exercise02.cpp`.
 - Output Video:
@@ -109,9 +109,10 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
 - Problem statement: `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
 - Solution: `exercises/exercise04.cpp`.
+
   - :warning: **I guess there are still some bugs in my code** :warning:, but because of
-lack of time and relatively good results, I would go to the next exercise for now. I also skipped the
-optional part of the exercise. I might come back to it later. The descriptor matching could be optimized later.
+    lack of time and relatively good results, I would go to the next exercise for now. I also skipped the
+    optional part of the exercise. I might come back to it later. The descriptor matching could be optimized later.
 
   ![Output](exercises/statements/outputs/ex04-simple_sift.png)
 
@@ -120,7 +121,7 @@ optional part of the exercise. I might come back to it later. The descriptor mat
 - Problem statement: `exercises/statements/Exercise 5 - Stereo Dense Reconstruction`.
 - Solution: `exercises/exercise05.cpp`.
   - Disparity image
-  ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity.png)
+    ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity-filtered.png)
 
 # Useful Commands
 

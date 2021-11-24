@@ -26,12 +26,15 @@ double squaredeuclidean(Eigen::MatrixXd const &img1,
 }
 
 // get_disparity (0.131 s) is 6 time faster than get_disparity_backup (0.626s) on my machine
+// This is the same as get_disparity_backup plus outlier rejection,
+// and it uses `std::for_each_n` and
+// `std::execution::par` instead of directly using loops.
 Eigen::MatrixXd
 get_disparity(Eigen::MatrixXd const &left_img,
               Eigen::MatrixXd const &right_img,
               size_t patch_radius,
-              double min_disp,
-              double max_disp)
+              size_t min_disp,
+              size_t max_disp)
 {
     Eigen::MatrixXd left_disp =
         Eigen::MatrixXd::Zero(left_img.rows(),
@@ -53,20 +56,51 @@ get_disparity(Eigen::MatrixXd const &left_img,
                  &left_img,
                  &right_img](size_t col)
                 {
-                    double min_dist = std::numeric_limits<double>::max();
+                    double min_ssd = std::numeric_limits<double>::max();
+                    size_t min_idx;
+                    std::vector<double> SSDs;
                     size_t disparity = 0;
                     for (size_t d = min_disp; d <= max_disp; ++d)
                     {
-                        double dist = squaredeuclidean(left_img, right_img,
-                                                       col, row,
-                                                       col - d, row,
-                                                       patch_radius);
-                        if (dist < min_dist)
+                        double ssd = squaredeuclidean(left_img, right_img,
+                                                      col, row,
+                                                      col - d, row,
+                                                      patch_radius);
+                        SSDs.push_back(ssd);
+                        if (ssd < min_ssd)
                         {
-                            min_dist = dist;
+                            min_ssd = ssd;
                             disparity = d;
+                            min_idx = d - min_disp;
                         }
                     }
+
+                    // reject outliers:
+                    // reject the disparity if
+                    // 3 least ssds are all smaller than
+                    // 1.5 * min_ssd.
+                    // (of course min_ssd < 1.5 * min_ssd" )
+
+                    // find the first 3 smallest items
+                    // but not in order
+                    std::nth_element(
+                        std::execution::par,
+                        SSDs.begin(),
+                        SSDs.begin() + 3,
+                        SSDs.end(),
+                        std::less<double>());
+
+                    size_t num_bad_samples = 0;
+                    std::for_each(
+                        SSDs.begin(), SSDs.begin() + 3,
+                        [&num_bad_samples, min_ssd](double ssd)
+                        {
+                            if (ssd <= 1.5 * min_ssd)
+                                ++num_bad_samples;
+                        });
+                    if (num_bad_samples == 3)
+                        disparity = 0;
+
                     left_disp(row, col) = static_cast<double>(disparity);
                 });
         });
@@ -118,5 +152,14 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
                         double baseline,
                         Eigen::MatrixXd const &left_img)
 {
-    return Eigen::MatrixXd();
+    auto num_valid_disp =
+        disparity.size() -
+        std::count(disparity.data(), disparity.data() + disparity.size(), 0.0);
+    std::cout << "num_valid_disp " << num_valid_disp << std::endl;
+    Eigen::MatrixXd point_cloud(3, num_valid_disp);
+
+    Eigen::MatrixXd K_inv = K.inverse();
+    std::cout << "K_inv: \n" << K_inv << std::endl;
+
+    return point_cloud;
 }

@@ -21,8 +21,8 @@ Eigen::MatrixXd
 get_disparity(Eigen::MatrixXd const &left_img,
               Eigen::MatrixXd const &right_img,
               size_t patch_radius,
-              double min_disp,
-              double max_disp);
+              size_t min_disp,
+              size_t max_disp);
 
 Eigen::MatrixXd
 get_disparity_backup(Eigen::MatrixXd const &left_img,
