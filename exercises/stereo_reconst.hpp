@@ -36,3 +36,6 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
                         Eigen::MatrixXd const &K,
                         double baseline,
                         Eigen::MatrixXd const &left_img);
+
+void
+visualize_point_cloud(Eigen::MatrixXd const & point_cloud);

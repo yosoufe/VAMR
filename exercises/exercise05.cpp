@@ -62,10 +62,13 @@ int main()
 
     // show(eigen_2_cv(disp_img * 255 / max_disp));
 
-    disparity_to_pointcloud(disp_img,
-                            K,
-                            baseline,
-                            left_eigen);
+    auto point_cloud =
+        disparity_to_pointcloud(disp_img,
+                                K,
+                                baseline,
+                                left_eigen);
+
+    visualize_point_cloud(point_cloud);
 
     return 0;
 }

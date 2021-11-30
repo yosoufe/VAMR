@@ -4,6 +4,8 @@
 #include <math.h>
 #include <algorithm>
 #include <execution>
+#include <cassert>
+#include <opencv2/viz.hpp>
 
 double squaredeuclidean(Eigen::MatrixXd const &img1,
                         Eigen::MatrixXd const &img2,
@@ -77,7 +79,7 @@ get_disparity(Eigen::MatrixXd const &left_img,
 
                     // reject outliers:
                     // reject the disparity if
-                    // 3 least ssds are all smaller than
+                    // 3 least SSDs are all smaller than
                     // 1.5 * min_ssd.
                     // (of course min_ssd < 1.5 * min_ssd" )
 
@@ -147,6 +149,30 @@ get_disparity_backup(Eigen::MatrixXd const &left_img,
 }
 
 Eigen::MatrixXd
+calculate_3d_from_disparity(Eigen::MatrixXd const &K_inv,
+                            Eigen::MatrixXd const &disparity,
+                            int row,
+                            int col,
+                            double baseline)
+{
+    Eigen::MatrixXd res(3, 1);
+    Eigen::MatrixXd p0(3, 1);
+    Eigen::MatrixXd p1(3, 1);
+    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3, 2);
+    p0 << col, row, 1.0;
+    p1 << col - disparity(row, col), row, 1.0;
+    Eigen::MatrixXd b(3, 1);
+    b << baseline, 0, 0;
+    Eigen::MatrixXd p0_hat = K_inv * p0;
+    A.block(0, 0, 3, 1) = p0_hat;
+    A.block(0, 1, 3, 1) = (-1.0) * (K_inv * p1);
+    Eigen::MatrixXd lambdas = (A.transpose() * A).inverse() * A.transpose() * b;
+    double &lambda0 = lambdas(0, 0);
+    res = lambda0 * p0_hat;
+    return res;
+}
+
+Eigen::MatrixXd
 disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
                         Eigen::MatrixXd const &K,
                         double baseline,
@@ -156,10 +182,70 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
         disparity.size() -
         std::count(disparity.data(), disparity.data() + disparity.size(), 0.0);
     std::cout << "num_valid_disp " << num_valid_disp << std::endl;
-    Eigen::MatrixXd point_cloud(3, num_valid_disp);
+    Eigen::MatrixXd point_cloud(4, num_valid_disp); // XYZ and intensity
 
     Eigen::MatrixXd K_inv = K.inverse();
-    std::cout << "K_inv: \n" << K_inv << std::endl;
+    std::cout << "K_inv: \n"
+              << K_inv << std::endl;
 
+    int counter = 0;
+
+    for (size_t row = 0; row < disparity.rows(); ++row)
+    {
+        for (size_t col = 0; col < disparity.cols(); ++col)
+        {
+            if (disparity(row, col) == 0)
+                continue;
+
+            point_cloud.block(0, counter, 3, 1) =
+                calculate_3d_from_disparity(K_inv,
+                                            disparity,
+                                            row,
+                                            col,
+                                            baseline);
+            point_cloud(3, counter) = left_img(row, col);
+            ++counter;
+        }
+    }
+    assert(counter == num_valid_disp);
     return point_cloud;
+}
+
+void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)
+{
+    using namespace cv;
+    viz::Viz3d myWindow("Point Cloud");
+    myWindow.setWindowSize(Size(1920, 1080));
+    // location of the window,
+    // Comment it out if you have only single monitor
+    myWindow.setWindowPosition(Point(2560, 0));
+
+    cv::Mat cv_cloud;
+    Eigen::MatrixXd pc_transpose = point_cloud.transpose();
+    cv::eigen2cv(pc_transpose, cv_cloud);
+    cv_cloud = cv_cloud.reshape(4);
+
+    cv::Mat cv_color;
+    Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> eigen_color =
+        point_cloud.block(3, 0, 1, point_cloud.cols()).cast<unsigned char>().transpose();
+    cv::eigen2cv(eigen_color, cv_color);
+
+    size_t counter = 0;
+
+    // https://answers.opencv.org/question/65569/cvviz-point-cloud/
+    // std::cout << cv_color.channels() << std::endl;
+    // std::cout << cv_color.type() << std::endl;
+    // std::cout << cv_color.rows << std::endl;
+    // std::cout << cv_color.cols << std::endl;
+    // std::cout << cv_color.size() << std::endl;
+    // std::cout << cv_cloud.size() << std::endl;
+    cv::viz::WCloud cloud_widget{cv_cloud, cv_color};
+    cloud_widget.setRenderingProperty( cv::viz::POINT_SIZE, 4 );
+
+    std::stringstream str_;
+    str_ << "point_cloud_" << ++counter;
+    myWindow.showWidget(str_.str(), cloud_widget);
+
+    myWindow.spin();
+    myWindow.close();
 }

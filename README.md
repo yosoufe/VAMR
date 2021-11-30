@@ -120,9 +120,12 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
 - Problem statement: `exercises/statements/Exercise 5 - Stereo Dense Reconstruction`.
 - Solution: `exercises/exercise05.cpp`.
-  - Disparity image
-    ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity-filtered.png)
+  - left first image
     ![Disparity image for first frame](https://user-images.githubusercontent.com/7648675/143288423-132e50ef-0a4b-48f0-9532-4c5ccce54b9b.png)
+  - Disparity image from left and right images
+    ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity-filtered.png)
+  - Rough Point Cloud from Disparity
+    ![Rough Point Cloud](exercises/statements/outputs/ex05-pointcloud_from_disparity-rough.png)
 
 
 # Useful Commands
