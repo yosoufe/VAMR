@@ -124,13 +124,19 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
     ![Disparity image for first frame](https://user-images.githubusercontent.com/7648675/143288423-132e50ef-0a4b-48f0-9532-4c5ccce54b9b.png)
   - Disparity image from left and right images
     ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity-filtered.png)
-  - Rough Point Cloud from Disparity
+  - Rough Point Cloud 
+  
+  https://user-images.githubusercontent.com/7648675/144170208-b014335a-9eb2-4aa8-9f07-dbe058b2f87f.mp4
+
+from Disparity
 
 
 # Useful Commands
 
-## Convert to gif
-
 ```bash
+# convert to gif
 ffmpeg -ss 0 -t 5 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
+
+# reduce the size and quality
+ffmpeg -i input.mp4 -vcodec libx265 -crf 28 output.mp4
 ```
