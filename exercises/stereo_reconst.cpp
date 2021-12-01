@@ -77,14 +77,24 @@ get_disparity(Eigen::MatrixXd const &left_img,
                         }
                     }
 
+                    // cached now the SSDs for
+                    // subpixel refinement laters
+                    // if the disparity is not ignored
+                    Eigen::MatrixXd Ys(3, 1);
+                    Ys << SSDs[disparity - min_disp - 1],
+                        SSDs[disparity - min_disp],
+                        SSDs[disparity - min_disp + 1];
+
+                    // reject outliers:
                     if (disparity == min_disp || disparity == max_disp)
                     {
+                        // when best is at the limits,
+                        // probably the best is out of the limit
+                        // and we know the exact number
                         disparity = 0;
                     }
                     else
                     {
-
-                        // reject outliers:
                         // reject the disparity if
                         // 3 least SSDs are all smaller than
                         // 1.5 * min_ssd.
@@ -111,7 +121,22 @@ get_disparity(Eigen::MatrixXd const &left_img,
                             disparity = 0;
                     }
 
-                    left_disp(row, col) = static_cast<double>(disparity);
+                    // refine in subpixel level
+                    // with the values that are
+                    // cached above
+                    double refined_disp = static_cast<double>(disparity);
+                    if (disparity != 0)
+                    {
+                        Eigen::MatrixXd A(3, 3);
+                        A << 1, disparity - 1, (disparity - 1) * (disparity - 1),
+                            1, disparity, disparity * disparity,
+                            1, disparity + 1, (disparity + 1) * (disparity + 1);
+
+                        Eigen::MatrixXd coeffs = A.inverse() * Ys;
+                        refined_disp = (-coeffs(1,0))/(2.0 * coeffs(2,0));
+                    }
+
+                    left_disp(row, col) = refined_disp;
                 });
         });
     return left_disp;
