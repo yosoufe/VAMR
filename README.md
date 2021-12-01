@@ -129,8 +129,8 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
     https://user-images.githubusercontent.com/7648675/144170690-082ce219-87d4-4637-81cf-84824a2f44d5.mp4
 
   - Point Cloud from Disparity with sub-pixel accuracy
-
-
+    
+    https://user-images.githubusercontent.com/7648675/144175521-0e370d34-662c-4df6-9901-5bec0fb630fa.mp4
 
 # Useful Commands
 
