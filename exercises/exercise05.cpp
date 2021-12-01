@@ -60,7 +60,7 @@ int main()
                                   min_disp,
                                   max_disp);
 
-    // show(eigen_2_cv(disp_img * 255 / max_disp));
+    show(eigen_2_cv(disp_img * 255 / max_disp));
 
     auto point_cloud =
         disparity_to_pointcloud(disp_img,

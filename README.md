@@ -125,7 +125,6 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
   - Disparity image from left and right images
     ![Disparity image for first frame](exercises/statements/outputs/ex05-disparity-filtered.png)
   - Rough Point Cloud from Disparity
-    ![Rough Point Cloud](exercises/statements/outputs/ex05-pointcloud_from_disparity-rough.png)
 
 
 # Useful Commands

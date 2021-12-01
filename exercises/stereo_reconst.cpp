@@ -77,31 +77,39 @@ get_disparity(Eigen::MatrixXd const &left_img,
                         }
                     }
 
-                    // reject outliers:
-                    // reject the disparity if
-                    // 3 least SSDs are all smaller than
-                    // 1.5 * min_ssd.
-                    // (of course min_ssd < 1.5 * min_ssd" )
-
-                    // find the first 3 smallest items
-                    // but not in order
-                    std::nth_element(
-                        std::execution::par,
-                        SSDs.begin(),
-                        SSDs.begin() + 3,
-                        SSDs.end(),
-                        std::less<double>());
-
-                    size_t num_bad_samples = 0;
-                    std::for_each(
-                        SSDs.begin(), SSDs.begin() + 3,
-                        [&num_bad_samples, min_ssd](double ssd)
-                        {
-                            if (ssd <= 1.5 * min_ssd)
-                                ++num_bad_samples;
-                        });
-                    if (num_bad_samples == 3)
+                    if (disparity == min_disp || disparity == max_disp)
+                    {
                         disparity = 0;
+                    }
+                    else
+                    {
+
+                        // reject outliers:
+                        // reject the disparity if
+                        // 3 least SSDs are all smaller than
+                        // 1.5 * min_ssd.
+                        // (of course min_ssd < 1.5 * min_ssd" )
+
+                        // find the first 3 smallest items
+                        // but not in order
+                        std::nth_element(
+                            std::execution::par,
+                            SSDs.begin(),
+                            SSDs.begin() + 3,
+                            SSDs.end(),
+                            std::less<double>());
+
+                        size_t num_bad_samples = 0;
+                        std::for_each(
+                            SSDs.begin(), SSDs.begin() + 3,
+                            [&num_bad_samples, min_ssd](double ssd)
+                            {
+                                if (ssd <= 1.5 * min_ssd)
+                                    ++num_bad_samples;
+                            });
+                        if (num_bad_samples == 3)
+                            disparity = 0;
+                    }
 
                     left_disp(row, col) = static_cast<double>(disparity);
                 });
@@ -240,7 +248,7 @@ void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)
     // std::cout << cv_color.size() << std::endl;
     // std::cout << cv_cloud.size() << std::endl;
     cv::viz::WCloud cloud_widget{cv_cloud, cv_color};
-    cloud_widget.setRenderingProperty( cv::viz::POINT_SIZE, 4 );
+    cloud_widget.setRenderingProperty(cv::viz::POINT_SIZE, 4);
 
     std::stringstream str_;
     str_ << "point_cloud_" << ++counter;
