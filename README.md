@@ -4,6 +4,8 @@
 
 This repository contains all the exercises of the course "Vision Algorithm for Mobile Robotics" in C++.
 
+If there are any questions, feel free to open an issue in this github repository.
+
 ## Links
 
 [The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html).
@@ -131,13 +133,13 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
   - Point Cloud from Disparity with sub-pixel accuracy
 
     https://user-images.githubusercontent.com/7648675/144175521-0e370d34-662c-4df6-9901-5bec0fb630fa.mp4
-    
+
   - complete point cloud from all of the pair of frames (better quality video in `exercises/statements/outputs/ex05-complete_point_cloud.mp4`)
-    
+
     https://user-images.githubusercontent.com/7648675/144346394-fddc5b30-3640-41db-ae77-8c951ad19c4e.mp4
 
 
-    
+
 
 ## Useful Commands
 

@@ -207,11 +207,17 @@ calculate_3d_from_disparity(Eigen::MatrixXd const &K_inv,
     return res;
 }
 
+size_t index_from_row_col(size_t row, size_t col, size_t n_cols)
+{
+    return row * n_cols + col;
+}
+
 Eigen::MatrixXd
-disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
-                        Eigen::MatrixXd const &K,
-                        double baseline,
-                        Eigen::MatrixXd const &left_img)
+disparity_to_pointcloud_serial_backup(
+    Eigen::MatrixXd const &disparity,
+    Eigen::MatrixXd const &K,
+    double baseline,
+    Eigen::MatrixXd const &left_img)
 {
     auto num_valid_disp =
         disparity.size() -
@@ -241,6 +247,61 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
     }
     assert(point_idx == num_valid_disp);
     return point_cloud;
+}
+
+Eigen::MatrixXd
+disparity_to_pointcloud(
+    Eigen::MatrixXd const &disparity,
+    Eigen::MatrixXd const &K,
+    double baseline,
+    Eigen::MatrixXd const &left_img)
+{
+    Eigen::MatrixXd point_cloud(5, disparity.size()); // XYZ and intensity and valid
+    Eigen::MatrixXd res;                              // XYZ and intensity
+
+    Eigen::MatrixXd K_inv = K.inverse();
+
+    // using for_each_n and execution::par speeds up the
+    // complete program from taking 26.3 seconds
+    // to 22.3 seconds (without viz)
+    // although disparity_to_pointcloud_serial_backup is easier to write and read.
+
+    std::for_each_n(
+        std::execution::par, counting_iterator(0), disparity.rows(),
+        [&K_inv, &disparity, &left_img, &point_cloud, baseline](size_t row)
+        {
+            std::for_each_n(
+                std::execution::par, counting_iterator(0), disparity.cols(),
+                [&K_inv, &disparity, &left_img, &point_cloud, row, baseline](size_t col)
+                {
+                    size_t idx = index_from_row_col(row, col, disparity.cols());
+                    if (disparity(row, col) != 0)
+                    {
+                        point_cloud.block(0, idx, 3, 1) =
+                            calculate_3d_from_disparity(K_inv,
+                                                        disparity,
+                                                        row,
+                                                        col,
+                                                        baseline);
+                        point_cloud(3, idx) = left_img(row, col);
+                        point_cloud(4, idx) = 1;
+                    }
+                    else
+                    {
+                        point_cloud(4, idx) = 0;
+                    }
+                });
+        });
+
+    std::vector<int> indices_to_keep;
+    indices_to_keep.reserve(point_cloud.cols());
+    for (int idx = 0; idx < point_cloud.cols(); ++idx)
+    {
+        if (point_cloud(4, idx) == 1)
+            indices_to_keep.push_back(idx);
+    }
+    res = (point_cloud.block(0, 0, 4, point_cloud.cols()))(Eigen::all, indices_to_keep);
+    return res;
 }
 
 void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)

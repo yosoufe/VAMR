@@ -93,6 +93,7 @@ int main()
                                     baseline,
                                     left_eigen);
 
+
         // visualize_point_cloud(point_cloud);
 
         Eigen::MatrixXd pose = poses.block(idx, 0, 1, 12);

@@ -32,6 +32,13 @@ get_disparity_backup(Eigen::MatrixXd const &left_img,
                      double max_disp);
 
 Eigen::MatrixXd
+disparity_to_pointcloud_serial_backup(
+    Eigen::MatrixXd const &disparity,
+    Eigen::MatrixXd const &K,
+    double baseline,
+    Eigen::MatrixXd const &left_img);
+
+Eigen::MatrixXd
 disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
                         Eigen::MatrixXd const &K,
                         double baseline,
