@@ -37,5 +37,15 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
                         double baseline,
                         Eigen::MatrixXd const &left_img);
 
-void
-visualize_point_cloud(Eigen::MatrixXd const & point_cloud);
+void visualize_point_cloud(Eigen::MatrixXd const &point_cloud);
+
+void visualize_point_clouds(
+    std::vector<Eigen::MatrixXd> const &point_clouds);
+
+Eigen::MatrixXd
+filter_point_cloud(
+    std::vector<double> const &xlims,
+    std::vector<double> const &ylims,
+    std::vector<double> const &zlims,
+    Eigen::MatrixXd const &lim_frame,
+    Eigen::MatrixXd const &point_cloud);

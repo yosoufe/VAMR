@@ -129,10 +129,10 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
     https://user-images.githubusercontent.com/7648675/144170690-082ce219-87d4-4637-81cf-84824a2f44d5.mp4
 
   - Point Cloud from Disparity with sub-pixel accuracy
-    
+
     https://user-images.githubusercontent.com/7648675/144175521-0e370d34-662c-4df6-9901-5bec0fb630fa.mp4
 
-# Useful Commands
+## Useful Commands
 
 ```bash
 # convert to gif
@@ -140,4 +140,32 @@ ffmpeg -ss 0 -t 5 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][
 
 # reduce the size and quality
 ffmpeg -i input.mp4 -vcodec libx264 -crf 28 output.mp4
+```
+
+### cv::Viz3d Key commands
+cv::Viz3d used for 3d visualizations and point cloud visualization. These shortkeys are useful to navigate the view.
+
+```
+| Help:
+-------
+          p, P   : switch to a point-based representation
+          w, W   : switch to a wireframe-based representation (where available)
+          s, S   : switch to a surface-based representation (where available)
+
+          j, J   : take a .PNG snapshot of the current window view
+          k, K   : export scene to Wavefront .obj format
+    ALT + k, K   : export scene to VRML format
+          c, C   : display current camera/window parameters
+          F5     : enable/disable fly mode (changes control style)
+
+          e, E   : exit the interactor
+          q, Q   : stop and call VTK's TerminateApp
+
+           +/-   : increment/decrement overall point size
+     +/- [+ ALT] : zoom in/out
+
+    r, R [+ ALT] : reset camera [to viewpoint = {0, 0, 0} -> center_{x, y, z}]
+
+    ALT + s, S   : turn stereo mode on/off
+    ALT + f, F   : switch between maximized window mode and original size
 ```

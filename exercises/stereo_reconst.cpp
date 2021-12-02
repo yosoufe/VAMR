@@ -133,7 +133,7 @@ get_disparity(Eigen::MatrixXd const &left_img,
                             1, disparity + 1, (disparity + 1) * (disparity + 1);
 
                         Eigen::MatrixXd coeffs = A.inverse() * Ys;
-                        refined_disp = (-coeffs(1,0))/(2.0 * coeffs(2,0));
+                        refined_disp = (-coeffs(1, 0)) / (2.0 * coeffs(2, 0));
                     }
 
                     left_disp(row, col) = refined_disp;
@@ -197,9 +197,11 @@ calculate_3d_from_disparity(Eigen::MatrixXd const &K_inv,
     Eigen::MatrixXd b(3, 1);
     b << baseline, 0, 0;
     Eigen::MatrixXd p0_hat = K_inv * p0;
+    Eigen::MatrixXd p1_hat = K_inv * p1;
     A.block(0, 0, 3, 1) = p0_hat;
-    A.block(0, 1, 3, 1) = (-1.0) * (K_inv * p1);
-    Eigen::MatrixXd lambdas = (A.transpose() * A).inverse() * A.transpose() * b;
+    A.block(0, 1, 3, 1) = -p1_hat;
+    Eigen::MatrixXd A_t = A.transpose();
+    Eigen::MatrixXd lambdas = (A_t * A).inverse() * A_t * b;
     double &lambda0 = lambdas(0, 0);
     res = lambda0 * p0_hat;
     return res;
@@ -214,14 +216,11 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
     auto num_valid_disp =
         disparity.size() -
         std::count(disparity.data(), disparity.data() + disparity.size(), 0.0);
-    std::cout << "num_valid_disp " << num_valid_disp << std::endl;
     Eigen::MatrixXd point_cloud(4, num_valid_disp); // XYZ and intensity
 
     Eigen::MatrixXd K_inv = K.inverse();
-    std::cout << "K_inv: \n"
-              << K_inv << std::endl;
 
-    int counter = 0;
+    int point_idx = 0;
 
     for (size_t row = 0; row < disparity.rows(); ++row)
     {
@@ -230,17 +229,17 @@ disparity_to_pointcloud(Eigen::MatrixXd const &disparity,
             if (disparity(row, col) == 0)
                 continue;
 
-            point_cloud.block(0, counter, 3, 1) =
+            point_cloud.block(0, point_idx, 3, 1) =
                 calculate_3d_from_disparity(K_inv,
                                             disparity,
                                             row,
                                             col,
                                             baseline);
-            point_cloud(3, counter) = left_img(row, col);
-            ++counter;
+            point_cloud(3, point_idx) = left_img(row, col);
+            ++point_idx;
         }
     }
-    assert(counter == num_valid_disp);
+    assert(point_idx == num_valid_disp);
     return point_cloud;
 }
 
@@ -252,6 +251,7 @@ void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)
     // location of the window,
     // Comment it out if you have only single monitor
     myWindow.setWindowPosition(Point(2560, 0));
+    myWindow.showWidget("Coordinate Widget", viz::WCoordinateSystem(5));
 
     cv::Mat cv_cloud;
     Eigen::MatrixXd pc_transpose = point_cloud.transpose();
@@ -264,6 +264,7 @@ void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)
     cv::eigen2cv(eigen_color, cv_color);
 
     size_t counter = 0;
+    // std::cout << cv_cloud << std::endl;
 
     // https://answers.opencv.org/question/65569/cvviz-point-cloud/
     // std::cout << cv_color.channels() << std::endl;
@@ -281,4 +282,89 @@ void visualize_point_cloud(Eigen::MatrixXd const &point_cloud)
 
     myWindow.spin();
     myWindow.close();
+}
+
+void visualize_point_clouds(
+    std::vector<Eigen::MatrixXd> const &point_clouds)
+{
+    using namespace cv;
+    viz::Viz3d myWindow("Point Clouds");
+    myWindow.setWindowSize(Size(1920, 1080));
+    // location of the window,
+    // Comment it out if you have only single monitor
+    myWindow.setWindowPosition(Point(2560, 0));
+    myWindow.showWidget("Coordinate Widget", viz::WCoordinateSystem(5));
+
+    // myWindow.spinOnce(1, true);
+    // myWindow.setViewerPose(
+    //     Affine3d(
+    //         Matx33d(
+    //             0.9129581274202138, 0.006546646768235034, -0.4080007340599631,
+    //             0.08046835856704371, 0.9773485475052571, 0.1957413087697381,
+    //             0.4000403740210511, -0.2115347680771561, 0.8917515018477072),
+    //         Vec3d(15.1419, -13.7171, -35.0615)));
+
+    cv::viz::WCloudCollection cloud_collection_widget;
+    cloud_collection_widget.setRenderingProperty(cv::viz::POINT_SIZE, 4);
+
+    for (auto const &point_cloud : point_clouds)
+    {
+        cv::Mat cv_cloud;
+        Eigen::MatrixXd pc_transpose = point_cloud.transpose();
+        cv::eigen2cv(pc_transpose, cv_cloud);
+        cv_cloud = cv_cloud.reshape(4);
+
+        cv::Mat cv_color;
+        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> eigen_color =
+            point_cloud.block(3, 0, 1, point_cloud.cols()).cast<unsigned char>().transpose();
+        cv::eigen2cv(eigen_color, cv_color);
+
+        cloud_collection_widget.addCloud(cv_cloud, cv_color);
+    }
+
+    myWindow.showWidget("point clouds", cloud_collection_widget);
+
+    myWindow.spin();
+    // std::cout << "translation: \n"
+    //           << myWindow.getViewerPose().translation() << std::endl;
+    // std::cout << "rotation: \n"
+    //           << myWindow.getViewerPose().rotation() << std::endl
+    //           << std::endl;
+
+    myWindow.close();
+}
+
+Eigen::MatrixXd
+filter_point_cloud(
+    std::vector<double> const &xlims,
+    std::vector<double> const &ylims,
+    std::vector<double> const &zlims,
+    Eigen::MatrixXd const &lim_frame,
+    Eigen::MatrixXd const &point_cloud)
+{
+    Eigen::MatrixXd res;
+    std::vector<int> keep_indices;
+    keep_indices.reserve(point_cloud.cols());
+
+    Eigen::MatrixXd points_in_given_frame(point_cloud.rows(), point_cloud.cols());
+    points_in_given_frame.block(0, 0, 3, points_in_given_frame.cols()) =
+        lim_frame * point_cloud.block(0, 0, 3, point_cloud.cols());
+
+    // visualize_point_cloud(points_in_given_frame);
+
+    for (int idx = 0; idx < points_in_given_frame.cols(); ++idx)
+    {
+        auto const &x = points_in_given_frame(0, idx);
+        auto const &y = points_in_given_frame(1, idx);
+        auto const &z = points_in_given_frame(2, idx);
+
+        if (x < xlims[0] || x > xlims[1] ||
+            y < ylims[0] || y > ylims[1] ||
+            z < zlims[0] || z > zlims[1])
+            continue;
+
+        keep_indices.push_back(idx);
+    }
+    res = point_cloud(Eigen::all, keep_indices);
+    return res;
 }
