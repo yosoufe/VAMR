@@ -18,3 +18,17 @@ add_test(
     NAME exercise04_tests
     COMMAND exercise04_tests
 )
+
+
+# exercise 05
+add_executable(exercise05_tests test_stereo_reconst.cpp)
+target_link_libraries(exercise05_tests
+    stereo_reconst
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
+add_test(
+    NAME exercise05_tests
+    COMMAND exercise05_tests
+)
