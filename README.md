@@ -1,6 +1,6 @@
 # 🚧 Under Construction 🚧
 
-# Vision Algorithms for Mobile Robotics (Fall 2020)
+# Vision Algorithms for Mobile Robotics
 
 This repository contains all the exercises of the course "Vision Algorithm for Mobile Robotics" in C++.
 
