@@ -138,7 +138,10 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
     https://user-images.githubusercontent.com/7648675/144346394-fddc5b30-3640-41db-ae77-8c951ad19c4e.mp4
 
+## Exercise 6 - Two-view Geometry
 
+- Problem statement: `exercises/statements/Exercise 6 - Two-view Geometry`.
+- Solution: `exercises/exercise06.cpp`.
 
 
 ## Useful Commands
