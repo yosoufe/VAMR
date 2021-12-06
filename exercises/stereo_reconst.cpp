@@ -3,7 +3,6 @@
 #include <limits>
 #include <math.h>
 #include <algorithm>
-#include <execution>
 #include <cassert>
 #include <opencv2/viz.hpp>
 
