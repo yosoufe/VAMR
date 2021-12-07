@@ -34,14 +34,14 @@ add_test(
 )
 
 ### exercise 06
-add_executable(two_view_geometry_tests test_two_view_geometry.cpp)
-target_link_libraries(two_view_geometry_tests
+add_executable(test_two_view_geometry test_two_view_geometry.cpp)
+target_link_libraries(test_two_view_geometry
     two_view_geometry
     ${GTEST_BOTH_LIBRARIES}
     pthread
 )
 
 add_test(
-    NAME two_view_geometry_tests
-    COMMAND two_view_geometry_tests
+    NAME test_two_view_geometry
+    COMMAND test_two_view_geometry
 )

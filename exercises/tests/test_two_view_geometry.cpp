@@ -66,26 +66,44 @@ TEST(Two_View_Geometry, eight_point)
 
     double sigma = 1e-1;
 
-    Eigen::MatrixXd noisy_x1 = x1 + sigma * Eigen::MatrixXd::Random(x1.rows(),x1.cols());
-    Eigen::MatrixXd noisy_x2 = x2 + sigma * Eigen::MatrixXd::Random(x2.rows(),x2.cols());
+    Eigen::MatrixXd noisy_x1 = x1 + sigma * Eigen::MatrixXd::Random(x1.rows(), x1.cols());
+    Eigen::MatrixXd noisy_x2 = x2 + sigma * Eigen::MatrixXd::Random(x2.rows(), x2.cols());
 
     // Fundamental matrix estimation via the 8-point algorithm
+    {
+        // Estimate fundamental matrix
+        // Call the 8-point algorithm on inputs x1,x2
+        Eigen::MatrixXd F = fundamental_eight_point(x1, x2);
 
-    // Estimate fundamental matrix
-    // Call the 8-point algorithm on inputs x1,x2
-    Eigen::MatrixXd F = fundamental_eight_point(x1,x2);
+        // Check the epipolar constraint x2(i).' * F * x1(i) = 0 for all points i.
+        double cost_algebraic = algebraic_error(F, x1, x2);;
+        double cost_dist_epi_line = dist_point_2_epipolar_line(F, x1, x2);
 
-    // Check the epipolar constraint x2(i).' * F * x1(i) = 0 for all points i.
-    double cost_algebraic = ((x2.array() *  (F*x1).array()).matrix().colwise().sum()).norm() / std::sqrt(double(N));
-    double cost_dist_epi_line = dist_point_2_epipolar_line(F, x1, x2);
+        std::cout << "Noise-free correspondences\n";
+        std::cout << "Algebraic error: " << cost_algebraic << std::endl;
+        std::cout << "Geometric error: " << cost_dist_epi_line << std::endl;
 
-    std::cout << "Noise-free correspondences\n";
-    std::cout << "Algebraic error: " << cost_algebraic << std::endl;
-    std::cout << "Geometric error: " << cost_dist_epi_line << std::endl;
+        EXPECT_TRUE(cost_algebraic < 1e-9);
+        EXPECT_TRUE(cost_dist_epi_line < 1e-9);
+    }
 
-    EXPECT_TRUE(cost_algebraic < 1e-10);
-    EXPECT_TRUE(cost_dist_epi_line < 1e-10);
+    {
+        Eigen::MatrixXd F = fundamental_eight_point(noisy_x1, noisy_x2);
+        double cost_algebraic = algebraic_error(F, noisy_x1, noisy_x2);
+        double cost_dist_epi_line = dist_point_2_epipolar_line(F, noisy_x1, noisy_x2);
 
-    // TODO: Noisy correspondences
+        std::cout << "Noisy correspondences, (sigma = " << sigma << "), with fundamental_eight_point\n";
+        std::cout << "Algebraic error: " << cost_algebraic << std::endl;
+        std::cout << "Geometric error: " << cost_dist_epi_line << std::endl;
+    }
 
+    {
+        Eigen::MatrixXd Fn = fundamental_eight_point_normalized(noisy_x1, noisy_x2);
+        double cost_algebraic = algebraic_error(Fn, noisy_x1, noisy_x2);
+        double cost_dist_epi_line = dist_point_2_epipolar_line(Fn, noisy_x1, noisy_x2);
+
+        std::cout << "Noisy correspondences, (sigma = " << sigma << "), with fundamental_eight_point_normalized\n";
+        std::cout << "Algebraic error: " << cost_algebraic << std::endl;
+        std::cout << "Geometric error: " << cost_dist_epi_line << std::endl;
+    }
 }

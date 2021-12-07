@@ -25,7 +25,7 @@ linear_triangulation(
     Eigen::MatrixXd P(4, p1.cols());
 
     std::for_each_n(
-        std::execution::par, counting_iterator(0), p1.cols(),
+        std::execution::par_unseq, counting_iterator(0), p1.cols(),
         [&](int col)
         {
             Eigen::MatrixXd A(6, 4);
@@ -38,6 +38,16 @@ linear_triangulation(
         });
 
     return P;
+}
+
+double
+algebraic_error(
+    Eigen::MatrixXd const & F,
+    Eigen::MatrixXd const & x1,
+    Eigen::MatrixXd const & x2)
+{
+    int N = x1.cols();
+    return ((x2.array() * (F * x1).array()).matrix().colwise().sum()).norm() / std::sqrt(double(N));
 }
 
 double
@@ -75,7 +85,7 @@ fundamental_eight_point(
     Eigen::MatrixXd F(3, 3);
     Eigen::MatrixXd Q(p1.cols(), 9);
     std::for_each_n(
-        std::execution::par, counting_iterator(0), p1.cols(),
+        std::execution::par_unseq, counting_iterator(0), p1.cols(),
         [&](int col)
         {
             int q_row = col;
@@ -87,5 +97,63 @@ fundamental_eight_point(
     Eigen::MatrixXd svd_v = svd_m.matrixV();
     Eigen::MatrixXd temp_F = svd_v.col(svd_v.cols() - 1);
     F = temp_F.transpose().reshaped(3, 3).transpose();
+
+    Eigen::BDCSVD<Eigen::MatrixXd> svd_F(F, Eigen::ComputeFullV | Eigen::ComputeFullU);
+    Eigen::MatrixXd sigmas = svd_F.singularValues().asDiagonal();
+    sigmas(3, 3) = 0;
+    F = svd_F.matrixU() * sigmas * svd_F.matrixV().transpose();
+    return F;
+}
+
+Eigen::MatrixXd
+matrix_std(Eigen::MatrixXd const &p)
+{
+    Eigen::MatrixXd res;
+    res = ((p.array() - p.rowwise().mean().array()).square().rowwise().sum() / (p.cols())).sqrt();
+    return res;
+}
+
+Eigen::MatrixXd
+normalize_2d_pts(
+    Eigen::MatrixXd const &p,
+    Eigen::MatrixXd &T)
+{
+    int N = p.cols();
+    Eigen::MatrixXd res;
+    Eigen::MatrixXd eucl_ps = Eigen::MatrixXd::Ones(3, N);
+    eucl_ps.block(0, 0, 2, N) = p.block(0, 0, 2, N).array().rowwise() / p.row(2).array();
+
+    Eigen::MatrixXd eucl_pts_2 = eucl_ps.block(0, 0, 2, N);
+
+    Eigen::Vector2d mean = eucl_pts_2.rowwise().mean();
+
+    Eigen::MatrixXd pts_centered = eucl_pts_2.colwise() - mean;
+    double sigma = std::sqrt(
+        pts_centered.array().square().colwise().sum().mean());
+
+    double s = sqrt(2) / sigma;
+
+    T.resize(3, 3);
+
+    T << s, 0, -s * mean(0),
+        0, s, -s * mean(1),
+        0, 0, 1;
+
+    res = T * eucl_ps;
+    return res;
+}
+
+Eigen::MatrixXd
+fundamental_eight_point_normalized(
+    Eigen::MatrixXd const &p1,
+    Eigen::MatrixXd const &p2)
+{
+    Eigen::MatrixXd T1(3, 3);
+    Eigen::MatrixXd normalized_p1 = normalize_2d_pts(p1, T1);
+    Eigen::MatrixXd T2(3, 3);
+    Eigen::MatrixXd normalized_p2 = normalize_2d_pts(p2, T2);
+
+    Eigen::MatrixXd F_normalized = fundamental_eight_point(normalized_p1, normalized_p2);
+    Eigen::MatrixXd F = T2.transpose() * F_normalized * T1;
     return F;
 }
