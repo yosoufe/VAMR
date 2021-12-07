@@ -42,9 +42,9 @@ linear_triangulation(
 
 double
 algebraic_error(
-    Eigen::MatrixXd const & F,
-    Eigen::MatrixXd const & x1,
-    Eigen::MatrixXd const & x2)
+    Eigen::MatrixXd const &F,
+    Eigen::MatrixXd const &x1,
+    Eigen::MatrixXd const &x2)
 {
     int N = x1.cols();
     return ((x2.array() * (F * x1).array()).matrix().colwise().sum()).norm() / std::sqrt(double(N));
@@ -156,4 +156,82 @@ fundamental_eight_point_normalized(
     Eigen::MatrixXd F_normalized = fundamental_eight_point(normalized_p1, normalized_p2);
     Eigen::MatrixXd F = T2.transpose() * F_normalized * T1;
     return F;
+}
+
+Eigen::MatrixXd
+estimate_essential_matrix(
+    Eigen::MatrixXd const &p1,
+    Eigen::MatrixXd const &p2,
+    Eigen::MatrixXd const &K1,
+    Eigen::MatrixXd const &K2)
+{
+    Eigen::MatrixXd F = fundamental_eight_point_normalized(p1, p2);
+    Eigen::MatrixXd E = K2.transpose() * F * K1;
+    return E;
+}
+
+void decompose_essential_matrix(
+    Eigen::MatrixXd const &E,
+    std::vector<Eigen::MatrixXd> &R,
+    Eigen::MatrixXd &u3)
+{
+    Eigen::MatrixXd W(3, 3);
+    W << 0, -1, 0,
+        1, 0, 0,
+        0, 0, 1;
+
+    // JacobiSVD vs BDCSVD
+    Eigen::BDCSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeThinV | Eigen::ComputeThinU);
+    u3 = svd.matrixU().col(2);
+    Eigen::MatrixXd V = svd.matrixV();
+    Eigen::MatrixXd U = svd.matrixU();
+
+    Eigen::MatrixXd R_;
+    R_ = U * W * V.transpose();
+    if (R_.determinant() < 0) R_ *= -1;
+    R.push_back(R_);
+
+    R_ = U * W.transpose() * V.transpose();
+    if (R_.determinant() < 0) R_ *= -1;
+    R.push_back(R_);
+    return;
+}
+
+void disambiguate_relative_pose(
+    std::vector<Eigen::MatrixXd> const &Rots,
+    Eigen::MatrixXd const &u3,
+    Eigen::MatrixXd const &points0_h,
+    Eigen::MatrixXd const &points1_h,
+    Eigen::MatrixXd const &K0,
+    Eigen::MatrixXd const &K1,
+    Eigen::MatrixXd &R,
+    Eigen::MatrixXd &T)
+{
+    std::vector<double> u3_factors = {1.0, -1.0};
+    double correct_u3_factor = 0;
+    int correct_rot_idx = -1;
+
+    Eigen::MatrixXd M1 = K0 * Eigen::MatrixXd::Identity(3,4);
+    Eigen::MatrixXd M2_(3,4);
+    int max_num_points_in_front_of_cameras = 0;
+    for (auto const & u3_factor : u3_factors)
+    {
+        for (int idx = 0; idx < Rots.size() ; ++ idx)
+        {
+            M2_ << Rots[idx], u3_factor * u3 ;
+            Eigen::MatrixXd M2 = K1 * M2_;
+            Eigen::MatrixXd points_3d = linear_triangulation(points0_h, points1_h, M1, M2);
+            Eigen::MatrixXd Zs = points_3d.row(2);
+            int num_points_in_front_of_cameras = ( Zs.array()  > 0).count();
+            if (num_points_in_front_of_cameras > max_num_points_in_front_of_cameras)
+            {
+                max_num_points_in_front_of_cameras = num_points_in_front_of_cameras;
+                correct_rot_idx = idx;
+                correct_u3_factor = u3_factor;
+            }
+        }
+    }
+    R = Rots[correct_rot_idx];
+    T = correct_u3_factor * u3;
+    return;
 }
