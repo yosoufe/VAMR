@@ -4,8 +4,8 @@
 
 void visualize_point_cloud(
     Eigen::MatrixXd const &point_cloud,
-    Eigen::MatrixXd const &R_C2_W,
-    Eigen::MatrixXd const &T_C2_W);
+    Eigen::MatrixXd const &R_W2_C,
+    Eigen::MatrixXd const &T_W2_C);
 
 int main()
 {
@@ -57,18 +57,13 @@ int main()
         R_C2_W,
         T_C2_W);
 
-    std::cout << "\nR_C2_W=\n" << R_C2_W << std::endl;
-    std::cout << "\nT_C2_W=\n" << T_C2_W << std::endl;
-
     // Triangulate a point cloud using the final transformation (R,T)
     Eigen::MatrixXd M1 = K * Eigen::MatrixXd::Identity(3, 4);
     Eigen::MatrixXd M2(3, 4);
-    // I do not know why I need to reverse the transformation here
-    // TODO: discover why???
-    M2 << K * R_C2_W.transpose(), (-1) * K * R_C2_W.transpose() * T_C2_W;
+    M2 << K * R_C2_W, K * T_C2_W;
     Eigen::MatrixXd P = linear_triangulation(p1, p2, M1, M2);
 
-    visualize_point_cloud(P, R_C2_W, T_C2_W);
+    visualize_point_cloud(P, R_C2_W.transpose(), -R_C2_W.transpose()*T_C2_W);
 
     return 0;
 }
@@ -96,8 +91,8 @@ void viz_camera(
 
 void visualize_point_cloud(
     Eigen::MatrixXd const &point_cloud,
-    Eigen::MatrixXd const &R_C2_W,
-    Eigen::MatrixXd const &T_C2_W)
+    Eigen::MatrixXd const &R_W2_C,
+    Eigen::MatrixXd const &T_W2_C)
 {
     using namespace cv;
     viz::Viz3d myWindow("Point Cloud");
@@ -129,7 +124,7 @@ void visualize_point_cloud(
             Vec3d(0.295923, -2.4547670, .4077167)));
 
     viz_camera(Eigen::MatrixXd::Identity(3,3), Eigen::MatrixXd::Zero(3,1), myWindow, "cam1");
-    viz_camera(R_C2_W, T_C2_W, myWindow, "cam2");
+    viz_camera(R_W2_C, T_W2_C, myWindow, "cam2");
 
     myWindow.spin();
     myWindow.close();

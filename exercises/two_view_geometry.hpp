@@ -135,8 +135,8 @@ void decompose_essential_matrix(
  * @param u3 a 3x1 vector with the translation information calculated by decompose_essential_matrix
  * @param points0_h 3xN homogeneous coordinates of point correspondences in image 1
  * @param points1_h 3xN homogeneous coordinates of point correspondences in image 2
- * @param K0 3x3 calibration matrix for camera 1
- * @param K1 3x3 calibration matrix for camera 2
+ * @param K1 3x3 calibration matrix for camera 1
+ * @param K2 3x3 calibration matrix for camera 2
  * @param R output: 3x3 the correct rotation matrix
  * @param T output: 3x1 the correct translation vector
  */
@@ -145,7 +145,7 @@ void disambiguate_relative_pose(
     Eigen::MatrixXd const &u3,
     Eigen::MatrixXd const &points0_h,
     Eigen::MatrixXd const &points1_h,
-    Eigen::MatrixXd const &K0,
     Eigen::MatrixXd const &K1,
+    Eigen::MatrixXd const &K2,
     Eigen::MatrixXd &R,
     Eigen::MatrixXd &T);

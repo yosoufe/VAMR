@@ -96,7 +96,7 @@ fundamental_eight_point(
     Eigen::BDCSVD<Eigen::MatrixXd> svd_m(Q, Eigen::ComputeThinV);
     Eigen::MatrixXd svd_v = svd_m.matrixV();
     Eigen::MatrixXd temp_F = svd_v.col(svd_v.cols() - 1);
-    F = temp_F.transpose().reshaped(3, 3).transpose();
+    F = temp_F.transpose().reshaped(3, 3);
 
     Eigen::BDCSVD<Eigen::MatrixXd> svd_F(F, Eigen::ComputeFullV | Eigen::ComputeFullU);
     Eigen::MatrixXd sigmas = svd_F.singularValues().asDiagonal();
@@ -183,6 +183,8 @@ void decompose_essential_matrix(
     // JacobiSVD vs BDCSVD
     Eigen::BDCSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeThinV | Eigen::ComputeThinU);
     u3 = svd.matrixU().col(2);
+    float u3_norm = u3.norm();
+    if (u3_norm != 0) u3 /= u3_norm;
     Eigen::MatrixXd V = svd.matrixV();
     Eigen::MatrixXd U = svd.matrixU();
 
@@ -202,8 +204,8 @@ void disambiguate_relative_pose(
     Eigen::MatrixXd const &u3,
     Eigen::MatrixXd const &points0_h,
     Eigen::MatrixXd const &points1_h,
-    Eigen::MatrixXd const &K0,
     Eigen::MatrixXd const &K1,
+    Eigen::MatrixXd const &K2,
     Eigen::MatrixXd &R,
     Eigen::MatrixXd &T)
 {
@@ -211,7 +213,7 @@ void disambiguate_relative_pose(
     double correct_u3_factor = 0;
     int correct_rot_idx = -1;
 
-    Eigen::MatrixXd M1 = K0 * Eigen::MatrixXd::Identity(3,4);
+    Eigen::MatrixXd M1 = K1 * Eigen::MatrixXd::Identity(3,4);
     Eigen::MatrixXd M2_(3,4);
     int max_num_points_in_front_of_cameras = 0;
     for (auto const & u3_factor : u3_factors)
@@ -221,6 +223,7 @@ void disambiguate_relative_pose(
             M2_ << Rots[idx], u3_factor * u3 ;
             Eigen::MatrixXd M2 = K1 * M2_;
             Eigen::MatrixXd points_3d_1 = linear_triangulation(points0_h, points1_h, M1, M2);
+            // project 3d points in both cameras
             Eigen::MatrixXd points_3d_2 = M2_ * points_3d_1;
             Eigen::MatrixXd Zs_1 = points_3d_1.row(2);
             Eigen::MatrixXd Zs_2 = points_3d_2.row(2);
