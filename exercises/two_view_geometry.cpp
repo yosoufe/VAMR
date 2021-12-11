@@ -220,9 +220,11 @@ void disambiguate_relative_pose(
         {
             M2_ << Rots[idx], u3_factor * u3 ;
             Eigen::MatrixXd M2 = K1 * M2_;
-            Eigen::MatrixXd points_3d = linear_triangulation(points0_h, points1_h, M1, M2);
-            Eigen::MatrixXd Zs = points_3d.row(2);
-            int num_points_in_front_of_cameras = ( Zs.array()  > 0).count();
+            Eigen::MatrixXd points_3d_1 = linear_triangulation(points0_h, points1_h, M1, M2);
+            Eigen::MatrixXd points_3d_2 = M2_ * points_3d_1;
+            Eigen::MatrixXd Zs_1 = points_3d_1.row(2);
+            Eigen::MatrixXd Zs_2 = points_3d_2.row(2);
+            int num_points_in_front_of_cameras = ( Zs_1.array()  > 0).count() + ( Zs_2.array()  > 0).count();
             if (num_points_in_front_of_cameras > max_num_points_in_front_of_cameras)
             {
                 max_num_points_in_front_of_cameras = num_points_in_front_of_cameras;
