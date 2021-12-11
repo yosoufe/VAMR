@@ -138,7 +138,20 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
     https://user-images.githubusercontent.com/7648675/144346394-fddc5b30-3640-41db-ae77-8c951ad19c4e.mp4
 
+## Exercise 6 - Two-view Geometry
 
+- Problem statement: `exercises/statements/Exercise 6 - Two-view Geometry`.
+- Solution: `exercises/exercise06.cpp`.
+- I developed unit tests using Google test framework, similar to the matlab test scripts provided by the exercise in `exercises/tests/test_two_view_geometry.cpp`.
+   To execute them after the compilation in the build directory:
+    ```bash
+    ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.linear_triangulation
+    ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.eight_point
+    # or the following to run all of the tests for exercise 06.
+    ./tests/two_view_geometry_tests
+    ```
+  - Point cloud from perfect feature matches
+     ![Point Cloud](exercises/statements/outputs/ex06-8_point_sfm.png)
 
 
 ## Useful Commands

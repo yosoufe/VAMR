@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <execution>
 
 using Index_t = unsigned int;
 

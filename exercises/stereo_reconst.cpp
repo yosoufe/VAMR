@@ -3,7 +3,6 @@
 #include <limits>
 #include <math.h>
 #include <algorithm>
-#include <execution>
 #include <cassert>
 #include <opencv2/viz.hpp>
 
@@ -384,14 +383,7 @@ void visualize_point_clouds(
     }
 
     myWindow.showWidget("point clouds", cloud_collection_widget);
-
     myWindow.spin();
-    // std::cout << "translation: \n"
-    //           << myWindow.getViewerPose().translation() << std::endl;
-    // std::cout << "rotation: \n"
-    //           << myWindow.getViewerPose().rotation() << std::endl
-    //           << std::endl;
-
     myWindow.close();
 }
 

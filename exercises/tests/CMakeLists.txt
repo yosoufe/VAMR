@@ -6,7 +6,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 ##################### Tests
 
-# exercise 04
+### exercise 04
 add_executable(exercise04_tests test_sift.cpp)
 target_link_libraries(exercise04_tests
     sift
@@ -20,7 +20,7 @@ add_test(
 )
 
 
-# exercise 05
+### exercise 05
 add_executable(exercise05_tests test_stereo_reconst.cpp)
 target_link_libraries(exercise05_tests
     stereo_reconst
@@ -31,4 +31,17 @@ target_link_libraries(exercise05_tests
 add_test(
     NAME exercise05_tests
     COMMAND exercise05_tests
+)
+
+### exercise 06
+add_executable(test_two_view_geometry test_two_view_geometry.cpp)
+target_link_libraries(test_two_view_geometry
+    two_view_geometry
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
+add_test(
+    NAME test_two_view_geometry
+    COMMAND test_two_view_geometry
 )
