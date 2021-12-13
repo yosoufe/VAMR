@@ -2,13 +2,9 @@
 
 # Vision Algorithms for Mobile Robotics
 
-This repository contains all the exercises of the course "Vision Algorithm for Mobile Robotics" in C++.
+C++ impelementation of the exercises of the "Vision Algorithm for Mobile Robotics" at ETH Zurich ([The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html)).
 
 If there are any questions, feel free to open an issue in this github repository.
-
-## Links
-
-[The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html).
 
 ## requirements
 
