@@ -146,7 +146,7 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
     # or the following to run all of the tests for exercise 06.
     ./tests/two_view_geometry_tests
     ```
-  - Point cloud from perfect feature matches (top view)
+  - 3D Point cloud and camera poses calculated by 8-Point algorithm from given perfect feature matches (top view)
      ![Point Cloud](exercises/statements/outputs/ex06-8_point_sfm.png)
 
 
