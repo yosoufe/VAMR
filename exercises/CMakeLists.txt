@@ -86,6 +86,17 @@ target_link_libraries (two_view_geometry utils tbb)
 add_executable(exercise06 exercise06.cpp)
 target_link_libraries (exercise06 two_view_geometry)
 
+###### exercise 07
+
+add_library(ransac ransac.cpp ransac.hpp)
+get_filename_component(ransac_HEADER_DIR "./" ABSOLUTE)
+
+target_include_directories(ransac PUBLIC ${ransac_HEADER_DIR})
+target_link_libraries (ransac utils tbb)
+
+add_executable(exercise07 exercise07.cpp)
+target_link_libraries (exercise07 ransac)
+
 
 ############################ Unit Tests ###########################
 add_subdirectory(tests)
