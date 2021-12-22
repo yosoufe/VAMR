@@ -6,4 +6,5 @@ void parabola_ransac(
     Eigen::MatrixXd &best_guess_history,
     Eigen::MatrixXd &max_num_inliers_history)
 {
+
 }

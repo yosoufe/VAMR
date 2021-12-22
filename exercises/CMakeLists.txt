@@ -41,6 +41,7 @@ add_library(utils SHARED
     folder_manager.cpp
     folder_manager.hpp
     matlab_like.cpp # Matlab like functions
+    matlab_like.hpp
 )
 target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
 get_filename_component(utils_HEADER_DIR "./" ABSOLUTE)
