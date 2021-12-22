@@ -2,6 +2,11 @@
 #include "matlab_like.hpp"
 #include "counting_iterator.hpp"
 #include <Eigen/Dense>
+#include <unordered_set>
+#include <algorithm>
+#include <vector>
+#include <numeric>
+#include <random>
 
 double polyval(
     Eigen::MatrixXd const &poly,
@@ -47,5 +52,28 @@ Eigen::MatrixXd polyfit(
     Eigen::MatrixXd Y = x.block(1,0,1,x.cols()).transpose();
     Eigen::MatrixXd result = (A.inverse() * Y).transpose();
 
+    return result;
+}
+
+
+Eigen::MatrixXd datasample(
+    Eigen::MatrixXd const &x,
+    int k)
+{
+    if (k > x.cols())
+    {
+        throw std::runtime_error("k should be smaller than number of columns of x");
+    }
+    std::vector<int> indicies(x.cols());
+    std::iota(indicies.begin(), indicies.end(), 0);
+    std::vector<int> drawn_indices;
+
+    std::sample(
+        indicies.begin(),
+        indicies.end(),
+        std::back_inserter(drawn_indices),
+        k,
+        std::mt19937{std::random_device{}()});
+    Eigen::MatrixXd result = x(Eigen::all, drawn_indices);
     return result;
 }

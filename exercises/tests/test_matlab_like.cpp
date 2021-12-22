@@ -1,4 +1,5 @@
 #include "matlab_like.hpp"
+#include <iostream>
 #include <gtest/gtest.h>
 
 TEST(MatlabLikeTest, polyval)
@@ -39,5 +40,16 @@ TEST(MatlabLikeTest, polyfit)
         EXPECT_EQ(poly_calculated.rows(), 1);
         EXPECT_EQ(poly_calculated.cols(), x_s.cols());
         EXPECT_TRUE(poly_calculated.isApprox(poly_expected, 1e-10));
+    }
+}
+
+TEST(MatlabLikeTest, datasample)
+{
+    for (int col = 3; col < 10; ++col)
+    {
+        Eigen::MatrixXd x = Eigen::MatrixXd::Random(3, col);
+        Eigen::MatrixXd sampled_x = datasample(x, 3);
+        std::cout << "\nx=\n" << x << std::endl;
+        std::cout << "\nsampled_x=\n" << sampled_x << std::endl;
     }
 }
