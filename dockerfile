@@ -139,6 +139,10 @@ RUN git clone https://github.com/google/googletest.git && \
     make -j`nproc` install && \
     cd .. && rm -rf googletest
 
+# cv-plot
+RUN git clone https://github.com/Profactor/cv-plot.git
+
+
 #install Nvidia HPC SDK
 # RUN wget https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-21-9_21.9_amd64.deb \
 #        https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-2021_21.9_amd64.deb && \

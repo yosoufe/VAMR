@@ -6,6 +6,19 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 ##################### Tests
 
+### Libs
+add_executable(test_matlab_like test_matlab_like.cpp)
+target_link_libraries(test_matlab_like
+    utils
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
+add_test(
+    NAME test_matlab_like
+    COMMAND test_matlab_like
+)
+
 ### exercise 04
 add_executable(exercise04_tests test_sift.cpp)
 target_link_libraries(exercise04_tests
@@ -44,4 +57,17 @@ target_link_libraries(test_two_view_geometry
 add_test(
     NAME test_two_view_geometry
     COMMAND test_two_view_geometry
+)
+
+### exercise 07
+add_executable(test_ransac test_ransac.cpp)
+target_link_libraries(test_ransac
+    ransac
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
+add_test(
+    NAME test_ransac
+    COMMAND test_ransac
 )

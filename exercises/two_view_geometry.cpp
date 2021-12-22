@@ -100,7 +100,7 @@ fundamental_eight_point(
 
     Eigen::BDCSVD<Eigen::MatrixXd> svd_F(F, Eigen::ComputeFullV | Eigen::ComputeFullU);
     Eigen::MatrixXd sigmas = svd_F.singularValues().asDiagonal();
-    sigmas(3, 3) = 0;
+    sigmas(2, 2) = 0;
     F = svd_F.matrixU() * sigmas * svd_F.matrixV().transpose();
     return F;
 }

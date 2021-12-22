@@ -12,6 +12,10 @@ find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+# CvPlot, change it if you have cloned it in different location
+include_directories("/3rdparty/cv-plot/CvPlot/inc")
+
+
 
 ################## Learning 3rd party libraries ##################
 # eigen example
@@ -36,8 +40,11 @@ add_library(utils SHARED
     utils.hpp
     folder_manager.cpp
     folder_manager.hpp
+    matlab_like.cpp # Matlab like functions
 )
 target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
+get_filename_component(utils_HEADER_DIR "./" ABSOLUTE)
+target_include_directories(utils PUBLIC ${utils_HEADER_DIR})
 
 
 ########################### Exercises ###########################
