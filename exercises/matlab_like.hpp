@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Eigen/Core>
 
 double polyval(
@@ -30,3 +29,6 @@ Eigen::MatrixXd polyfit(
 Eigen::MatrixXd datasample(
     Eigen::MatrixXd const &x,
     int k);
+
+
+Eigen::MatrixXd random(int num_row, int num_col);

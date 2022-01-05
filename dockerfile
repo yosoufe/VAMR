@@ -148,6 +148,12 @@ RUN git clone https://github.com/Profactor/cv-plot.git
 #        https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-2021_21.9_amd64.deb && \
 #     apt-get install -y ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
 
+# debug Eigen Matrix in VS Code
+ENV USER root
+RUN wget -P /3rdparty/gdbExtensions/ "https://raw.githubusercontent.com/libigl/eigen/master/debug/gdb/printers.py" & \
+    wget -P /3rdparty/gdbExtensions/ "https://raw.githubusercontent.com/libigl/eigen/master/debug/gdb/__init__.py"
+COPY gdbinit /root/.gdbinit
+
 
 RUN mkdir -p /code
 WORKDIR /code/exercises

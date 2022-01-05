@@ -4,7 +4,7 @@
 
 TEST(MatlabLikeTest, polyval)
 {
-    Eigen::MatrixXd poly(3, 1);
+    Eigen::MatrixXd poly(1, 3);
     poly << 1, 2, 3;
     double res;
     res = polyval(poly, 1);
@@ -52,4 +52,17 @@ TEST(MatlabLikeTest, datasample)
         std::cout << "\nx=\n" << x << std::endl;
         std::cout << "\nsampled_x=\n" << sampled_x << std::endl;
     }
+}
+
+TEST(MatlabLikeTest, random)
+{
+    Eigen::MatrixXd rand = random(3,5);
+    EXPECT_EQ(rand.rows(), 3);
+    EXPECT_EQ(rand.cols(), 5);
+    for (auto x: rand.reshaped())
+    {
+        EXPECT_GT(x, 0.0);
+        EXPECT_LT(x, 1.0);
+    }
+    std::cout << "\nrand=\n" << rand << std::endl;
 }

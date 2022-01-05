@@ -19,6 +19,7 @@ If there are any questions, feel free to open an issue in this github repository
     The followings are inside the docker image:
     - Using Eigen library for linear algebra.
     - Using OpenCV and VTK only for reading, writing of image and video files and visualization. The rest are coded from scratch.
+    - Using [CvPlot](https://github.com/Profactor/cv-plot) for 2D plotting.
 
 ## Usage
 
@@ -148,6 +149,12 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
     ```
   - 3D Point cloud and camera poses calculated by 8-Point algorithm from given perfect feature matches (top view)
      ![Point Cloud](exercises/statements/outputs/ex06-8_point_sfm.png)
+
+## Exercise 7 - From Images to Localization
+- Problem statement: `exercises/statements/Exercise 7 - From images to localization`.
+- Solution: `exercises/exercise07.cpp`.
+- RANSAC for polynomial estimation. On the right, Blue curve is original polynomial, Red curve is best estimate and green curves show the iterations. The left curve shows the number of inliers among the iterations.
+     ![Ransac for parbola](exercises/statements/outputs/ex07-part01.png)
 
 
 ## Useful Commands

@@ -17,7 +17,7 @@ double polyval(
     int poly_idx = 0;
     while (order >= 0)
     {
-        res += std::pow(x, order) * poly(poly_idx);
+        res += std::pow(x, order) * poly(0, poly_idx);
         order--;
         poly_idx++;
     }
@@ -41,20 +41,19 @@ Eigen::MatrixXd polyval(
 Eigen::MatrixXd polyfit(
     Eigen::MatrixXd const &x)
 {
-    int order = x.cols()-1;
+    int order = x.cols() - 1;
     Eigen::MatrixXd A(x.cols(), x.cols());
-    for(int idx = 0; idx < x.cols(); ++idx)
+    for (int idx = 0; idx < x.cols(); ++idx)
     {
         int power = order - idx;
-        A.block(0,idx,x.cols(), 1) = x.block(0,0, 1, x.cols()).transpose().array().pow(power);
+        A.block(0, idx, x.cols(), 1) = x.block(0, 0, 1, x.cols()).transpose().array().pow(power);
     }
 
-    Eigen::MatrixXd Y = x.block(1,0,1,x.cols()).transpose();
+    Eigen::MatrixXd Y = x.block(1, 0, 1, x.cols()).transpose();
     Eigen::MatrixXd result = (A.inverse() * Y).transpose();
 
     return result;
 }
-
 
 Eigen::MatrixXd datasample(
     Eigen::MatrixXd const &x,
@@ -76,4 +75,13 @@ Eigen::MatrixXd datasample(
         std::mt19937{std::random_device{}()});
     Eigen::MatrixXd result = x(Eigen::all, drawn_indices);
     return result;
+}
+
+
+Eigen::MatrixXd random(int num_row, int num_col)
+{
+    Eigen::MatrixXd res = Eigen::MatrixXd::Random(num_row, num_col);
+    res = res.array() + 1.0;
+    res /= 2;
+    return res;
 }
