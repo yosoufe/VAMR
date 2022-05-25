@@ -1,8 +1,10 @@
 #include "utils.hpp"
+#include "camera_model.hpp"
 
 int main(int argc, char **argv)
 {
     std::string in_data_root = "../../data/ex01/";
+    std::string out_data_root = "../../output/ex01/";
     auto poses = read_pose_file(in_data_root + "poses.txt");
     if (poses.size() == 0)
     {
@@ -10,9 +12,7 @@ int main(int argc, char **argv)
     }
     auto grid = create_grid(0.04, 9, 6);
     auto cube = create_cube(0.04 * 2);
-    // std::cout << grid << std::endl;
     auto K = read_K_matrix(in_data_root + "K.txt");
-    // std::cout << K << std::endl;
     double d1 = 0, d2 = 0;
     read_distortion_param(in_data_root + "D.txt", d1, d2);
     // std::cout << d1 << " " << d2 << std::endl;
@@ -24,8 +24,8 @@ int main(int argc, char **argv)
     auto image = load_image_color(in_data_root + "images/img_0001.jpg");
     auto img_size = image.size();
 
-    cv::VideoWriter grid_video_distorted = create_video_writer(img_size, "ex01/distorted_grid.mp4");
-    cv::VideoWriter video_undistorted = create_video_writer(img_size, "ex01/undistorted.mp4");
+    cv::VideoWriter grid_video_distorted = create_video_writer(img_size, out_data_root+"distorted_grid.mp4");
+    cv::VideoWriter video_undistorted = create_video_writer(img_size, out_data_root+"undistorted.mp4");
 
     for (size_t image_idx = 1; image_idx <= 736; image_idx++)
     {

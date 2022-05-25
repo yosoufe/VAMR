@@ -46,17 +46,6 @@ create_grid(double cell_size, size_t num_x, size_t num_y);
 Eigen::MatrixXd
 create_cube(double cell_size = 0.4);
 
-Eigen::Matrix2Xd
-distorted_pixel(const double k1,
-                const double k2,
-                const Eigen::Vector2d &principal_pt,
-                const Eigen::Matrix2Xd &points);
-
-Eigen::Matrix2Xd
-project_2_camera_frame(const Eigen::Matrix3d &intrinsics,
-                       const Eigen::Isometry3d &extrinsics,
-                       const Eigen::Matrix3Xd &points);
-
 cv::Mat
 load_image_color(std::string image_path);
 
@@ -65,11 +54,6 @@ draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const
 
 void draw_cube(cv::Mat &src_img, const Eigen::Matrix2Xd &pts);
 
-cv::Mat
-undistort_image(const cv::Mat &src_img,
-                double d1,
-                double d2,
-                const Eigen::Vector2d &principal_pt);
 
 cv::VideoWriter
 create_video_writer(const cv::Size &img_size, const std::string &file_path);

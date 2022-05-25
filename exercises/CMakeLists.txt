@@ -42,12 +42,17 @@ target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
 
 ########################### Exercises ###########################
 ###### exercise 01
+add_library(camera_model camera_model.cpp camera_model.hpp )
+get_filename_component(CAMERA_MODEL_HEADER_DIR "./" ABSOLUTE)
+target_include_directories(camera_model PUBLIC ${CAMERA_MODEL_HEADER_DIR})
+target_link_libraries (camera_model utils)
+
 add_executable(exercise01 exercise01.cpp)
-target_link_libraries (exercise01 utils)
+target_link_libraries (exercise01 camera_model)
 
 ###### exercise 02
 add_executable(exercise02 exercise02.cpp)
-target_link_libraries (exercise02 utils)
+target_link_libraries (exercise02 camera_model)
 
 ###### exercise 03
 add_executable(exercise03 exercise03.cpp)
@@ -56,7 +61,6 @@ target_link_libraries (exercise03 utils)
 ###### exercise 04
 add_library(sift sift.cpp sift.hpp image_gradient.cpp image_gradient.hpp)
 get_filename_component(SIFT_HEADER_DIR "./" ABSOLUTE)
-
 target_include_directories(sift PUBLIC ${SIFT_HEADER_DIR})
 target_link_libraries (sift utils)
 
@@ -64,10 +68,8 @@ add_executable(exercise04 exercise04.cpp)
 target_link_libraries (exercise04 sift)
 
 ###### exercise 05
-
 add_library(stereo_reconst stereo_reconst.cpp stereo_reconst.hpp)
 get_filename_component(stereo_reconst_HEADER_DIR "./" ABSOLUTE)
-
 target_include_directories(stereo_reconst PUBLIC ${stereo_reconst_HEADER_DIR})
 target_link_libraries (stereo_reconst utils tbb)
 
@@ -76,10 +78,8 @@ add_executable(exercise05 exercise05.cpp)
 target_link_libraries (exercise05 stereo_reconst)
 
 ###### exercise 06
-
 add_library(two_view_geometry two_view_geometry.cpp two_view_geometry.hpp)
 get_filename_component(two_view_geometry_HEADER_DIR "./" ABSOLUTE)
-
 target_include_directories(two_view_geometry PUBLIC ${two_view_geometry_HEADER_DIR})
 target_link_libraries (two_view_geometry utils tbb)
 
