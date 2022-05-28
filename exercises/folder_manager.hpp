@@ -34,6 +34,8 @@ private:
     std::string m_folder_path;
     std::vector<ImageFile> m_files;
 
+    std::string first_numberstring(std::string const &str);
+
 public:
     SortedImageFiles(std::string folder_path);
 

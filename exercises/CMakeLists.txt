@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.0)
-project(VAMR)
+project(VAMR LANGUAGES CXX)
+
+
+include(CheckLanguage)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+    message(STATUS "CUDA found")
+    enable_language(CUDA)
+    add_compile_definitions(WITH_CUDA)
+else()
+    message(STATUS "No CUDA support")
+endif()
+
 
 # set_property(TARGET tgt PROPERTY CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD 17)
@@ -27,7 +39,10 @@ target_link_libraries (viz3d_practice utils Eigen3::Eigen ${OpenCV_LIBS})
 add_executable(imageBasics practices/imageBasics.cpp)
 target_link_libraries(imageBasics ${OpenCV_LIBS})
 
-
+# cuda library example
+if(CMAKE_CUDA_COMPILER)
+    add_subdirectory("practices/cuda_practice")
+endif()
 
 ############ Shared Library for Shared Functionalities between Exercises ############
 # utils library

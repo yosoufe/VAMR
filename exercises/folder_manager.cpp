@@ -22,21 +22,29 @@ int ImageFile::number() const
 }
 
 // **************** SortedFiles ****************
-
 SortedImageFiles::SortedImageFiles(std::string folder_path) : m_folder_path(folder_path)
 {
     for (auto &file_ptr : fs::directory_iterator(m_folder_path))
     {
         fs::path file = file_ptr.path();
         string stem = file.stem();
-        int number = stoi(stem);
+        int number = stoi(first_numberstring(stem));
+        std::cout << number << std::endl;
         m_files.push_back(ImageFile(file, number));
     }
     sort(m_files.begin(), m_files.end(), ImageFile::comperator());
-    // test
-    // for (auto & file : m_files){
-    //     std::cout << file.number() << endl;
-    // }
+}
+
+std::string SortedImageFiles::first_numberstring(std::string const &str)
+{
+    char const *digits = "0123456789";
+    std::size_t const n = str.find_first_of(digits);
+    if (n != std::string::npos)
+    {
+        std::size_t const m = str.find_first_not_of(digits, n);
+        return str.substr(n, m != std::string::npos ? m - n : m);
+    }
+    return std::string();
 }
 
 SortedImageFiles::FileIterator::FileIterator(ImageFile *ptr) : m_ptr(ptr) {}
