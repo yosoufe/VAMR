@@ -22,6 +22,11 @@ undistort_image(const cv::Mat &src_img,
                 double d2,
                 const Eigen::Vector2d &principal_pt);
 
-#if WITH_CUDA
-
-#endif // WITH_CUDA
+namespace cuda
+{
+    cv::Mat
+    undistort_image(const cv::Mat &src_img,
+                    double d1,
+                    double d2,
+                    const Eigen::Vector2d &principal_pt);
+}

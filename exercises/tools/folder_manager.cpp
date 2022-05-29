@@ -29,7 +29,6 @@ SortedImageFiles::SortedImageFiles(std::string folder_path) : m_folder_path(fold
         fs::path file = file_ptr.path();
         string stem = file.stem();
         int number = stoi(first_numberstring(stem));
-        std::cout << number << std::endl;
         m_files.push_back(ImageFile(file, number));
     }
     sort(m_files.begin(), m_files.end(), ImageFile::comperator());

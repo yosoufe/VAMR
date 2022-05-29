@@ -36,8 +36,12 @@ int main(int argc, char **argv)
         draw_circles(image, grid_in_distorted_img, 3);
         grid_video_distorted << image;
 
-        // make a video of grid points on distorted images
-        cv::Mat undistorted_img = undistort_image(image, d1, d2, principal_pt);
+        // make a video of grid points on distorted images 
+        #if WITH_CUDA
+            cv::Mat undistorted_img = cuda::undistort_image(image, d1, d2, principal_pt);
+        #else
+            cv::Mat undistorted_img = undistort_image(image, d1, d2, principal_pt);
+        #endif
         auto cube_in_camera_frame = project_2_camera_frame(K, poses[image_path.number() - 1], cube);
         draw_cube(undistorted_img, cube_in_camera_frame);
         video_undistorted << undistorted_img;

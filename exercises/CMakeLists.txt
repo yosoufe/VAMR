@@ -12,6 +12,7 @@ else()
     message(STATUS "No CUDA support")
 endif()
 
+set(CMAKE_BUILD_TYPE Release)
 
 # set_property(TARGET tgt PROPERTY CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD 17)
@@ -46,22 +47,11 @@ endif()
 
 ############ Shared Library for Shared Functionalities between Exercises ############
 # utils library
-add_library(utils SHARED
-    utils.cpp
-    utils.hpp
-    folder_manager.cpp
-    folder_manager.hpp
-)
-target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
-
+add_subdirectory(tools)
 
 ########################### Exercises ###########################
 ###### exercise 01
-add_library(camera_model camera_model.cpp camera_model.hpp )
-get_filename_component(CAMERA_MODEL_HEADER_DIR "./" ABSOLUTE)
-target_include_directories(camera_model PUBLIC ${CAMERA_MODEL_HEADER_DIR})
-target_link_libraries (camera_model utils)
-
+add_subdirectory("camera_model")
 add_executable(exercise01 exercise01.cpp)
 target_link_libraries (exercise01 camera_model)
 
