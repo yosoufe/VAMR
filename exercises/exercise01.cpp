@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "camera_model.hpp"
 #include "folder_manager.hpp"
+#include <chrono>
 
 int main(int argc, char **argv)
 {
@@ -36,12 +37,17 @@ int main(int argc, char **argv)
         draw_circles(image, grid_in_distorted_img, 3);
         grid_video_distorted << image;
 
-        // make a video of grid points on distorted images 
-        #if WITH_CUDA
+        // make a video of grid points on distorted images
+        auto start = std::chrono::high_resolution_clock::now();
+        #ifdef WITH_CUDA
             cv::Mat undistorted_img = cuda::undistort_image(image, d1, d2, principal_pt);
+            // 2X speed up without any cuda code optimization.
         #else
             cv::Mat undistorted_img = undistort_image(image, d1, d2, principal_pt);
         #endif
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
+        std::cout << "duration in microseconds: " << duration.count() << std::endl;
+        
         auto cube_in_camera_frame = project_2_camera_frame(K, poses[image_path.number() - 1], cube);
         draw_cube(undistorted_img, cube_in_camera_frame);
         video_undistorted << undistorted_img;
