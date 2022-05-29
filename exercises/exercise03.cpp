@@ -387,6 +387,7 @@ cv::Mat viz_matches(const cv::Mat &src_img,
 int main()
 {
     std::string in_data_root = "../../data/ex03/";
+    std::string out_data_root = "../../output/ex03/";
     SortedImageFiles image_files(in_data_root);
 
     cv::Size img_size;
@@ -418,7 +419,7 @@ int main()
         // tracker.viz_descriptors();
     }
 
-    cv::VideoWriter video = create_video_writer(img_size, "ex03/keypoint_tracking.mp4");
+    cv::VideoWriter video = create_video_writer(img_size, out_data_root+"keypoint_tracking.mp4");
 
     // Part 4 and 5 - Match descriptors between all images
     Eigen::MatrixXd prev_desc;

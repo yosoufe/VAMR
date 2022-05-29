@@ -115,29 +115,31 @@ RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
     cd ../.. && \
     rm -rf opencv opencv_contrib
 
-# install terminator
-RUN apt-get update && apt-get autoremove -y \
-    && apt-get install -y \
-        python3-gi gir1.2-keybinder-3.0 gettext intltool dbus-x11 x11-apps\
-        gobject-introspection \
-        gir1.2-gtk-3.0 \
-        libvte-2.91-dev \
-        python-gobject \
-        python3-gi-cairo \
-        libcanberra-gtk-module \
-        libcanberra-gtk3-module \
-    && /usr/bin/python3 -m pip install psutil configobj && \
-    git clone -b v1.92 --single-branch https://github.com/gnome-terminator/terminator.git \
-    && cd terminator \
-    && python3 setup.py build \
-    && python3 setup.py install --record=install-files.txt \
-    && cd ..
-
 # install google tests
 RUN git clone https://github.com/google/googletest.git && \
     cd googletest && cmake . && \
     make -j`nproc` install && \
     cd .. && rm -rf googletest
+
+# install terminator
+# RUN apt-get update && apt-get autoremove -y \
+#     && apt-get install -y \
+#         python3-gi gir1.2-keybinder-3.0 gettext intltool dbus-x11 x11-apps\
+#         gobject-introspection \
+#         gir1.2-gtk-3.0 \
+#         libvte-2.91-dev \
+#         python-gobject \
+#         python3-gi-cairo \
+#         libcanberra-gtk-module \
+#         libcanberra-gtk3-module \
+#     && /usr/bin/python3 -m pip install psutil configobj && \
+#     git clone -b v1.92 --single-branch https://github.com/gnome-terminator/terminator.git \
+#     && cd terminator \
+#     && python3 setup.py build \
+#     && python3 setup.py install --record=install-files.txt \
+#     && cd ..
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y terminator
 
 #install Nvidia HPC SDK
 # RUN wget https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-21-9_21.9_amd64.deb \
@@ -148,5 +150,5 @@ RUN git clone https://github.com/google/googletest.git && \
 RUN mkdir -p /code
 WORKDIR /code/exercises
 
-CMD [ "/usr/local/bin/terminator" ]
+CMD [ "/usr/bin/terminator" ]
 # CMD [ "bash" ]

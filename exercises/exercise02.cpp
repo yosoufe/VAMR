@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 
+#include "camera_model.hpp"
+
 auto read_detected_corners(std::string file_path)
 {
     auto corners_matrix = read_matrix(file_path);
@@ -129,7 +131,8 @@ Eigen::MatrixXd re_project_points(
 auto plot_trajectory_3d(
     const std::vector<Eigen::MatrixXd> &poses,
     const std::vector<cv::Mat> &images,
-    const Eigen::MatrixXd &points_in_W)
+    const Eigen::MatrixXd &points_in_W,
+    const std::string &output_file)
 {
     using namespace cv;
     auto img_size = images[0].size();
@@ -176,7 +179,7 @@ auto plot_trajectory_3d(
     viz::WCameraPosition cpw_frustum(Vec2f(0.889484, 0.523599), 0.1d); // Camera frustum
     viz::WCameraPosition cpw(.05); // Coordinate axes
 
-    cv::VideoWriter re_projected_vid_writer = create_video_writer(Size(img_size.width * 2, img_size.height), "ex02/output_vid.mp4");
+    cv::VideoWriter re_projected_vid_writer = create_video_writer(Size(img_size.width * 2, img_size.height), output_file);
 
     int counter = 0;
     bool first_time = true;
@@ -235,6 +238,7 @@ auto plot_trajectory_3d(
 int main(int argc, char **argv)
 {
     std::string in_data_root = "../../data/ex02/";
+    std::string out_data_root = "../../output/ex02/";
 
     auto K = read_K_matrix(in_data_root + "K.txt");
     std::cout << "K matrix: \n"
@@ -253,7 +257,7 @@ int main(int argc, char **argv)
     auto img_size = image.size();
     cv::VideoWriter re_projected_vid_writer = create_video_writer(
         img_size,
-        "ex02/reprojected_points.mp4");
+        out_data_root+"reprojected_points.mp4");
 
     std::vector<Eigen::MatrixXd> poses;
     std::vector<cv::Mat> images;
@@ -280,7 +284,7 @@ int main(int argc, char **argv)
         images.push_back(image);
     }
 
-    plot_trajectory_3d(poses, images, points_in_W);
+    plot_trajectory_3d(poses, images, points_in_W, out_data_root+"output_vid.mp4");
 
     return 0;
 }
