@@ -151,7 +151,7 @@ cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string 
     if (!vid_writer.isOpened())
     {
         std::stringstream err_msg;
-        err_msg << "Could not open the output video for write: " << file_path << std::endl;
+        err_msg << "Could not open the output video to write: " << file_path << std::endl;
         throw std::runtime_error(err_msg.str());
     }
     return vid_writer;

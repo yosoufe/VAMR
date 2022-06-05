@@ -77,19 +77,19 @@ RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_
     rm -rf libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
 
 # vtk, required for the 3d viz in opencv
-RUN git clone https://github.com/Kitware/VTK.git && \
+RUN git clone https://github.com/Kitware/VTK.git -b v9.0.3 && \
     cd VTK && \
     mkdir build && \
     cd build && \
-    cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_SHARED_LIBS=ON .. && \
+    cmake -D CMAKE_BUILD_TYPE=Release -D BUILD_SHARED_LIBS=ON .. && \
     make -j`nproc` install && \
     cd ../.. && \
     rm -rf VTK
 
 
 # opencv
-RUN git clone -b 4.5.0 https://github.com/opencv/opencv_contrib.git & \
-    git clone -b 4.5.0 https://github.com/opencv/opencv.git && \
+RUN git clone -b 4.5.5 https://github.com/opencv/opencv_contrib.git & \
+    git clone -b 4.5.5 https://github.com/opencv/opencv.git && \
     wait && \
     cd opencv && \
     mkdir build && \
@@ -121,31 +121,9 @@ RUN git clone https://github.com/google/googletest.git && \
     make -j`nproc` install && \
     cd .. && rm -rf googletest
 
-# install terminator
-# RUN apt-get update && apt-get autoremove -y \
-#     && apt-get install -y \
-#         python3-gi gir1.2-keybinder-3.0 gettext intltool dbus-x11 x11-apps\
-#         gobject-introspection \
-#         gir1.2-gtk-3.0 \
-#         libvte-2.91-dev \
-#         python-gobject \
-#         python3-gi-cairo \
-#         libcanberra-gtk-module \
-#         libcanberra-gtk3-module \
-#     && /usr/bin/python3 -m pip install psutil configobj && \
-#     git clone -b v1.92 --single-branch https://github.com/gnome-terminator/terminator.git \
-#     && cd terminator \
-#     && python3 setup.py build \
-#     && python3 setup.py install --record=install-files.txt \
-#     && cd ..
-
+# terminator
+RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y terminator
-
-#install Nvidia HPC SDK
-# RUN wget https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-21-9_21.9_amd64.deb \
-#        https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-2021_21.9_amd64.deb && \
-#     apt-get install -y ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
-
 
 RUN mkdir -p /code
 WORKDIR /code/exercises
