@@ -171,3 +171,141 @@ Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kap
     Eigen::MatrixXd harris_score = (score.array() < 0).select(0, score);
     return harris_score;
 }
+
+cv::Mat viz_harris_shi_tomasi_scores(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    bool show_img)
+{
+    cv::Mat src_img = img.clone();
+    auto harris_cv = convert_to_cv_to_show(harris_score);
+    auto shi_tomasi_cv = convert_to_cv_to_show(shi_tomasi_score);
+    cv::Mat shi_merged;
+    cv::vconcat(src_img, shi_tomasi_cv, shi_merged);
+    cv::putText(shi_merged,
+                "shi tomasi score",
+                cv::Point(50, shi_merged.rows * 0.95),
+                cv::FONT_HERSHEY_DUPLEX,
+                1,
+                cv::Scalar(255),
+                false);
+    cv::Mat harris_merged;
+    cv::vconcat(src_img, harris_cv, harris_merged);
+    cv::putText(harris_merged,
+                "harris score",
+                cv::Point(50, harris_merged.rows * 0.95),
+                cv::FONT_HERSHEY_DUPLEX,
+                1,
+                cv::Scalar(255),
+                false);
+    cv::Mat res;
+    cv::hconcat(shi_merged, harris_merged, res);
+    if (show_img)
+    {
+        cv::imshow("Image", res);
+        cv::waitKey(0);
+    }
+
+    return res;
+}
+
+void add_keypoints(cv::Mat &src, const Eigen::MatrixXd &keypoints)
+{
+    for (size_t idx = 0; idx < keypoints.cols(); idx++)
+    {
+        cv::drawMarker(
+            src,
+            cv::Point(keypoints(0, idx), keypoints(1, idx)),
+            cv::Scalar(0, 0, 255),
+            cv::MARKER_TILTED_CROSS,
+            10,
+            2);
+    }
+}
+
+cv::Mat viz_key_points(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    const Eigen::MatrixXd &harris_kps,
+    const Eigen::MatrixXd &shi_tomasi_kps,
+    bool show_img)
+{
+    cv::Mat score_img = viz_harris_shi_tomasi_scores(img,
+                                                     shi_tomasi_score,
+                                                     harris_score,
+                                                     false);
+    cv::Mat color_src;
+    cv::cvtColor(img, color_src, cv::COLOR_GRAY2BGR);
+    cv::Mat harris_kps_img = color_src.clone();
+    cv::Mat shi_tomasi_kps_img = color_src.clone();
+    add_keypoints(harris_kps_img, harris_kps);
+    add_keypoints(shi_tomasi_kps_img, shi_tomasi_kps);
+    cv::Mat res;
+    cv::hconcat(shi_tomasi_kps_img, harris_kps_img, res);
+    cv::cvtColor(score_img, score_img, cv::COLOR_GRAY2BGR);
+    cv::vconcat(score_img, res, res);
+    if (show_img)
+    {
+        cv::imshow("Image", res);
+        cv::waitKey(0);
+    }
+    return res;
+}
+
+cv::Mat viz_dscr(
+    const cv::Mat &img,
+    const Eigen::MatrixXd desc)
+{
+    size_t cols = img.cols;
+    size_t descriptor_size = std::lround(std::sqrt(desc.rows()));
+    size_t descriptor_size_img = 10 * descriptor_size;
+    size_t v_space = descriptor_size_img / 2;
+    size_t grid_w = cols / 5;
+    size_t rows = 4 * descriptor_size_img + 5 * v_space;
+    cv::Mat res(rows, cols, CV_8U, cv::Scalar(0));
+
+    for (size_t idx = 0; idx < 16; idx++)
+    {
+        size_t idx_col = idx % 4;
+        size_t idx_row = idx / 4;
+        Eigen::MatrixXd patch_eigen = desc.col(idx);
+        patch_eigen.resize(descriptor_size, descriptor_size);
+        cv::Mat patch = eigen_2_cv(patch_eigen);
+        cv::resize(patch, patch, cv::Size(descriptor_size_img, descriptor_size_img), 0, 0, cv::INTER_NEAREST);
+        size_t row_start = (descriptor_size_img + v_space) * (idx_row + 1) - descriptor_size_img;
+        size_t row_end = (descriptor_size_img + v_space) * (idx_row + 1);
+        size_t col_start = grid_w * (idx_col + 1) - descriptor_size_img / 2;
+        size_t col_end = grid_w * (idx_col + 1) + descriptor_size_img / 2;
+        patch.copyTo(
+            res(cv::Range(row_start, row_end),
+                cv::Range(col_start, col_end)));
+    }
+    return res;
+}
+
+cv::Mat viz_descriptors(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    const Eigen::MatrixXd &harris_kps,
+    const Eigen::MatrixXd &shi_tomasi_kps,
+    const Eigen::MatrixXd &harris_descriptors,
+    const Eigen::MatrixXd &shi_tomasi_descriptors,
+    bool show_img)
+{
+    cv::Mat key_pts_img = viz_key_points(img, shi_tomasi_score, harris_score, shi_tomasi_kps, harris_kps, false);
+    cv::Mat desc_harris = viz_dscr(img, harris_descriptors);
+    cv::Mat desc_shi_tomasi = viz_dscr(img, shi_tomasi_descriptors);
+    cv::Mat res;
+    cv::hconcat(desc_shi_tomasi, desc_harris, res);
+    cv::cvtColor(res, res, cv::COLOR_GRAY2BGR);
+    cv::vconcat(key_pts_img, res, res);
+    if (show_img)
+    {
+        cv::imshow("Image", res);
+        cv::waitKey(0);
+    }
+    return res;
+}

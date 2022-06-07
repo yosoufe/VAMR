@@ -51,7 +51,7 @@ private:
             sI_xy = correlation(I_xy, Eigen::MatrixXd::Ones(patch_size, patch_size));
         }
     }
-    
+
     // Done
     Eigen::MatrixXd select_kps(const Eigen::MatrixXd &scores, size_t num, size_t radius)
     {
@@ -71,6 +71,7 @@ private:
         return res;
     }
 
+    // Done
     void add_keypoints(cv::Mat &src, const Eigen::MatrixXd &keypoints) const
     {
         for (size_t idx = 0; idx < keypoints.cols(); idx++)
@@ -107,6 +108,7 @@ private:
         return res;
     }
 
+    // Done
     cv::Mat viz_dscr(const Eigen::MatrixXd desc)
     {
         size_t cols = src_img.cols;
@@ -170,10 +172,11 @@ public:
         auto determinant = (sI_xx.array() * sI_yy.array()) - sI_xy.array().square();
         Eigen::MatrixXd score = (trace / 2.0 - ((trace / 2.0).square() - determinant).sqrt()).matrix();
         m_shi_tomasi_score = (score.array() < 0).select(0, score);
-        //viz_score_image(score, img);
+        // viz_score_image(score, img);
         return m_shi_tomasi_score;
     }
 
+    // Done
     cv::Mat viz_harris_shitomasi_scores(bool show_img = true)
     {
         harris_score();
@@ -219,6 +222,7 @@ public:
         return m_shi_tomasi_kps;
     }
 
+    // Done
     cv::Mat viz_key_points(bool show_img = true)
     {
         if (m_harris_kps.size() == 0 || m_shi_tomasi_kps.size() == 0)
@@ -243,6 +247,7 @@ public:
         return res;
     }
 
+    // Done
     Eigen::MatrixXd harris_descriptors(size_t descriptor_radius)
     {
         if (m_harris_kps.size() == 0)
@@ -253,6 +258,7 @@ public:
         return m_harris_descriptors;
     }
 
+    // Done
     Eigen::MatrixXd shi_tomasi_descriptors(size_t descriptor_radius)
     {
         if (m_shi_tomasi_kps.size() == 0)
@@ -284,9 +290,9 @@ public:
 };
 
 cv::Mat viz_matches(const cv::Mat &src_img,
-                 const VectorXuI &matches,
-                 const Eigen::MatrixXd &curr_kps,
-                 const Eigen::MatrixXd &prev_kps)
+                    const VectorXuI &matches,
+                    const Eigen::MatrixXd &curr_kps,
+                    const Eigen::MatrixXd &prev_kps)
 {
     cv::Mat color_img;
     cv::cvtColor(src_img, color_img, cv::COLOR_GRAY2BGR);
@@ -331,17 +337,23 @@ int main()
         Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
         auto shi_tomasi_score = shi_tomasi(eigen_img, patch_size);
         auto harris_score = harris(eigen_img, patch_size, harris_kappa);
-        // tracker.viz_harris_shitomasi_scores();
+        viz_harris_shi_tomasi_scores(src_img,
+                                     shi_tomasi_score, harris_score);
 
         // Part 2: Select keypoints
-        auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
         auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
-        // tracker.viz_key_points();
+        auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
+        viz_key_points(src_img,
+                       shi_tomasi_score, harris_score,
+                       shi_tomasi_kps, harris_kps);
 
         // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
-        auto harris_descriptors = describe_keypoints(eigen_img, harris_kps, descriptor_radius);
         auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);
-        // tracker.viz_descriptors();
+        auto harris_descriptors = describe_keypoints(eigen_img, harris_kps, descriptor_radius);
+        viz_descriptors(src_img,
+                        shi_tomasi_score, harris_score,
+                        shi_tomasi_kps, harris_kps,
+                        shi_tomasi_descriptors, harris_descriptors);
     }
 
     {
@@ -364,7 +376,7 @@ int main()
         // tracker.viz_descriptors();
     }
 
-    cv::VideoWriter video = create_video_writer(img_size, out_data_root+"keypoint_tracking.mp4");
+    cv::VideoWriter video = create_video_writer(img_size, out_data_root + "keypoint_tracking.mp4");
 
     // Part 4 and 5 - Match descriptors between all images
     Eigen::MatrixXd prev_desc;
@@ -382,10 +394,10 @@ int main()
         {
             auto matches = match_descriptors(desc, prev_desc, match_lambda);
             video << viz_matches(src_img, matches, curr_kps, prev_kps);
-        //     if (image_path.number() == 2)
-        //     {
-        //         int temp = system("read temp");
-        //     }
+            //     if (image_path.number() == 2)
+            //     {
+            //         int temp = system("read temp");
+            //     }
         }
         prev_desc = desc;
         prev_kps = curr_kps;

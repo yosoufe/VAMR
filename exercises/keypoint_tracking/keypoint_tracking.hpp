@@ -74,3 +74,27 @@ VectorXuI match_descriptors(
     const Eigen::MatrixXd &query_descriptors,
     const Eigen::MatrixXd &database_descriptors,
     double match_lambda);
+
+cv::Mat viz_harris_shi_tomasi_scores(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    bool show_img = true);
+
+cv::Mat viz_key_points(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    const Eigen::MatrixXd &harris_kps,
+    const Eigen::MatrixXd &shi_tomasi_kps,
+    bool show_img = true);
+
+cv::Mat viz_descriptors(
+    const cv::Mat &img,
+    const Eigen::MatrixXd &shi_tomasi_score,
+    const Eigen::MatrixXd &harris_score,
+    const Eigen::MatrixXd &harris_kps,
+    const Eigen::MatrixXd &shi_tomasi_kps,
+    const Eigen::MatrixXd &harris_descriptors,
+    const Eigen::MatrixXd &shi_tomasi_descriptors,
+    bool show_img = true);
