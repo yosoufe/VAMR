@@ -70,7 +70,10 @@
     },
     "cSpell.words": [
         "Eigen",
-        "extrinsics"
+        "extrinsics",
+        "keypoint",
+        "keypoints",
+        "sobel"
     ],
     "cmake.sourceDirectory": "${workspaceFolder}/exercises",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",

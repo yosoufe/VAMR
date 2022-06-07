@@ -58,7 +58,7 @@ void draw_cube(cv::Mat &src_img, const Eigen::Matrix2Xd &pts);
 cv::VideoWriter
 create_video_writer(const cv::Size &img_size, const std::string &file_path);
 
-cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img);
+cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd& eigen_img);
 
 Eigen::MatrixXd cv_2_eigen(const cv::Mat &img);
 
@@ -69,3 +69,5 @@ Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd 
 void show(const cv::Mat &img, std::string window_name = "image");
 
 std::string cv_type2str(int type);
+
+void visualize_matrix_as_image(Eigen::MatrixXd mat);

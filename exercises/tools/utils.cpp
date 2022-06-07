@@ -157,7 +157,7 @@ cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string 
     return vid_writer;
 }
 
-cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
+cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
 {
     cv::Mat img_cv;
     cv::Mat img_cv_uchar;
@@ -233,4 +233,11 @@ std::string cv_type2str(int type) {
   r += (chans+'0');
 
   return r;
+}
+
+void visualize_matrix_as_image(Eigen::MatrixXd mat)
+{
+    auto mat_cv = convert_to_cv_to_show(mat);
+    cv::imshow("output", mat_cv);
+    cv::waitKey(0);
 }

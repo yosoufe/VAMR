@@ -61,8 +61,9 @@ add_executable(exercise02 exercise02.cpp)
 target_link_libraries (exercise02 pnp_dlt)
 
 ###### exercise 03
+add_subdirectory("keypoint_tracking")
 add_executable(exercise03 exercise03.cpp)
-target_link_libraries (exercise03 utils)
+target_link_libraries (exercise03 keypoint_tracking)
 
 ###### exercise 04
 add_library(sift sift.cpp sift.hpp image_gradient.cpp image_gradient.hpp)
