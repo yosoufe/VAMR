@@ -1,15 +1,11 @@
+set (TARGET_NAME utils)
 
-set(UTILS_SRC 
-    utils.cpp
-    folder_manager.cpp
-)
+set(SRC utils.cpp folder_manager.cpp)
 
 if(CMAKE_CUDA_COMPILER)
-    list(APPEND UTILS_SRC utils.cu)
+    list(APPEND SRC utils.cu)
 endif()
 
-add_library(utils SHARED
-    ${UTILS_SRC}
-)
-target_link_libraries(utils Eigen3::Eigen ${OpenCV_LIBS})
-target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(${TARGET_NAME} SHARED ${SRC})
+target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(${TARGET_NAME} Eigen3::Eigen ${OpenCV_LIBS})
