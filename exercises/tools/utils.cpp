@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include <fstream> // ifstream
+#include "counting_iterator.hpp"
 
 std::ifstream read_file(std::string path)
 {
@@ -193,14 +194,25 @@ Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd 
     size_t kernel_su = kernel.cols();
 
     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
-    for (size_t v = kernel_rv; v < input.rows() - kernel_rv; v++)
-    {
-        for (size_t u = kernel_ru; u < input.cols() - kernel_ru; u++)
+
+    std::for_each_n(
+        std::execution::par_unseq, 
+        counting_iterator(kernel_rv),
+        input.rows() - kernel_rv - kernel_rv,
+        [&](size_t v)
         {
-            auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
-            res(v, u) = element_wise_prod.sum();
+            std::for_each_n(
+                std::execution::par_unseq,
+                counting_iterator(kernel_ru),
+                input.cols() - kernel_ru - kernel_ru,
+                [&](size_t u)
+                {
+                    auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
+                    res(v, u) = element_wise_prod.sum();
+                }
+            );
         }
-    }
+    );
     return res;
 }
 

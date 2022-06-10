@@ -8,4 +8,4 @@ endif()
 
 add_library(${TARGET_NAME} SHARED ${SRC})
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${TARGET_NAME} Eigen3::Eigen ${OpenCV_LIBS})
+target_link_libraries(${TARGET_NAME} Eigen3::Eigen ${OpenCV_LIBS} ${OpenMP_LIBRARIES})
