@@ -2,7 +2,7 @@ set (TARGET_NAME keypoint_tracking)
 set (SRC keypoint_tracking.cpp)
 
 if(CMAKE_CUDA_COMPILER)
-    # list(APPEND SRC )
+    list(APPEND SRC keypoint_tracking.cu)
 endif()
 
 

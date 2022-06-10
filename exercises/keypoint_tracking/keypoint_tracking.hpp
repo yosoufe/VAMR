@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 #include <opencv2/core.hpp>
 
-using VectorXuI= Eigen::Matrix<size_t, Eigen::Dynamic, 1>;
+using VectorXuI = Eigen::Matrix<size_t, Eigen::Dynamic, 1>;
 
 void viz_score_image(
     const Eigen::MatrixXd &score,
@@ -10,22 +10,22 @@ void viz_score_image(
 
 /**
  * @brief calculates harris score
- * 
+ *
  * @param img the input image as Eigen Matrix
- * @param patch_size 
- * @param kappa 
+ * @param patch_size
+ * @param kappa
  * @return Eigen::MatrixXd the score matrix, same size as input image.
  */
-Eigen::MatrixXd harris(const Eigen::MatrixXd& img, size_t patch_size, double kappa);
+Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kappa);
 
 /**
  * @brief calculates shi tomasi score
- * 
+ *
  * @param img the input image as Eigen Matrix
- * @param patch_size 
- * @return Eigen::MatrixXd 
+ * @param patch_size
+ * @return Eigen::MatrixXd
  */
-Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd& img, size_t patch_size);
+Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size);
 
 /**
  * @brief Select keypoints from the score image.
@@ -43,8 +43,8 @@ Eigen::MatrixXd select_keypoints(
     size_t radius);
 
 /**
- * @brief Returns a (2r+1)^2xN matrix of image 
- * patch vectors based on image img and a 2xN matrix 
+ * @brief Returns a (2r+1)^2xN matrix of image
+ * patch vectors based on image img and a 2xN matrix
  * containing the keypoint coordinates.
  *
  * @param img       source image to get descriptors from
@@ -64,11 +64,11 @@ Eigen::MatrixXd describe_keypoints(
  * matches(i) will be zero if there is no database descriptor
  * with an SSD < lambda * min(SSD). No two non-zero elements of matches will
  * be equal.
- * 
+ *
  * @param query_descriptors (num_kp X desc_size)
  * @param database_descriptors (num_kp X desc_size)
- * @param match_lambda 
- * @return VectorXuI 
+ * @param match_lambda
+ * @return VectorXuI
  */
 VectorXuI match_descriptors(
     const Eigen::MatrixXd &query_descriptors,
@@ -98,3 +98,13 @@ cv::Mat viz_descriptors(
     const Eigen::MatrixXd &harris_descriptors,
     const Eigen::MatrixXd &shi_tomasi_descriptors,
     bool show_img = true);
+
+cv::Mat viz_matches(const cv::Mat &src_img,
+                    const VectorXuI &matches,
+                    const Eigen::MatrixXd &curr_kps,
+                    const Eigen::MatrixXd &prev_kps);
+
+namespace cuda
+{
+    
+}

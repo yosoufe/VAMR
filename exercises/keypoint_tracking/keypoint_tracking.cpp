@@ -309,3 +309,29 @@ cv::Mat viz_descriptors(
     }
     return res;
 }
+
+cv::Mat viz_matches(const cv::Mat &src_img,
+                    const VectorXuI &matches,
+                    const Eigen::MatrixXd &curr_kps,
+                    const Eigen::MatrixXd &prev_kps)
+{
+    cv::Mat color_img;
+    cv::cvtColor(src_img, color_img, cv::COLOR_GRAY2BGR);
+    for (size_t idx = 0; idx < matches.size(); idx++)
+    {
+        cv::drawMarker(color_img,
+                       cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
+                       cv::Scalar(0, 0, 255),
+                       cv::MARKER_TILTED_CROSS, 10, 2);
+        if (matches(idx) == 0)
+            continue;
+        cv::line(color_img,
+                 cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
+                 cv::Point(prev_kps(0, matches(idx)), prev_kps(1, matches(idx))),
+                 cv::Scalar(0, 255, 0),
+                 2);
+    }
+    cv::imshow("image", color_img);
+    cv::waitKey(1);
+    return color_img;
+}

@@ -268,6 +268,7 @@ public:
         return m_shi_tomasi_descriptors;
     }
 
+    // Done
     cv::Mat viz_descriptors(bool show_img = true)
     {
         if (m_shi_tomasi_descriptors.size() == 0 || m_harris_kps.size() == 0)
@@ -289,33 +290,7 @@ public:
     }
 };
 
-cv::Mat viz_matches(const cv::Mat &src_img,
-                    const VectorXuI &matches,
-                    const Eigen::MatrixXd &curr_kps,
-                    const Eigen::MatrixXd &prev_kps)
-{
-    cv::Mat color_img;
-    cv::cvtColor(src_img, color_img, cv::COLOR_GRAY2BGR);
-    for (size_t idx = 0; idx < matches.size(); idx++)
-    {
-        cv::drawMarker(color_img,
-                       cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
-                       cv::Scalar(0, 0, 255),
-                       cv::MARKER_TILTED_CROSS, 10, 2);
-        if (matches(idx) == 0)
-            continue;
-        cv::line(color_img,
-                 cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
-                 cv::Point(prev_kps(0, matches(idx)), prev_kps(1, matches(idx))),
-                 cv::Scalar(0, 255, 0),
-                 2);
-    }
-    cv::imshow("image", color_img);
-    cv::waitKey(1);
-    return color_img;
-}
-
-int main()
+int main_cpu()
 {
     std::string in_data_root = "../../data/ex03/";
     std::string out_data_root = "../../output/ex03/";
@@ -330,22 +305,22 @@ int main()
     size_t descriptor_radius = 9;
     double match_lambda = 4;
 
-    { // refactored
+    {
         // Part 1: calculate corner response functions
         auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
         img_size = src_img.size();
         Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
         auto shi_tomasi_score = shi_tomasi(eigen_img, patch_size);
         auto harris_score = harris(eigen_img, patch_size, harris_kappa);
-        viz_harris_shi_tomasi_scores(src_img,
-                                     shi_tomasi_score, harris_score);
+        // viz_harris_shi_tomasi_scores(src_img,
+        //                              shi_tomasi_score, harris_score);
 
         // Part 2: Select keypoints
         auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
         auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
-        viz_key_points(src_img,
-                       shi_tomasi_score, harris_score,
-                       shi_tomasi_kps, harris_kps);
+        // viz_key_points(src_img,
+        //                shi_tomasi_score, harris_score,
+        //                shi_tomasi_kps, harris_kps);
 
         // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
         auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);
@@ -356,26 +331,6 @@ int main()
                         shi_tomasi_descriptors, harris_descriptors);
     }
 
-    {
-        // Part 1: calculate corner response functions
-        auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
-        img_size = src_img.size();
-        ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
-        auto shi_tomasi_score = tracker.shi_tomasi_score();
-        auto harris_score = tracker.harris_score();
-        // tracker.viz_harris_shitomasi_scores();
-
-        // Part 2: Select keypoints
-        auto harris_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
-        auto shi_tomasi_kps = tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
-        // tracker.viz_key_points();
-
-        // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
-        tracker.harris_descriptors(descriptor_radius);
-        tracker.shi_tomasi_descriptors(descriptor_radius);
-        // tracker.viz_descriptors();
-    }
-
     cv::VideoWriter video = create_video_writer(img_size, out_data_root + "keypoint_tracking.mp4");
 
     // Part 4 and 5 - Match descriptors between all images
@@ -384,12 +339,11 @@ int main()
     for (auto &image_path : image_files)
     {
         cv::Mat src_img = cv::imread(image_path.path(), cv::IMREAD_GRAYSCALE);
-        ShiTomasAndHarris tracker(src_img, patch_size, harris_kappa);
-        Eigen::MatrixXd curr_kps = tracker.select_harris_keypoints(num_keypoints, non_maximum_suppression_radius);
-        Eigen::MatrixXd desc = tracker.harris_descriptors(descriptor_radius);
-        // tracker.select_shi_tomasi_keypoints(num_keypoints, non_maximum_suppression_radius);
-        // tracker.shi_tomasi_descriptors(descriptor_radius);
-        // tracker.viz_descriptors();
+        Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
+        auto harris_score = harris(eigen_img, patch_size, harris_kappa);
+        auto curr_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
+        auto desc = describe_keypoints(eigen_img, curr_kps, descriptor_radius);
+
         if (prev_desc.size() != 0)
         {
             auto matches = match_descriptors(desc, prev_desc, match_lambda);
@@ -404,4 +358,21 @@ int main()
     }
 
     return 0;
+}
+
+int main_gpu()
+{
+    std::string in_data_root = "../../data/ex03/";
+    std::string out_data_root = "../../output/ex03/";
+    SortedImageFiles image_files(in_data_root);
+
+    cv::Size img_size;
+
+    return 0;
+}
+
+int main()
+{
+    // return main_cpu();
+    return main_gpu();
 }
