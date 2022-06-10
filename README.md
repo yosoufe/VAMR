@@ -9,16 +9,18 @@ If there are any questions, feel free to open an issue in this github repository
 ## requirements
 
 - Developed on Ubuntu 20.04
-- Nvidia GPU
-- latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
 - docker
-- [Nvidia docker container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#)
+- [Nvidia docker container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#) and
+- Nvidia GPU and latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
+    - I only know how to run a GUI application within docker with NVIDIA GPUs.
+    - I have also started to implement the algortihms with CUDA as well. 
+      - **DISCLAIMER**: I am only learning CUDA, Don't use my coding style as reference just because I work for NVIDIA. I am not doing any CUDA programing at NVIDIA.
 - Python 3 and pip
 - **NO** MATLAB:
   - The official course is doing all the exercises in MATLAB and since I do not have MATLAB License, I am doing it in C++. The second reason is, **all the jobs in robotics require strong C++ knowledge**, so I am practicing C++.
-    The followings are inside the docker image:
-    - Using Eigen library for linear algebra.
-    - Using OpenCV and VTK only for reading, writing of image and video files and visualization. The rest are coded from scratch.
+- The following libraries are used and already installed in the Docker Image:
+  - Eigen library for linear algebra.
+  - OpenCV and VTK only for reading, writing of image/video files and 2D/3D visualization.
 
 ## Usage
 
@@ -52,7 +54,8 @@ python cli.py run
 ```bash
 cv VAMR
 mkdir -p output/ex{01..09}
-python cli.py run
+python cli.py run # this should start the container
+# now inside the container
 cd exercises
 mkdir build
 cd build
@@ -62,12 +65,25 @@ make -j`nproc`
 
 # Exercises
 
+## Directory Structure
+Exercise statements can be found at `exercises/statements/<Exercise directory>/statement.pdf`.
+For example, for exercise 1 the file is at `exercises/statements/Exercise 2 - PnP/statement.pdf`.
+
+The input data is not provided in this repo. You can download them from the course webpage at [here](http://rpg.ifi.uzh.ch/teaching2020.html) under section "Course Program, Slides, and Additional Reading Material". They should placed in `data/exXX/`. For example, the 
+`images` directory for exercies 1 should be placed at `data/ex01/images`. You can also check the exercise main file where the
+main file expect to see the input files.
+
+The main function of each exercise file is implemented in `exercises/exerciseXX.cpp` for example the main file for 
+exercise 1 is `exercises/exercise01.cpp`. Usually the algorithms are implemented as libraries and used with the main file.
+You can check the included header files in each `exerciseXX.cpp` to find out the name of the library. The library is implemented 
+in a directory with the same name of the header file.
+
+The CUDA implementations are using `cuda` as their namespace and they are implemented in `*.cu` and `*.cuh` files.
+
 ## Exercise 1 - Augmented Reality Wireframe Cube
 
 This is about camera and distortion models.
 
-- Problem statement: `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
-- solution is in `exercises/exercise01.cpp`.
 - Output Videos:
   - https://youtu.be/RD8uO2pETIE
   - https://youtu.be/Ba9SmGKgBmU
