@@ -6,6 +6,14 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 ##################### Tests
 
+### utils
+add_executable(test_utils test_utils.cpp)
+target_link_libraries(test_utils
+    utils
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
 ### exercise 04
 add_executable(exercise04_tests test_sift.cpp)
 target_link_libraries(exercise04_tests

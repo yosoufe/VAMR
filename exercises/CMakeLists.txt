@@ -12,6 +12,8 @@ else()
     message(STATUS "No CUDA support")
 endif()
 
+# If you need to compile for debug mode, 
+# change this to "Debug"
 set(CMAKE_BUILD_TYPE Release)
 
 # set_property(TARGET tgt PROPERTY CXX_STANDARD 17)

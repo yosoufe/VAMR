@@ -29,13 +29,12 @@ void print_shape(T m)
 };
 
 Eigen::MatrixXd
-read_matrix(std::string file_path, char delimiter=' ');
+read_matrix(std::string file_path, char delimiter = ' ');
 
 std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>>
 read_pose_file(std::string file_path);
 
-void
-read_distortion_param(std::string file_path, double &k1, double &k2);
+void read_distortion_param(std::string file_path, double &k1, double &k2);
 
 Eigen::Matrix3d
 read_K_matrix(std::string file_path);
@@ -49,16 +48,14 @@ create_cube(double cell_size = 0.4);
 cv::Mat
 load_image_color(std::string image_path);
 
-void
-draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color = cv::Scalar(0, 0, 255), int lineType=cv::FILLED);
+void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color = cv::Scalar(0, 0, 255), int lineType = cv::FILLED);
 
 void draw_cube(cv::Mat &src_img, const Eigen::Matrix2Xd &pts);
-
 
 cv::VideoWriter
 create_video_writer(const cv::Size &img_size, const std::string &file_path);
 
-cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd& eigen_img);
+cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd &eigen_img);
 
 Eigen::MatrixXd cv_2_eigen(const cv::Mat &img);
 
@@ -71,3 +68,29 @@ void show(const cv::Mat &img, std::string window_name = "image");
 std::string cv_type2str(int type);
 
 void visualize_matrix_as_image(Eigen::MatrixXd mat);
+
+
+#if WITH_CUDA
+namespace cuda
+{
+    template <typename T>
+    using MatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+
+    template <typename T>
+    struct eigen_wrapper
+    {
+        T *d_data;
+        int n_rows;
+        int n_cols;
+
+        void free();
+    };
+
+    template <typename T>
+    eigen_wrapper<T> eigen_to_cuda(const MatrixT<T> &eigen);
+
+    template <typename T>
+    MatrixT<T> cuda_to_eigen(const eigen_wrapper<T> &cuda_eigen);
+}
+
+#endif

@@ -29,7 +29,7 @@ Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size);
 
 /**
  * @brief Select keypoints from the score image.
- * The non-maximum suppression is applies with a box of
+ * The non-maximum suppression is applied with a box of
  * size (2 radius +1) * (2 radius + 1)
  *
  * @param score The score image
@@ -104,7 +104,28 @@ cv::Mat viz_matches(const cv::Mat &src_img,
                     const Eigen::MatrixXd &curr_kps,
                     const Eigen::MatrixXd &prev_kps);
 
+#if WITH_CUDA
+
 namespace cuda
 {
-    
+    /**
+     * @brief calculates harris score
+     *
+     * @param img the input image as Eigen Matrix
+     * @param patch_size
+     * @param kappa
+     * @return Eigen::MatrixXd the score matrix, same size as input image.
+     */
+    Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kappa);
+
+    /**
+     * @brief calculates shi tomasi score
+     *
+     * @param img the input image as Eigen Matrix
+     * @param patch_size
+     * @return Eigen::MatrixXd
+     */
+    Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size);
 }
+
+#endif
