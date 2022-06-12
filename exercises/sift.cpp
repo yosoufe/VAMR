@@ -1,6 +1,7 @@
 #include "sift.hpp"
 #include <cassert>
 #include "image_gradient.hpp"
+#include "operations.hpp"
 
 #include <chrono>
 using namespace std::chrono;

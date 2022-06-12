@@ -1,9 +1,9 @@
 set (TARGET_NAME utils)
 
-set(SRC utils.cpp folder_manager.cpp)
+set(SRC utils.cpp folder_manager.cpp operations.cpp cuda_types.cpp)
 
 if(CMAKE_CUDA_COMPILER)
-    list(APPEND SRC utils.cu)
+    list(APPEND SRC utils.cu operations.cu cuda_types.cu)
 endif()
 
 add_library(${TARGET_NAME} STATIC ${SRC})

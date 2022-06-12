@@ -1,6 +1,5 @@
 #include "utils.hpp"
 #include <fstream> // ifstream
-#include "counting_iterator.hpp"
 
 std::ifstream read_file(std::string path)
 {
@@ -183,37 +182,6 @@ cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
     MatrixXuc temp = eigen.cast<unsigned char>();
     cv::eigen2cv(temp, img);
     return img;
-}
-
-Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
-{
-    size_t kernel_rv = kernel.rows() / 2;
-    size_t kernel_sv = kernel.rows();
-
-    size_t kernel_ru = kernel.cols() / 2;
-    size_t kernel_su = kernel.cols();
-
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
-
-    std::for_each_n(
-        std::execution::par_unseq, 
-        counting_iterator(kernel_rv),
-        input.rows() - kernel_rv - kernel_rv,
-        [&](size_t v)
-        {
-            std::for_each_n(
-                std::execution::par_unseq,
-                counting_iterator(kernel_ru),
-                input.cols() - kernel_ru - kernel_ru,
-                [&](size_t u)
-                {
-                    auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
-                    res(v, u) = element_wise_prod.sum();
-                }
-            );
-        }
-    );
-    return res;
 }
 
 void show(const cv::Mat &img, std::string window_name)

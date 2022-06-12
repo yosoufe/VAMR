@@ -61,8 +61,6 @@ Eigen::MatrixXd cv_2_eigen(const cv::Mat &img);
 
 cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen);
 
-Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel);
-
 void show(const cv::Mat &img, std::string window_name = "image");
 
 std::string cv_type2str(int type);
@@ -71,29 +69,6 @@ void visualize_matrix_as_image(Eigen::MatrixXd mat);
 
 
 #if WITH_CUDA
-namespace cuda
-{
-    template <typename T>
-    using MatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 
-    template <typename T>
-    struct EigenCuda
-    {
-        T *d_data;
-        int n_rows;
-        int n_cols;
-
-        void free();
-    };
-
-    template <typename T>
-    EigenCuda<T> eigen_to_cuda(const MatrixT<T> &eigen);
-
-    template <typename T>
-    MatrixT<T> cuda_to_eigen(const EigenCuda<T> &cuda_eigen);
-
-    using CuMatrixD = EigenCuda<double>;
-    using CuMatrixF = EigenCuda<float>;
-}
 
 #endif

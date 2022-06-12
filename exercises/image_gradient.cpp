@@ -1,19 +1,11 @@
 #include "image_gradient.hpp"
 #include <math.h>
+#include "operations.hpp"
 
 ImageGradient::ImageGradient(const std::vector<std::vector<Eigen::MatrixXd>> &blurred_images) : blurred(blurred_images)
 {
-    sobel_y_kernel = sobel_kernel();
-    sobel_x_kernel = sobel_y_kernel.transpose();
-}
-
-Eigen::MatrixXd ImageGradient::sobel_kernel()
-{
-    Eigen::MatrixXd kernel(3, 3);
-    kernel << 1, 2, 1,
-        0, 0, 0,
-        -1, -2, -1;
-    return kernel;
+    sobel_kernel_y = sobel_y_kernel();
+    sobel_kernel_x = sobel_kernel_y.transpose();
 }
 
 std::tuple<size_t, size_t> ImageGradient::make_key(size_t octave, size_t scale)
@@ -31,8 +23,8 @@ double my_atan2(double a, double b)
 void ImageGradient::calculate_grads(size_t octave, size_t scale)
 {
     auto key = make_key(octave, scale);
-    Eigen::MatrixXd sobel_x = correlation(blurred[octave][scale], sobel_x_kernel);
-    Eigen::MatrixXd sobel_y = correlation(blurred[octave][scale], sobel_y_kernel);
+    Eigen::MatrixXd sobel_x = correlation(blurred[octave][scale], sobel_kernel_x);
+    Eigen::MatrixXd sobel_y = correlation(blurred[octave][scale], sobel_kernel_y);
 
     g_mags[key] = (sobel_x.array().square() + sobel_y.array().square()).sqrt().matrix();
     g_dirs[key] = sobel_x.binaryExpr(sobel_y, std::ptr_fun(my_atan2)); // eigen does not have atan2.

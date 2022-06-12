@@ -53,7 +53,7 @@ endif()
 
 ############ Shared Library for Shared Functionalities between Exercises ############
 # utils library
-add_subdirectory(tools)
+add_subdirectory(utils)
 
 ########################### Exercises ###########################
 ###### exercise 01

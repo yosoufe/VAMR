@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "utils.hpp"
+#include "cuda_types.hpp"
 #include <Eigen/Dense>
 
 #if WITH_CUDA

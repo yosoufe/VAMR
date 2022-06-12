@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "keypoint_tracking.hpp"
+#include "cuda_types.hpp"
 
 int main_cpu()
 {

@@ -1,12 +1,10 @@
 #include "keypoint_tracking.hpp"
 #include "utils.hpp"
+#include "operations.hpp"
 
 void viz_score_image(const Eigen::MatrixXd &score, const cv::Mat &img)
 {
     auto score_cv = convert_to_cv_to_show(score);
-    // std::cout << score_cv.size() << " " << img.size() << std::endl;
-    // std::cout << score_cv.dims << " " << img.dims << std::endl;
-    // std::cout << score_cv.type() << " " << img.type() << std::endl;
     cv::Mat matArray[] = {img, score_cv};
     cv::Mat out;
     cv::vconcat(matArray, 2, out);
@@ -112,22 +110,6 @@ VectorXuI match_descriptors(
     matches = (idx_uniques.array() == 1).select(matches, 0);
 
     return matches;
-}
-
-Eigen::MatrixXd sobel_x_kernel()
-{
-    return Eigen::Matrix3d(
-        {{-1.0, 0.0, 1.0},
-         {-2.0, 0.0, 2.0},
-         {-1.0, 0.0, 1.0}});
-}
-
-Eigen::MatrixXd sobel_y_kernel()
-{
-    return Eigen::Matrix3d(
-        {{-1.0, -2.0, -1.0},
-         {0.0, 0.0, 0.0},
-         {1.0, 2.0, 1.0}});
 }
 
 void calculate_Is(

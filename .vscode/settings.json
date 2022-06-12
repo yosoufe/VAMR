@@ -82,5 +82,6 @@
     "C_Cpp.default.cStandard": "c17",
     "C_Cpp.errorSquiggles": "Enabled",
     "terminal.integrated.scrollback": 100000,
-    "cmake.buildDirectory": "${workspaceFolder}/exercises/build"
+    "cmake.buildDirectory": "${workspaceFolder}/exercises/build",
+    "cmake.configureOnEdit": false
 }

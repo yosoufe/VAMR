@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <opencv2/core.hpp>
 #include "utils.hpp"
+#include "cuda_types.hpp"
 
 using VectorXuI = Eigen::Matrix<size_t, Eigen::Dynamic, 1>;
 
