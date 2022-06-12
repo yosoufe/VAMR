@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <opencv2/core.hpp>
+#include "utils.hpp"
 
 using VectorXuI = Eigen::Matrix<size_t, Eigen::Dynamic, 1>;
 
@@ -111,21 +112,21 @@ namespace cuda
     /**
      * @brief calculates harris score
      *
-     * @param img the input image as Eigen Matrix
+     * @param img the input image as CuMatrixD
      * @param patch_size
      * @param kappa
      * @return Eigen::MatrixXd the score matrix, same size as input image.
      */
-    Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kappa);
+    CuMatrixD harris(const CuMatrixD &img, size_t patch_size, double kappa);
 
     /**
      * @brief calculates shi tomasi score
      *
-     * @param img the input image as Eigen Matrix
+     * @param img the input image as CuMatrixD
      * @param patch_size
      * @return Eigen::MatrixXd
      */
-    Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size);
+    CuMatrixD shi_tomasi(const CuMatrixD &img, size_t patch_size);
 }
 
 #endif

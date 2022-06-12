@@ -77,7 +77,7 @@ namespace cuda
     using MatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 
     template <typename T>
-    struct eigen_wrapper
+    struct EigenCuda
     {
         T *d_data;
         int n_rows;
@@ -87,10 +87,13 @@ namespace cuda
     };
 
     template <typename T>
-    eigen_wrapper<T> eigen_to_cuda(const MatrixT<T> &eigen);
+    EigenCuda<T> eigen_to_cuda(const MatrixT<T> &eigen);
 
     template <typename T>
-    MatrixT<T> cuda_to_eigen(const eigen_wrapper<T> &cuda_eigen);
+    MatrixT<T> cuda_to_eigen(const EigenCuda<T> &cuda_eigen);
+
+    using CuMatrixD = EigenCuda<double>;
+    using CuMatrixF = EigenCuda<float>;
 }
 
 #endif

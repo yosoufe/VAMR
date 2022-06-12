@@ -30,9 +30,8 @@ inline void _cuda_last_error(const char* file_name, const int line_number)
 // CUDA LAST Error
 #define CLE() _cuda_last_error(__FILE__,__LINE__)
 
+__device__ int
+get_index_rowwise(int row, int col, int n_cols, int stride);
 
-__device__ size_t
-get_index_rowwise(int row, int col, int n_cols, size_t stride);
-
-__device__ size_t
-get_index_colwise(int row, int col, int n_rows, size_t stride);
+__device__ int
+get_index_colwise(int row, int col, int n_rows, int stride);

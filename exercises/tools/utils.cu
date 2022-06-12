@@ -2,16 +2,16 @@
 #include "utils.hpp"
 
 template <typename T>
-void cuda::eigen_wrapper<T>::free()
+void cuda::EigenCuda<T>::free()
 {
     CSC(cudaFree(d_data));
 }
 
-// instantiate template struct eigen_wrapper
-template struct cuda::eigen_wrapper<double>;
-template struct cuda::eigen_wrapper<float>;
+// instantiate template struct EigenCuda
+template struct cuda::EigenCuda<double>;
+template struct cuda::EigenCuda<float>;
 
-__device__ size_t
+__device__ int
 get_index_rowwise(int row, int col, int n_cols, int stride)
 {
     // printf("row: %d, col: %d, n_cols: %d\n", row, col, n_cols);
@@ -42,9 +42,9 @@ __global__ void print_cuda_eigen(T *data, int cols, int rows)
 }
 
 template <typename T>
-cuda::eigen_wrapper<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
+cuda::EigenCuda<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
 {
-    eigen_wrapper<T> cuda_eigen;
+    EigenCuda<T> cuda_eigen;
     int number_of_bytes = sizeof(T) * eigen.cols() * eigen.rows();
     CSC(cudaMalloc(&cuda_eigen.d_data, number_of_bytes));
     CSC(cudaMemcpy(cuda_eigen.d_data, eigen.data(), number_of_bytes, cudaMemcpyHostToDevice));
@@ -56,11 +56,11 @@ cuda::eigen_wrapper<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
 }
 
 // instantiate template function above
-template cuda::eigen_wrapper<double> cuda::eigen_to_cuda<double>(const MatrixT<double> &);
-template cuda::eigen_wrapper<float> cuda::eigen_to_cuda<float>(const MatrixT<float> &);
+template cuda::EigenCuda<double> cuda::eigen_to_cuda<double>(const MatrixT<double> &);
+template cuda::EigenCuda<float> cuda::eigen_to_cuda<float>(const MatrixT<float> &);
 
 template <typename T>
-cuda::MatrixT<T> cuda::cuda_to_eigen(const cuda::eigen_wrapper<T> &cuda_eigen)
+cuda::MatrixT<T> cuda::cuda_to_eigen(const cuda::EigenCuda<T> &cuda_eigen)
 {
     size_t s = cuda_eigen.n_cols * cuda_eigen.n_rows;
     T *h_data = new T[s];
@@ -72,5 +72,5 @@ cuda::MatrixT<T> cuda::cuda_to_eigen(const cuda::eigen_wrapper<T> &cuda_eigen)
 }
 
 // instantiate template function above
-template cuda::MatrixT<double> cuda::cuda_to_eigen(const cuda::eigen_wrapper<double> &cuda_eigen);
-template cuda::MatrixT<float> cuda::cuda_to_eigen(const cuda::eigen_wrapper<float> &cuda_eigen);
+template cuda::MatrixT<double> cuda::cuda_to_eigen(const cuda::EigenCuda<double> &cuda_eigen);
+template cuda::MatrixT<float> cuda::cuda_to_eigen(const cuda::EigenCuda<float> &cuda_eigen);

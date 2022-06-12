@@ -97,25 +97,27 @@ int main_gpu()
         auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
         img_size = src_img.size();
         Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
-        auto shi_tomasi_score = shi_tomasi(eigen_img, patch_size);
-        auto harris_score = harris(eigen_img, patch_size, harris_kappa);
-        // viz_harris_shi_tomasi_scores(src_img,
-        //                              shi_tomasi_score, harris_score);
+        auto cuda_eigen_img = cuda::eigen_to_cuda(eigen_img);
+        auto shi_tomasi_score = cuda::shi_tomasi(cuda_eigen_img, patch_size);
+        auto harris_score = cuda::harris(cuda_eigen_img, patch_size, harris_kappa);
+        viz_harris_shi_tomasi_scores(src_img,
+                                     cuda::cuda_to_eigen(shi_tomasi_score), 
+                                     cuda::cuda_to_eigen(harris_score));
 
         // Part 2: Select keypoints
-        auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
-        auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
+        // auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
+        // auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
         // viz_key_points(src_img,
         //                shi_tomasi_score, harris_score,
         //                shi_tomasi_kps, harris_kps);
 
         // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
-        auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);
-        auto harris_descriptors = describe_keypoints(eigen_img, harris_kps, descriptor_radius);
-        viz_descriptors(src_img,
-                        shi_tomasi_score, harris_score,
-                        shi_tomasi_kps, harris_kps,
-                        shi_tomasi_descriptors, harris_descriptors);
+        // auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);
+        // auto harris_descriptors = describe_keypoints(eigen_img, harris_kps, descriptor_radius);
+        // viz_descriptors(src_img,
+        //                 shi_tomasi_score, harris_score,
+        //                 shi_tomasi_kps, harris_kps,
+        //                 shi_tomasi_descriptors, harris_descriptors);
     }
 
     return 0;

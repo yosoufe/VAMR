@@ -1,4 +1,5 @@
-FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
+# FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
+FROM yosoufe/cudagl:11.7.0-devel-ubuntu20.04
 
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -68,13 +69,15 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     cd ../.. && \
     rm -rf eigen
 
-# install cudnn libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb
-RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb & \
-    wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb && \
-    wait && \
-    dpkg -i libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb &&\
-    dpkg -i libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb && \
-    rm -rf libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb
+# install cudnn
+RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.2.4.15-1+cuda11.4_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.2.4.15-1+cuda11.4_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
+    && wait \
+    && dpkg -i libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
+    && dpkg -i libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
+    && rm -rf libcudnn*.deb
 
 # vtk, required for the 3d viz in opencv
 RUN git clone https://github.com/Kitware/VTK.git -b v9.0.3 && \
