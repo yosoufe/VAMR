@@ -13,6 +13,7 @@ namespace cuda
 {
     CuMatrixD sobel_x_kernel();
     CuMatrixD sobel_y_kernel();
+    CuMatrixD correlation(const CuMatrixD &input, const CuMatrixD &kernel);
 }
 
 

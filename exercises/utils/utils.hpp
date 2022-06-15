@@ -20,6 +20,9 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/eigen.hpp>
 
+template <typename T>
+using MatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+
 std::ifstream read_file(std::string path);
 
 template <class T>

@@ -5,6 +5,10 @@ using namespace cuda;
 
 CuMatrixD cuda::harris(const CuMatrixD &img, size_t patch_size, double kappa)
 {
+    // calculate_Is();
+    // calculate score;
+    // threshold the score;
+    // return the score;
     return CuMatrixD();
 }
 

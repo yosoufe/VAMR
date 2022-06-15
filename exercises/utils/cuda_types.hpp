@@ -1,16 +1,21 @@
 #pragma once 
 #include <Eigen/Dense>
+#include "utils.hpp"
 
 #if WITH_CUDA
 namespace cuda
 {
-    template <typename T>
-    using MatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
-
+    /**
+     * @brief A struct to store the pointer to device memory
+     * (on GPU) to the location of the Matrix
+     * and dimensions of the matrix.
+     * 
+     * @tparam T double or float.
+     */
     template <typename T>
     struct CuMatrix
     {
-        T *d_data;
+        T *d_data = nullptr;
         int n_rows;
         int n_cols;
 

@@ -128,6 +128,21 @@ RUN git clone https://github.com/google/googletest.git && \
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y terminator
 
+# install nsight
+RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-11-7_11.7.50-1_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
+    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
+    && wait \
+    && apt-get install -y default-jre \
+    && dpkg -i cuda-nsight-11-7_11.7.50-1_amd64.deb \
+    && dpkg -i nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
+    && dpkg -i cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
+    && dpkg -i nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
+    && dpkg -i cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
+    && rm -rf *nsight*.deb
+
 RUN mkdir -p /code
 WORKDIR /code/exercises
 

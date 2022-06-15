@@ -1,8 +1,18 @@
 #include <gtest/gtest.h>
 #include "cuda_types.hpp"
+#include "operations.hpp"
+#include "utils.hpp"
 #include <Eigen/Dense>
 
 #if WITH_CUDA
+
+template <typename T>
+bool are_matrices_close(const T &first, const T &second)
+{
+    return (first.cols() == second.cols() &&
+            first.rows() == second.rows() &&
+            (first - second).norm() < 1e-5);
+}
 
 TEST(UtilsTest, cuda_eigen)
 {
@@ -17,8 +27,7 @@ TEST(UtilsTest, cuda_eigen)
         cuda_eigen_double.free();
         EXPECT_EQ(new_double_matrix.cols(), double_matrix.cols());
         EXPECT_EQ(new_double_matrix.rows(), double_matrix.rows());
-        EXPECT_NEAR((new_double_matrix-double_matrix).norm(), 0.0, 1e-5);
-
+        EXPECT_NEAR((new_double_matrix - double_matrix).norm(), 0.0, 1e-5);
 
         Eigen::MatrixXf float_matrix = Eigen::MatrixXf::Random(5, 5);
         auto cuda_eigen_float = cuda::eigen_to_cuda(float_matrix);
@@ -27,10 +36,34 @@ TEST(UtilsTest, cuda_eigen)
 
         auto new_float_matrix = cuda::cuda_to_eigen(cuda_eigen_float);
         cuda_eigen_float.free();
-        EXPECT_EQ(new_float_matrix.cols(), float_matrix.cols());
-        EXPECT_EQ(new_float_matrix.rows(), float_matrix.rows());
-        EXPECT_NEAR((new_float_matrix-float_matrix).norm(), 0.0, 1e-5);
+        EXPECT_TRUE(are_matrices_close(new_float_matrix,float_matrix));
     }
+}
+
+TEST(UtilsTest, cuda_sobel_kernel)
+{
+    Eigen::MatrixXd cpu_sobel_kernel_x = sobel_x_kernel();
+    cuda::CuMatrixD cuda_sobel_kernel_x = cuda::sobel_x_kernel();
+    auto gpu_copied_kernel = cuda::cuda_to_eigen(cuda_sobel_kernel_x);
+    EXPECT_TRUE(are_matrices_close(gpu_copied_kernel,cpu_sobel_kernel_x));
+    cuda_sobel_kernel_x.free();
+}
+
+TEST(UtilsTest, cuda_correlation)
+{
+    Eigen::MatrixXd kernel = sobel_x_kernel();
+    Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(5,5);
+    auto correlated = correlation(matrix, kernel);
+    std::cout << "cpu correlated:\n" << correlated << std::endl;
+    cuda::CuMatrixD cuda_kernel = cuda::sobel_x_kernel();
+    cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
+    cuda::CuMatrixD cuda_correlated = cuda::correlation(cuda_matrix, cuda_kernel);
+    auto cuda_correlated_cpu = cuda::cuda_to_eigen(cuda_correlated);
+    std::cout << "gpu correlated:\n" << cuda_correlated_cpu << std::endl;
+    EXPECT_TRUE(are_matrices_close(cuda_correlated_cpu.block(1,1,3,3),correlated.block(1,1,3,3)));
+    cuda_correlated.free();
+    cuda_kernel.free();
+    cuda_matrix.free();
 }
 
 #endif
