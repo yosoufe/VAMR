@@ -1,3 +1,7 @@
+#include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
+#include <thrust/execution_policy.h>
+
 #include "operations.cuh"
 #include "operations.hpp"
 #include "utils.cuh"
@@ -18,6 +22,7 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
 {
     cudnnHandle_t cudnn;
     CUDNN_CALL(cudnnCreate(&cudnn));
+    CUDNN_CALL(cudnnCnnInferVersionCheck());
 
     // input
     const int in_n = 1;
@@ -60,7 +65,7 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CUDNN_CALL(cudnnSetConvolution2dDescriptor(
         conv_desc,
         pad_h, pad_w, str_h, str_w, dil_h, dil_w,
-        CUDNN_CONVOLUTION, CUDNN_DATA_DOUBLE));
+        CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE));
 
     // output
     int out_n;
@@ -99,7 +104,7 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CSC(cudaMalloc(&ws_data, ws_size));
 
     // perform
-    double alpha = -1.0;
+    double alpha = 1.0;
     double beta = 0;
 
     CUDNN_CALL(cudnnConvolutionForward(
@@ -122,4 +127,20 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CUDNN_CALL(cudnnDestroy(cudnn));
 
     return out;
+}
+
+template <typename T>
+struct square
+{
+    __host__ __device__ T operator()(const T &x) const
+    {
+        return x * x;
+    }
+};
+
+void cuda::ew_square(cuda::CuMatrixD &input)
+{
+    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data);
+    thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
+    thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_vec_start, square<double>());
 }

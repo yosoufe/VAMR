@@ -14,6 +14,10 @@ namespace cuda
     CuMatrixD sobel_x_kernel();
     CuMatrixD sobel_y_kernel();
     CuMatrixD correlation(const CuMatrixD &input, const CuMatrixD &kernel);
+    /**
+     * @brief elemenet wise square in place
+     */
+    void ew_square(CuMatrixD &input);
 }
 
 
