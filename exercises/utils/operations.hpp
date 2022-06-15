@@ -18,6 +18,15 @@ namespace cuda
      * @brief elemenet wise square in place
      */
     void ew_square(CuMatrixD &input);
+
+    /**
+     * @brief elementwise multiplication
+     * 
+     * @param i1 
+     * @param i2 
+     * @return cuda::CuMatrixD 
+     */
+    CuMatrixD ew_multiplication(const CuMatrixD &i1, const CuMatrixD &i2);
 }
 
 

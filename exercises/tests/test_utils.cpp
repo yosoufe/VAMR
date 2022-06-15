@@ -89,4 +89,25 @@ TEST(UtilsTest, cuda_ew_square)
     }
 }
 
+TEST(UtilsTest, ew_multiplication)
+{
+    for (int i = 0; i< 100; ++i)
+    {
+        Eigen::MatrixXd m1 = Eigen::MatrixXd::Random(500, 500);
+        Eigen::MatrixXd m2 = Eigen::MatrixXd::Random(500, 500);
+        auto cpu_ew_product = (m1.array() * m2.array()).matrix();
+        cuda::CuMatrixD cuda_m1 = cuda::eigen_to_cuda(m1);
+        cuda::CuMatrixD cuda_m2 = cuda::eigen_to_cuda(m2);
+        auto cuda_product = cuda::ew_multiplication(cuda_m1, cuda_m2);
+        auto cuda_product_on_cpu = cuda::cuda_to_eigen(cuda_product);
+        EXPECT_TRUE(are_matrices_close(cuda_product_on_cpu, cpu_ew_product));
+        // std::cout << "cpu squared\n" << cpu_squared << std::endl;
+        // std::cout << "gpu squared\n" << gpu_squared << std::endl;
+        cuda_m1.free();
+        cuda_m2.free();
+        cuda_product.free();
+    }
+}
+
+
 #endif

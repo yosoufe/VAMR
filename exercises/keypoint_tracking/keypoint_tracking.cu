@@ -10,10 +10,10 @@ void calculate_Is(
     cuda::CuMatrixD &sI_xy)
 {
     // CUDA TODO
-    auto I_x = cuda::correlation(img, cuda::sobel_x_kernel());
-    auto I_y = cuda::correlation(img, cuda::sobel_y_kernel());
-    auto I_xx = I_x.array().square().matrix();
-    auto I_yy = I_y.array().square().matrix();
+    auto I_xx = cuda::correlation(img, cuda::sobel_x_kernel());
+    auto I_yy = cuda::correlation(img, cuda::sobel_y_kernel());
+    ew_square(I_xx);
+    ew_square(I_yy);
     auto I_xy = (I_x.array() * I_y.array()).matrix();
     sI_xx = cuda::correlation(I_xx, Eigen::MatrixXd::Ones(patch_size, patch_size));
     sI_yy = cuda::correlation(I_yy, Eigen::MatrixXd::Ones(patch_size, patch_size));

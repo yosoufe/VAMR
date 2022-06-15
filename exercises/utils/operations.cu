@@ -1,6 +1,10 @@
 #include <thrust/device_vector.h>
 #include <thrust/device_ptr.h>
 #include <thrust/execution_policy.h>
+#include <thrust/functional.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_free.h>
+
 
 #include "operations.cuh"
 #include "operations.hpp"
@@ -143,4 +147,29 @@ void cuda::ew_square(cuda::CuMatrixD &input)
     thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data);
     thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
     thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_vec_start, square<double>());
+}
+
+template <typename T>
+struct multiply_functor
+    : public thrust::binary_function<T, T, T>
+{
+    __host__ __device__ T operator()(T x, T y)
+    {
+        return x * y;
+    }
+};
+
+cuda::CuMatrixD cuda::ew_multiplication(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
+{
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data);
+    thrust::device_ptr<double> e1 = s1 + i1.n_cols * i1.n_rows;
+    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data);
+    thrust::device_ptr<double> output = thrust::device_malloc<double>(i1.n_cols * i1.n_rows);
+    multiply_functor<double> binary_op;
+    thrust::transform(thrust::cuda::par, s1, e1, s2, output, binary_op);
+    cuda::CuMatrixD res;
+    res.d_data = thrust::raw_pointer_cast(output);
+    res.n_cols = i1.n_cols;
+    res.n_rows = i1.n_rows;
+    return res;
 }
