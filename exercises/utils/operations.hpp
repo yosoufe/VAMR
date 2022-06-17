@@ -13,6 +13,14 @@ namespace cuda
 {
     CuMatrixD sobel_x_kernel();
     CuMatrixD sobel_y_kernel();
+    /**
+     * @brief Cross correlation, with 0 padding at the input matrix
+     * The output matrix would be the size of the input.
+     * 
+     * @param input 
+     * @param kernel 
+     * @return CuMatrixD 
+     */
     CuMatrixD correlation(const CuMatrixD &input, const CuMatrixD &kernel);
     /**
      * @brief elemenet wise square in place
@@ -27,6 +35,8 @@ namespace cuda
      * @return cuda::CuMatrixD 
      */
     CuMatrixD ew_multiplication(const CuMatrixD &i1, const CuMatrixD &i2);
+
+    CuMatrixD ones(int rows, int cols);
 }
 
 

@@ -9,6 +9,7 @@
 #include "operations.cuh"
 #include "operations.hpp"
 #include "utils.cuh"
+#include <Eigen/Dense>
 
 cuda::CuMatrixD cuda::sobel_x_kernel()
 {
@@ -21,6 +22,13 @@ cuda::CuMatrixD cuda::sobel_y_kernel()
     Eigen::MatrixXd kernel = ::sobel_y_kernel();
     return cuda::eigen_to_cuda(kernel);
 }
+
+cuda::CuMatrixD cuda::ones(int rows, int cols)
+{
+    Eigen::MatrixXd m = Eigen::MatrixXd::Ones(rows,cols);
+    return cuda::eigen_to_cuda(m);
+}
+
 
 cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMatrixD &kernel)
 {
@@ -57,8 +65,8 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     double *filt_data = kernel.d_data;
 
     // convolution
-    const int pad_h = 1;
-    const int pad_w = 1;
+    const int pad_h = kernel.n_cols/2;
+    const int pad_w = kernel.n_rows/2;
     const int str_h = 1;
     const int str_w = 1;
     const int dil_h = 1;

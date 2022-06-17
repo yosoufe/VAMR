@@ -10,6 +10,13 @@ void viz_score_image(
     const Eigen::MatrixXd &score,
     const cv::Mat &img);
 
+void calculate_Is(
+    const Eigen::MatrixXd &img,
+    size_t patch_size,
+    Eigen::MatrixXd &sI_xx,
+    Eigen::MatrixXd &sI_yy,
+    Eigen::MatrixXd &sI_xy);
+
 /**
  * @brief calculates harris score
  *
@@ -110,6 +117,13 @@ cv::Mat viz_matches(const cv::Mat &src_img,
 
 namespace cuda
 {
+    void calculate_Is(
+        const CuMatrixD &img,
+        size_t patch_size,
+        CuMatrixD &sI_xx,
+        CuMatrixD &sI_yy,
+        CuMatrixD &sI_xy);
+
     /**
      * @brief calculates harris score
      *

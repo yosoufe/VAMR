@@ -70,6 +70,13 @@ std::string cv_type2str(int type);
 
 void visualize_matrix_as_image(Eigen::MatrixXd mat);
 
+template <typename T1, typename T2>
+bool are_matrices_close(const T1 &first, const T2 &second)
+{
+    return (first.cols() == second.cols() &&
+            first.rows() == second.rows() &&
+            (first - second).norm() < 1e-5);
+}
 
 #if WITH_CUDA
 

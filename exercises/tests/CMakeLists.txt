@@ -14,31 +14,45 @@ target_link_libraries(test_utils
     pthread
 )
 
+### exercise 03
+add_executable(test_exercise03 test_keypoint_tracking.cpp)
+target_link_libraries(test_exercise03
+    keypoint_tracking
+    ${GTEST_BOTH_LIBRARIES}
+    pthread
+)
+
+add_test(
+    NAME test_exercise03
+    COMMAND test_exercise03
+)
+
+
 ### exercise 04
-add_executable(exercise04_tests test_sift.cpp)
-target_link_libraries(exercise04_tests
+add_executable(test_exercise04 test_sift.cpp)
+target_link_libraries(test_exercise04
     sift
     ${GTEST_BOTH_LIBRARIES}
     pthread
 )
 
 add_test(
-    NAME exercise04_tests
-    COMMAND exercise04_tests
+    NAME test_exercise04
+    COMMAND test_exercise04
 )
 
 
 ### exercise 05
-add_executable(exercise05_tests test_stereo_reconst.cpp)
-target_link_libraries(exercise05_tests
+add_executable(test_exercise05 test_stereo_reconst.cpp)
+target_link_libraries(test_exercise05
     stereo_reconst
     ${GTEST_BOTH_LIBRARIES}
     pthread
 )
 
 add_test(
-    NAME exercise05_tests
-    COMMAND exercise05_tests
+    NAME test_exercise05
+    COMMAND test_exercise05
 )
 
 ### exercise 06
