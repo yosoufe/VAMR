@@ -3,7 +3,7 @@
 
 #if WITH_CUDA
 
-TEST(keypoint_tracking, calculate_Is)
+TEST(keypoint_tracking, calculate_Is_gpu)
 {
     for (int i = 0; i < 100 ; ++i)
     {
@@ -29,8 +29,6 @@ TEST(keypoint_tracking, calculate_Is)
         //           << h_sI_xx << std::endl;
         // std::cout << "sI_xx GPU\n"
         //           << hd_sI_xx << std::endl;
-        d_img.free();
-        d_sI_xx.free(); d_sI_yy.free(); d_sI_xy.free();
     }
 }
 

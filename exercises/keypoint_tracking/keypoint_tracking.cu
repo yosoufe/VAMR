@@ -13,27 +13,30 @@ void cuda::calculate_Is(
     // TODO: generalize the correlation to different kernel sizes.
     auto I_xx = cuda::correlation(img, cuda::sobel_x_kernel());
     auto I_yy = cuda::correlation(img, cuda::sobel_y_kernel());
-    auto I_xy = cuda::ew_multiplication(I_xx, I_yy);
-    ew_square(I_xx);
-    ew_square(I_yy);
+    auto I_xy = I_xx * I_yy;
+    I_xx = cuda::pow(I_xx, 2.0); // gpu memory leak
+    I_yy = cuda::pow(I_yy, 2.0);
     auto ones = cuda::ones(patch_size, patch_size);
     sI_xx = cuda::correlation(I_xx, ones);
     sI_yy = cuda::correlation(I_yy, ones);
     sI_xy = cuda::correlation(I_xy, ones);
-    I_xx.free(); I_xy.free(); I_yy.free(); ones.free();
 }
 
 cuda::CuMatrixD cuda::harris(const cuda::CuMatrixD &img, size_t patch_size, double kappa)
 {
     cuda::CuMatrixD sI_xx, sI_yy, sI_xy;
-    calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
+    cuda::calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
+    // FIXME: Memory leak, lvalue and rvalue issue. Not compiling
+    cuda::CuMatrixD score = (sI_xx * sI_yy - 2 * sI_xy) - kappa * cuda::pow((sI_xx + sI_yy),2);
     // calculate score;
     // threshold the score;
     // return the score;
-    return cuda::CuMatrixD();
+    return score;
 }
 
 cuda::CuMatrixD cuda::shi_tomasi(const cuda::CuMatrixD &img, size_t patch_size)
 {
+    cuda::CuMatrixD sI_xx, sI_yy, sI_xy;
+    cuda::calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
     return cuda::CuMatrixD();
 }

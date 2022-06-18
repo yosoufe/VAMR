@@ -22,21 +22,39 @@ namespace cuda
      * @return CuMatrixD 
      */
     CuMatrixD correlation(const CuMatrixD &input, const CuMatrixD &kernel);
-    /**
-     * @brief elemenet wise square in place
-     */
-    void ew_square(CuMatrixD &input);
+
+    CuMatrixD ones(int rows, int cols);
 
     /**
      * @brief elementwise multiplication
      * 
      * @param i1 
      * @param i2 
-     * @return cuda::CuMatrixD 
+     * @return CuMatrixD 
      */
-    CuMatrixD ew_multiplication(const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator* (const CuMatrixD &i1, const CuMatrixD &i2);
 
-    CuMatrixD ones(int rows, int cols);
+    CuMatrixD operator+ (const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator- (const CuMatrixD &i1, const CuMatrixD &i2);
+    
+
+    /**
+     * @brief multiplication by scalar
+     * 
+     * @param y 
+     * @param x 
+     * @return CuMatrixD 
+     */
+    CuMatrixD operator* (const CuMatrixD& mat, double constant);
+    CuMatrixD operator* (double constant, const CuMatrixD& mat);
+
+    /**
+     * @brief power function
+     * 
+     * @param i1 
+     * @param pow 
+     */
+    CuMatrixD pow (const CuMatrixD &i1, double pow);
 }
 
 

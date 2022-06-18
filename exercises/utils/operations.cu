@@ -4,7 +4,7 @@
 #include <thrust/functional.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
-
+#include <thrust/transform.h>
 
 #include "operations.cuh"
 #include "operations.hpp"
@@ -25,10 +25,9 @@ cuda::CuMatrixD cuda::sobel_y_kernel()
 
 cuda::CuMatrixD cuda::ones(int rows, int cols)
 {
-    Eigen::MatrixXd m = Eigen::MatrixXd::Ones(rows,cols);
+    Eigen::MatrixXd m = Eigen::MatrixXd::Ones(rows, cols);
     return cuda::eigen_to_cuda(m);
 }
-
 
 cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMatrixD &kernel)
 {
@@ -48,7 +47,7 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         in_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
         in_n, in_c, in_h, in_w));
 
-    double *in_data = input.d_data;
+    double *in_data = input.d_data.get();
 
     // filter
     const int filt_k = 1;
@@ -62,11 +61,11 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         filt_desc, CUDNN_DATA_DOUBLE, CUDNN_TENSOR_NCHW,
         filt_k, filt_c, filt_h, filt_w));
 
-    double *filt_data = kernel.d_data;
+    double *filt_data = kernel.d_data.get();
 
     // convolution
-    const int pad_h = kernel.n_cols/2;
-    const int pad_w = kernel.n_rows/2;
+    const int pad_h = kernel.n_cols / 2;
+    const int pad_w = kernel.n_rows / 2;
     const int str_h = 1;
     const int str_w = 1;
     const int dil_h = 1;
@@ -125,10 +124,7 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         conv_desc, algo.algo, ws_data, ws_size,
         &beta, out_desc, out_data));
 
-    cuda::CuMatrixD out;
-    out.d_data = out_data;
-    out.n_cols = out_w;
-    out.n_rows = out_h;
+    auto out = cuda::CuMatrixD::factory(out_data, out_w, out_h);
 
     // finalizing
     CSC(cudaFree(ws_data));
@@ -141,20 +137,25 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     return out;
 }
 
+
 template <typename T>
-struct square
+struct power
 {
+    T p;
+    power(T p) : p(p){};
     __host__ __device__ T operator()(const T &x) const
     {
-        return x * x;
+        return pow(x, p);
     }
 };
 
-void cuda::ew_square(cuda::CuMatrixD &input)
+cuda::CuMatrixD cuda::pow(const cuda::CuMatrixD &input, double pow)
 {
-    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data);
+    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
     thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
-    thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_vec_start, square<double>());
+    thrust::device_ptr<double> output = thrust::device_malloc<double>(input.n_cols * input.n_rows);
+    thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, output, power<double>(pow));
+    return cuda::CuMatrixD::factory(thrust::raw_pointer_cast(output), input.n_cols, input.n_rows);
 }
 
 template <typename T>
@@ -167,17 +168,70 @@ struct multiply_functor
     }
 };
 
-cuda::CuMatrixD cuda::ew_multiplication(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
+cuda::CuMatrixD cuda::operator*(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
 {
-    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data);
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data.get());
     thrust::device_ptr<double> e1 = s1 + i1.n_cols * i1.n_rows;
-    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data);
+    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data.get());
     thrust::device_ptr<double> output = thrust::device_malloc<double>(i1.n_cols * i1.n_rows);
     multiply_functor<double> binary_op;
     thrust::transform(thrust::cuda::par, s1, e1, s2, output, binary_op);
-    cuda::CuMatrixD res;
-    res.d_data = thrust::raw_pointer_cast(output);
-    res.n_cols = i1.n_cols;
-    res.n_rows = i1.n_rows;
-    return res;
+    return cuda::CuMatrixD::factory(thrust::raw_pointer_cast(output), i1.n_cols, i1.n_rows);
+}
+
+template <typename T>
+struct plus_functor
+    : public thrust::binary_function<T, T, T>
+{
+    __host__ __device__ T operator()(T x, T y)
+    {
+        return x + y;
+    }
+};
+
+cuda::CuMatrixD cuda::operator+(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
+{
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data.get());
+    thrust::device_ptr<double> e1 = s1 + i1.n_cols * i1.n_rows;
+    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data.get());
+    thrust::device_ptr<double> output = thrust::device_malloc<double>(i1.n_cols * i1.n_rows);
+    plus_functor<double> binary_op;
+    thrust::transform(thrust::cuda::par, s1, e1, s2, output, binary_op);
+    return cuda::CuMatrixD::factory(thrust::raw_pointer_cast(output), i1.n_cols, i1.n_rows);
+}
+
+template <typename T>
+struct minus_functor
+    : public thrust::binary_function<T, T, T>
+{
+    __host__ __device__ T operator()(T x, T y)
+    {
+        return x - y;
+    }
+};
+
+cuda::CuMatrixD cuda::operator-(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
+{
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data.get());
+    thrust::device_ptr<double> e1 = s1 + i1.n_cols * i1.n_rows;
+    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data.get());
+    thrust::device_ptr<double> output = thrust::device_malloc<double>(i1.n_cols * i1.n_rows);
+    minus_functor<double> binary_op;
+    thrust::transform(thrust::cuda::par, s1, e1, s2, output, binary_op);
+    return cuda::CuMatrixD::factory(thrust::raw_pointer_cast(output), i1.n_cols, i1.n_rows);
+}
+
+cuda::CuMatrixD cuda::operator*(const cuda::CuMatrixD &mat, double constant)
+{
+    using namespace thrust::placeholders;
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(mat.d_data.get());
+    thrust::device_ptr<double> e1 = s1 + mat.n_cols * mat.n_rows;
+    thrust::device_ptr<double> output = thrust::device_malloc<double>(mat.n_cols * mat.n_rows);
+    thrust::transform(s1, e1, output, constant * _1);
+    return cuda::CuMatrixD::factory(thrust::raw_pointer_cast(output), mat.n_cols, mat.n_rows);
+}
+
+cuda::CuMatrixD cuda::operator*(double constant, const cuda::CuMatrixD &mat)
+{
+    return cuda::operator*(mat, constant);
 }
