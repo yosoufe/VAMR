@@ -33,9 +33,19 @@ namespace cuda
      * @return CuMatrixD 
      */
     CuMatrixD operator* (const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator* (CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator* (const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator* (CuMatrixD &&i1, CuMatrixD &&i2);
 
     CuMatrixD operator+ (const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator+ (CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator+ (const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator+ (CuMatrixD &&i1, CuMatrixD &&i2);
+
     CuMatrixD operator- (const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator- (CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator- (const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator- (CuMatrixD &&i1, CuMatrixD &&i2);
     
 
     /**
@@ -47,14 +57,28 @@ namespace cuda
      */
     CuMatrixD operator* (const CuMatrixD& mat, double constant);
     CuMatrixD operator* (double constant, const CuMatrixD& mat);
+    CuMatrixD operator* (CuMatrixD&& mat, double constant);
+    CuMatrixD operator* (double constant, CuMatrixD&& mat);
 
     /**
-     * @brief power function
+     * @brief power function, in-place
      * 
      * @param i1 
      * @param pow 
      */
+    CuMatrixD pow(CuMatrixD &&input, double pow);
+
+    /**
+     * @brief power function, out-of-place
+     * 
+     * @param i1 
+     * @param pow 
+     * @return CuMatrixD 
+     */
     CuMatrixD pow (const CuMatrixD &i1, double pow);
+
+    CuMatrixD threshold_lower(const CuMatrixD &input, double threshold, double substitute);
+    CuMatrixD threshold_lower(CuMatrixD &&input, double threshold, double substitute);
 }
 
 

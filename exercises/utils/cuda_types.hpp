@@ -21,14 +21,36 @@ namespace cuda
     struct CuMatrix
     {
     public:
-        static CuMatrix factory(T *ptr, int n_cols, int n_rows);
+        /**
+         * @brief empty matrix with zero size.
+         * To make sure the object has a correct deleter
+         * 
+         * @return CuMatrix 
+         */
+        CuMatrix();
+
+        /**
+         * @brief Construct a new Cu Matrix object
+         * 
+         * @param ptr 
+         * @param n_cols 
+         * @param n_rows 
+         */
+        CuMatrix(T *ptr, int n_cols, int n_rows);
+        
+        /**
+         * @brief empty matrix with given rows and cols
+         * 
+         * @param cols 
+         * @param rows 
+         * @return CuMatrix 
+         */
+        CuMatrix(int cols, int rows);
+        
         std::shared_ptr<T> d_data;
         int n_rows;
         int n_cols;
         void free();
-
-    private:
-        CuMatrix() = default;
     };
 
     using CuMatrixD = CuMatrix<double>;

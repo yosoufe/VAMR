@@ -3,7 +3,6 @@
 #include "operations.hpp"
 #include "utils.hpp"
 #include <Eigen/Dense>
-#include <cstdlib>
 
 #if WITH_CUDA
 
@@ -67,17 +66,19 @@ TEST(UtilsTest, cuda_ew_square)
         Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(500, 500);
         auto cpu_squared = matrix.array().square().matrix();
         cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
-        cuda::pow(cuda_matrix,2.0);
-        auto gpu_squared = cuda::cuda_to_eigen(cuda_matrix);
+        auto squared = cuda::pow(cuda_matrix,2.0);                              // out of place squared
+        auto in_place_cuda_squared = cuda::pow(std::move(cuda_matrix), 2.0);    // in place squared
+        EXPECT_EQ(in_place_cuda_squared.d_data.get(), cuda_matrix.d_data.get());
+        auto gpu_squared = cuda::cuda_to_eigen(squared);
+        auto gpu_inplace_squared = cuda::cuda_to_eigen(in_place_cuda_squared);
         EXPECT_TRUE(are_matrices_close(gpu_squared, cpu_squared));
-        // std::cout << "cpu squared\n" << cpu_squared << std::endl;
-        // std::cout << "gpu squared\n" << gpu_squared << std::endl;
+        EXPECT_TRUE(are_matrices_close(gpu_inplace_squared, cpu_squared));
     }
 }
 
 TEST(UtilsTest, ew_multiplication)
 {
-    for (int i = 0; i< 100; ++i)
+    for (int i = 0; i< 10; ++i)
     {
         Eigen::MatrixXd m1 = Eigen::MatrixXd::Random(500, 500);
         Eigen::MatrixXd m2 = Eigen::MatrixXd::Random(500, 500);
@@ -87,6 +88,9 @@ TEST(UtilsTest, ew_multiplication)
         auto cuda_product = cuda_m1 * cuda_m2;
         auto cuda_product_on_cpu = cuda::cuda_to_eigen(cuda_product);
         EXPECT_TRUE(are_matrices_close(cuda_product_on_cpu, cpu_ew_product));
+        auto res_1 = (cuda_m1 * cuda_m2) * cuda_m1; 
+        auto res_2 = (cuda_m1 * cuda_m2) * (cuda_m1 * cuda_m2);
+        auto res_3 = cuda_m2 * (cuda_m1 * cuda_m2);
         // std::cout << "cpu squared\n" << cpu_squared << std::endl;
         // std::cout << "gpu squared\n" << gpu_squared << std::endl;
     }

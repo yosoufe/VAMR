@@ -83,5 +83,30 @@
     "C_Cpp.errorSquiggles": "Enabled",
     "terminal.integrated.scrollback": 100000,
     "cmake.buildDirectory": "${workspaceFolder}/exercises/build",
-    "cmake.configureOnEdit": false
+    "cmake.configureOnEdit": false,
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "googletest.failed",
+                "settings": {
+                    "foreground": "#f00"
+                }
+            },
+            {
+                "scope": "googletest.passed",
+                "settings": {
+                    "foreground": "#0f0"
+                }
+            },
+            {
+                "scope": "googletest.run",
+                "settings": {
+                    "foreground": "#0f0"
+                }
+            }
+        ]
+    },
+    "gtest-adapter.debugConfig": [
+        "(gdb) Launch"
+    ]
 }

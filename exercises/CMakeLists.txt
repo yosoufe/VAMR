@@ -18,7 +18,7 @@ endif()
 
 # If you need to compile for debug mode, 
 # change this to "Debug"
-set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Debug)
 
 # set_property(TARGET tgt PROPERTY CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD 17)
