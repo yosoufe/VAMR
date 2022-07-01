@@ -7,6 +7,7 @@
 
 #include "keypoint_tracking.hpp"
 #include "cuda_types.hpp"
+#include "utils.hpp" // # TODO remove it after removing the test
 
 int main_cpu()
 {
@@ -102,7 +103,7 @@ int main_gpu()
         auto shi_tomasi_score = cuda::shi_tomasi(cuda_eigen_img, patch_size);
         auto harris_score = cuda::harris(cuda_eigen_img, patch_size, harris_kappa);
         viz_harris_shi_tomasi_scores(src_img,
-                                     cuda::cuda_to_eigen(shi_tomasi_score), 
+                                     cuda::cuda_to_eigen(shi_tomasi_score),
                                      cuda::cuda_to_eigen(harris_score));
 
         // Part 2: Select keypoints
@@ -124,8 +125,39 @@ int main_gpu()
     return 0;
 }
 
+int main_test()
+{
+    std::string in_data_root = "../../data/ex03/";
+    std::string out_data_root = "../../output/ex03/";
+    SortedImageFiles image_files(in_data_root);
+    size_t patch_size = 9;
+
+    auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
+    Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
+    std::cout << std::endl << eigen_img.block(50, 50, 10, 10) << std::endl;
+
+    auto shi_tomasi_score = shi_tomasi(eigen_img, patch_size);
+
+    auto d_eigen_img = cuda::eigen_to_cuda(eigen_img);
+    auto d_shi_tomasi_score = cuda::shi_tomasi(d_eigen_img, patch_size);
+    auto hd_score = cuda::cuda_to_eigen(d_shi_tomasi_score);
+
+    std::cout << "are_matrices_close " << are_matrices_close(
+        hd_score.block(50, 50, 50, 50),
+        shi_tomasi_score.block(50, 50, 50, 50)) << std::endl;
+    
+    print_shape(hd_score);
+    print_shape(shi_tomasi_score);
+
+    std::cout << std::endl << hd_score.block(50, 50, 10, 10) << std::endl;
+    std::cout << std::endl << shi_tomasi_score.block(50, 50, 10, 10) << std::endl;
+
+    return 0;
+}
+
 int main()
 {
-    return main_cpu();
+    return main_test();
+    // return main_cpu();
     // return main_gpu();
 }

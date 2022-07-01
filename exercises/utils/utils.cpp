@@ -34,7 +34,8 @@ Eigen::MatrixXd read_matrix(std::string file_path, char delimiter)
             std::string section;
             if (!std::getline(line_stream, section, delimiter))
                 break;
-            if (section.empty()) continue; // ignore multiple delimiter
+            if (section.empty())
+                continue; // ignore multiple delimiter
             row.push_back(std::stod(section.c_str()));
         }
         data.push_back(row);
@@ -120,8 +121,7 @@ cv::Mat load_image_color(std::string image_path)
     return img;
 }
 
-void
-draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color, int lineType)
+void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color, int lineType)
 {
     int num_pts = pts.cols();
     for (size_t pt_idx = 0; pt_idx < num_pts; pt_idx++)
@@ -157,12 +157,12 @@ cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string 
     return vid_writer;
 }
 
-cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
+cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd &eigen_img)
 {
     cv::Mat img_cv;
     cv::Mat img_cv_uchar;
     cv::eigen2cv(eigen_img, img_cv);
-    cv::normalize(img_cv,img_cv_uchar , 255,0, cv::NORM_MINMAX, 0);
+    cv::normalize(img_cv, img_cv_uchar, 255, 0, cv::NORM_MINMAX, 0);
     // img_cv.convertTo(img_cv_uchar, 0);
     // img_cv_uchar = img_cv;
     return img_cv_uchar;
@@ -192,27 +192,45 @@ void show(const cv::Mat &img, std::string window_name)
     cv::waitKey(0);
 }
 
-std::string cv_type2str(int type) {
-  std::string r;
+std::string cv_type2str(int type)
+{
+    std::string r;
 
-  uchar depth = type & CV_MAT_DEPTH_MASK;
-  uchar chans = 1 + (type >> CV_CN_SHIFT);
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
 
-  switch ( depth ) {
-    case CV_8U:  r = "8U"; break;
-    case CV_8S:  r = "8S"; break;
-    case CV_16U: r = "16U"; break;
-    case CV_16S: r = "16S"; break;
-    case CV_32S: r = "32S"; break;
-    case CV_32F: r = "32F"; break;
-    case CV_64F: r = "64F"; break;
-    default:     r = "User"; break;
-  }
+    switch (depth)
+    {
+    case CV_8U:
+        r = "8U";
+        break;
+    case CV_8S:
+        r = "8S";
+        break;
+    case CV_16U:
+        r = "16U";
+        break;
+    case CV_16S:
+        r = "16S";
+        break;
+    case CV_32S:
+        r = "32S";
+        break;
+    case CV_32F:
+        r = "32F";
+        break;
+    case CV_64F:
+        r = "64F";
+        break;
+    default:
+        r = "User";
+        break;
+    }
 
-  r += "C";
-  r += (chans+'0');
+    r += "C";
+    r += (chans + '0');
 
-  return r;
+    return r;
 }
 
 void visualize_matrix_as_image(Eigen::MatrixXd mat)

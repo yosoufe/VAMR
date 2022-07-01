@@ -157,6 +157,8 @@ cv::Mat viz_harris_shi_tomasi_scores(
     const Eigen::MatrixXd &harris_score,
     bool show_img)
 {
+    std::cout << std::endl << shi_tomasi_score.block(0,0, 10,10) << std::endl;
+    std::cout << std::endl << harris_score.block(0,0, 10,10) << std::endl;
     cv::Mat src_img = img.clone();
     auto harris_cv = convert_to_cv_to_show(harris_score);
     auto shi_tomasi_cv = convert_to_cv_to_show(shi_tomasi_score);

@@ -3,6 +3,7 @@
 #include "operations.hpp"
 #include "utils.hpp"
 #include <Eigen/Dense>
+#include "folder_manager.hpp"
 
 #if WITH_CUDA
 
@@ -28,6 +29,19 @@ TEST(UtilsTest, cuda_eigen)
         auto new_float_matrix = cuda::cuda_to_eigen(cuda_eigen_float);
         EXPECT_TRUE(are_matrices_close(new_float_matrix, float_matrix));
     }
+}
+
+TEST(UtilsTest, cuda_img)
+{
+    std::string in_data_root = "../../data/ex03/";
+    SortedImageFiles image_files(in_data_root);
+    auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
+    Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
+    std::cout << eigen_img.Flags << std::endl;
+    std::cout << (eigen_img.Flags & Eigen::RowMajorBit) << std::endl;
+    auto d_eigen_img = cuda::eigen_to_cuda(eigen_img);
+    auto hd_eigen_img = cuda::cuda_to_eigen(d_eigen_img);
+    EXPECT_TRUE(are_matrices_close(hd_eigen_img, eigen_img));
 }
 
 TEST(UtilsTest, cuda_sobel_kernel)
