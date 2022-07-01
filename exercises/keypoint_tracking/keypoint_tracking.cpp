@@ -119,7 +119,6 @@ void calculate_Is(
     Eigen::MatrixXd &sI_yy,
     Eigen::MatrixXd &sI_xy)
 {
-    // CUDA TODO
     auto I_x = correlation(img, sobel_x_kernel());
     auto I_y = correlation(img, sobel_y_kernel());
     auto I_xx = I_x.array().square().matrix();
@@ -132,7 +131,6 @@ void calculate_Is(
 
 Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size)
 {
-    // CUDA TODO
     Eigen::MatrixXd sI_xx, sI_yy, sI_xy;
     calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
     auto trace = (sI_xx + sI_yy).array();
@@ -144,7 +142,6 @@ Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size)
 
 Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kappa)
 {
-    // CUDA TODO
     Eigen::MatrixXd sI_xx, sI_yy, sI_xy;
     calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
     Eigen::MatrixXd score = ((sI_xx.array() * sI_yy.array() - 2 * sI_xy.array()) -

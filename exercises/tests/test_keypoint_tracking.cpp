@@ -40,18 +40,40 @@ TEST(keypoint_tracking, harris_score)
         cuda::CuMatrixD d_img = cuda::eigen_to_cuda(h_img);
         size_t patch_size = 5;
         double kappa = 0.08;
-        auto h_harris = harris(h_img, patch_size, kappa);
-        auto d_harris = harris(d_img, patch_size, kappa);
-        auto hd_harris = cuda::cuda_to_eigen(d_harris);
+        auto h_score = harris(h_img, patch_size, kappa);
+        auto d_score = harris(d_img, patch_size, kappa);
+        auto hd_score = cuda::cuda_to_eigen(d_score);
         size_t s = 1 + patch_size / 2;
         size_t l = h_img.cols() - (2 * s);
-        EXPECT_TRUE(are_matrices_close(hd_harris.block(s, s, l, l),
-                                       h_harris.block(s, s, l, l)));
+        EXPECT_TRUE(are_matrices_close(hd_score.block(s, s, l, l),
+                                       h_score.block(s, s, l, l)));
 
-        // std::cout << "h_harris CPU\n"
-        //           << h_harris << std::endl;
-        // std::cout << "d_harris GPU\n"
-        //           << hd_harris << std::endl;
+        // std::cout << "h_score CPU\n"
+        //           << h_score << std::endl;
+        // std::cout << "d_score GPU\n"
+        //           << hd_score << std::endl;
+    }
+}
+
+TEST(keypoint_tracking, shi_tomasi_score)
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        Eigen::MatrixXd h_img = Eigen::MatrixXd::Random(10, 10);
+        cuda::CuMatrixD d_img = cuda::eigen_to_cuda(h_img);
+        size_t patch_size = 5;
+        auto h_score = shi_tomasi(h_img, patch_size);
+        auto d_score = shi_tomasi(d_img, patch_size);
+        auto hd_score = cuda::cuda_to_eigen(d_score);
+        size_t s = 1 + patch_size / 2;
+        size_t l = h_img.cols() - (2 * s);
+        EXPECT_TRUE(are_matrices_close(hd_score.block(s, s, l, l),
+                                       h_score.block(s, s, l, l)));
+
+        // std::cout << "h_score CPU\n"
+        //           << h_score << std::endl;
+        // std::cout << "d_score GPU\n"
+        //           << hd_score << std::endl;
     }
 }
 

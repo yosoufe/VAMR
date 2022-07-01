@@ -69,11 +69,13 @@
         "geometry": "cpp"
     },
     "cSpell.words": [
+        "CUDA",
         "Eigen",
         "extrinsics",
         "keypoint",
         "keypoints",
-        "sobel"
+        "sobel",
+        "tomasi"
     ],
     "cmake.sourceDirectory": "${workspaceFolder}/exercises",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",

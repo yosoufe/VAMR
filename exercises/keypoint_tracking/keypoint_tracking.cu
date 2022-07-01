@@ -35,5 +35,9 @@ cuda::CuMatrixD cuda::shi_tomasi(const cuda::CuMatrixD &img, size_t patch_size)
 {
     cuda::CuMatrixD sI_xx, sI_yy, sI_xy;
     cuda::calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
-    return cuda::CuMatrixD();
+    auto trace = sI_xx + sI_yy;
+    auto determinant = sI_xx * sI_yy - cuda::pow(sI_xy, 2);
+    auto score = (trace * 0.5 - cuda::pow(cuda::pow(trace * 0.5, 2) - determinant, 0.5));
+    score = threshold_lower(std::move(score), 0, 0);
+    return score;
 }
