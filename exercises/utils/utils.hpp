@@ -79,6 +79,8 @@ bool are_matrices_close(const T1 &first, const T2 &second)
     return (first - second).norm() < 1e-5;
 }
 
+double second(void);
+
 #if WITH_CUDA
 
 

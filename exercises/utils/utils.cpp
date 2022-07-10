@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include <fstream> // ifstream
+#include <sys/time.h>
 
 std::ifstream read_file(std::string path)
 {
@@ -238,4 +239,11 @@ void visualize_matrix_as_image(Eigen::MatrixXd mat)
     auto mat_cv = convert_to_cv_to_show(mat);
     cv::imshow("output", mat_cv);
     cv::waitKey(0);
+}
+
+double
+second(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
 }
