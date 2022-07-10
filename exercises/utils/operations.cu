@@ -64,8 +64,8 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     double *filt_data = kernel.d_data.get();
 
     // convolution
-    const int pad_h = kernel.n_cols / 2;
-    const int pad_w = kernel.n_rows / 2;
+    const int pad_h = kernel.n_rows / 2;
+    const int pad_w = kernel.n_cols / 2;
     const int str_h = 1;
     const int str_w = 1;
     const int dil_h = 1;

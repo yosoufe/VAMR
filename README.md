@@ -22,6 +22,46 @@ If there are any questions, feel free to open an issue in this github repository
   - Eigen library for linear algebra.
   - OpenCV and VTK only for reading, writing of image/video files and 2D/3D visualization.
 
+## setup and build docker images
+
+`cli.py` is a helper command line tool to build and run docker image.
+
+```bash
+# to install the cli.py's dependencies
+python -m pip install -r requirements.txt
+```
+
+
+1. Build the `cudagl:11.7.0-devel-ubuntu20.04` docker image
+
+    Note: I am not familiar with `buildx` that is being used in `cuda` repo. This is the only way
+    that I could build the image without pushing the image to a docker registry.
+    ```bash
+    # clone this repo wherever you like, better not to be inside this repo.
+    git clone git@gitlab.com:nvidia/container-images/cuda.git
+    cd cuda
+
+    sed -i "s/\ --pull\ /\ /g" build.sh
+    sed -i "s/run_cmd docker buildx create --use/\echo \"\"#/g" build.sh
+    ./build.sh --image-name cudagl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl
+    # to remove intermediate images
+    docker rmi $(docker images --filter=reference="cudagl/build-intermediate:*" -q)
+    docker rmi $(docker images --filter=reference="cudagl:*base*" -q)
+    docker rmi $(docker images --filter=reference="cudagl:*runtime*" -q)
+
+
+    # YOUR_DOCKER_HUB_USER=yosoufe
+    # sed -i "s/\/build-intermediate/_build-intermediate/g" build.sh
+    # ./build.sh --image-name ${YOUR_DOCKER_HUB_USER}/cgl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl --push
+    ```
+
+    Now you should have `cudagl:11.7.0-devel-ubuntu20.04` in your `docker image ls`.
+
+2. Download CUDNN ".deb" file from nvidia website into `docker_extra` folder. This is tested with CUDNN 8.4.1.50
+3. Download NVIDIA Nsight from https://developer.nvidia.com/nsight-systems into `docker_extra` folder.
+  I have tested with `Nsight Systems 2022.2.1 (Linux Host .deb Installer)`.
+4. Now run `python cli.py build` in the root of this project.
+
 ## Usage
 
 We are using docker, We are installing all the requirements inside the docker and run everything inside the docker.
@@ -29,21 +69,8 @@ We are using docker, We are installing all the requirements inside the docker an
 The container has [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) inside which you can open multiple terminals
 as tabs or split windows. Read the documentation of the [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) to learn short keys.
 
-`cli.py` is a helper command line tool to build and run docker image.
 
 ```sh
-# to install the cli.py's dependencies
-python -m pip install -r requirements.txt
-
-# to build the docker image
-python cli.py build
-
-# or to pull the image from the dockerhub
-# instead of building it,
-# It can be faster than building,
-# Compiling opencv can take a long time.
-python cli.py pull
-
 # to run the docker image and have a terminal inside the docker image, we compile everything in the container
 # It will pull my image if you do not build it yourself.
 python cli.py run

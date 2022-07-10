@@ -5,7 +5,7 @@ import os, pwd
 
 app = typer.Typer()
 
-DOCKER_IMAGE = "yosoufe/opencv_cuda:4.5.5_11.7.0"
+DOCKER_IMAGE = "yosoufe/vamr"
 
 
 def bash_cmd(command: str):

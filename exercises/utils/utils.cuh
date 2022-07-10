@@ -48,3 +48,19 @@ get_index_rowwise(int row, int col, int n_cols, int stride);
 
 __device__ int
 get_index_colwise(int row, int col, int n_rows, int stride);
+
+template <typename T>
+__global__ void print_cuda_eigen(T *data, int cols, int rows)
+{
+    printf("printing in cuda kernel:\n");
+    for (int row = 0; row < rows; ++row)
+    {
+        for (int col = 0; col < cols; ++col)
+        {
+            int idx = get_index_colwise(row, col, rows, 1);
+            printf("%d: ", idx);
+            printf("%f ,", float(data[idx]));
+        }
+        printf("\n");
+    }
+}

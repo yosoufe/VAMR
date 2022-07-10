@@ -1,6 +1,7 @@
 #include "keypoint_tracking.hpp"
 #include "utils.cuh"
 #include "operations.hpp"
+#include "utils.cuh"
 
 void cuda::calculate_Is(
     const cuda::CuMatrixD &img,
@@ -35,6 +36,8 @@ cuda::CuMatrixD cuda::shi_tomasi(const cuda::CuMatrixD &img, size_t patch_size)
 {
     cuda::CuMatrixD sI_xx, sI_yy, sI_xy;
     cuda::calculate_Is(img, patch_size, sI_xx, sI_yy, sI_xy);
+    std::cout << "cuda sI_xx " << bool(sI_xx.d_data) << std::endl;
+    print_cuda_eigen<double><<<1, 1>>>(sI_xx.d_data.get(), sI_xx.n_cols, sI_xx.n_rows);
     auto trace = sI_xx + sI_yy;
     auto determinant = sI_xx * sI_yy - cuda::pow(sI_xy, 2);
     auto score = (trace * 0.5 - cuda::pow(cuda::pow(trace * 0.5, 2) - determinant, 0.5));

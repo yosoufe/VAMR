@@ -1,5 +1,5 @@
 # FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
-FROM yosoufe/cudagl:11.7.0-devel-ubuntu20.04
+FROM cudagl:11.7.0-devel-ubuntu20.04
 
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -70,12 +70,20 @@ RUN git clone -b 3.4 https://gitlab.com/libeigen/eigen.git && \
     rm -rf eigen
 
 # install cudnn
-RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
-    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
-    && wait \
-    && dpkg -i libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
-    && dpkg -i libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
-    && rm -rf libcudnn*.deb
+# RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
+#     & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
+#     && wait \
+#     && dpkg -i libcudnn8_8.4.1.50-1+cuda11.6_amd64.deb \
+#     && dpkg -i libcudnn8-dev_8.4.1.50-1+cuda11.6_amd64.deb \
+#     && rm -rf libcudnn*.deb
+
+COPY docker_extra/cudnn-* .
+RUN dpkg -i cudnn-local-repo-* \
+    && cp /var/cudnn-local-repo-*/cudnn-local-*-keyring.gpg /usr/share/keyrings/ \
+    && apt-get update \
+    && apt-get install libcudnn8 \
+        libcudnn8-dev \
+        libcudnn8-samples
 
 # vtk, required for the 3d viz in opencv
 RUN git clone https://github.com/Kitware/VTK.git -b v9.0.3 && \
@@ -126,20 +134,24 @@ RUN git clone https://github.com/google/googletest.git && \
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y terminator
 
+# # install nsight
+# RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-11-7_11.7.50-1_amd64.deb \
+#     & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
+#     & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
+#     & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
+#     & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
+#     && wait \
+#     && apt-get install -y default-jre \
+#     && dpkg -i cuda-nsight-11-7_11.7.50-1_amd64.deb \
+#     && dpkg -i nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
+#     && dpkg -i cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
+#     && dpkg -i nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
+#     && dpkg -i cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
+#     && rm -rf *nsight*.deb
+
 # install nsight
-RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-11-7_11.7.50-1_amd64.deb \
-    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
-    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
-    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
-    & wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
-    && wait \
-    && apt-get install -y default-jre \
-    && dpkg -i cuda-nsight-11-7_11.7.50-1_amd64.deb \
-    && dpkg -i nsight-compute-2022.2.0_2022.2.0.13-1_amd64.deb \
-    && dpkg -i cuda-nsight-compute-11-7_11.7.0-1_amd64.deb \
-    && dpkg -i nsight-systems-2022.1.3_2022.1.3.3-1_amd64.deb \
-    && dpkg -i cuda-nsight-systems-11-7_11.7.0-1_amd64.deb \
-    && rm -rf *nsight*.deb
+COPY docker_extra/nsight-systems-* .
+RUN dpkg -i nsight-systems-*
 
 RUN mkdir -p /code
 WORKDIR /code/exercises

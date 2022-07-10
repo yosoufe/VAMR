@@ -10,7 +10,7 @@ void cuda::CuMatrixDeleter<T>::operator()(T *p) const
     {
         // FIXME: this should not throw exception.
         // or exit. CSC might exit.
-        std::cout << "freeing gpu memory" << std::endl;
+        // std::cout << "freeing gpu memory" << std::endl;
         CSC(cudaFree(p));
     }
 }
@@ -51,7 +51,7 @@ cuda::CuMatrix<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
     T *output_ptr;
     CSC(cudaMalloc(&output_ptr, number_of_bytes));
     CSC(cudaMemcpy(output_ptr, eigen.data(), number_of_bytes, cudaMemcpyHostToDevice));
-    // print_cuda_eigen<T><<<1, 1>>>(cuda_eigen.d_data, eigen.cols(), eigen.rows());
+    // print_cuda_eigen<T><<<1, 1>>>(cuda_eigen.d_data.get(), eigen.cols(), eigen.rows());
     cudaDeviceSynchronize();
     return cuda::CuMatrix<T>(output_ptr, eigen.cols(), eigen.rows());
 }

@@ -8,6 +8,10 @@ build
 lectures
 output
 
+# NVIDIA .deb files
+docker_extra/*.deb
+docker_extra/*.tar
+
 # Prerequisites
 *.d
 
