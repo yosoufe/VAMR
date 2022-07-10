@@ -36,7 +36,8 @@ inline void _cudnn_error(cudnnStatus_t err, const char *file_name, const int lin
 {
     if (err != CUDNN_STATUS_SUCCESS)
     {
-        std::cout << "CUDNN Error: " << err << std::endl;
+        fprintf(stderr, "\nCUDNN Error:  File: %s:%d\nReason: %s\n\n", file_name, line_number, cudnnGetErrorString(err));
+        std::cin.get();
         std::exit(1);
     }
 }

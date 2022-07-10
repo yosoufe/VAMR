@@ -29,8 +29,47 @@ cuda::CuMatrixD cuda::ones(int rows, int cols)
     return cuda::eigen_to_cuda(m);
 }
 
+void setTensorDesc(cudnnTensorDescriptor_t &tensorDesc,
+                   const cudnnTensorFormat_t &tensorFormat,
+                   const cudnnDataType_t &dataType,
+                   int n,
+                   int c,
+                   int h,
+                   int w)
+{
+#define ND_TENSOR_DESCRIPTOR
+#if SIMPLE_TENSOR_DESCRIPTOR
+    CUDNN_CALL(cudnnSetTensor4dDescriptor(tensorDesc,
+                                          tensorFormat,
+                                          dataType,
+                                          n, c,
+                                          h,
+                                          w));
+#elif defined(ND_TENSOR_DESCRIPTOR)
+    const int nDims = 4;
+    int dimA[nDims] = {n, c, h, w};
+    int strideA[nDims] = {c * h * w, h * w, w, 1};
+    CUDNN_CALL(cudnnSetTensorNdDescriptor(tensorDesc,
+                                          dataType,
+                                          4,
+                                          dimA,
+                                          strideA));
+#else
+    CUDNN_CALL(cudnnSetTensor4dDescriptorEx(tensorDesc,
+                                            dataType,
+                                            n, c,
+                                            h, w,
+                                            c * h * w, h * w, w, 1));
+#endif
+}
+
 cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMatrixD &kernel)
 {
+    /**
+     * in CUDNN it seems it is 
+     * height <-> number of columns
+     * weight <-> number of rows.
+     */
     cudnnHandle_t cudnn;
     CUDNN_CALL(cudnnCreate(&cudnn));
     CUDNN_CALL(cudnnCnnInferVersionCheck());
@@ -38,22 +77,25 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     // input
     const int in_n = 1;
     const int in_c = 1;
-    const int in_h = input.n_rows;
-    const int in_w = input.n_cols;
+    const int in_h = input.n_cols;
+    const int in_w = input.n_rows;
 
     cudnnTensorDescriptor_t in_desc;
     CUDNN_CALL(cudnnCreateTensorDescriptor(&in_desc));
-    CUDNN_CALL(cudnnSetTensor4dDescriptor(
-        in_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
-        in_n, in_c, in_h, in_w));
+    // CUDNN_CALL(cudnnSetTensor4dDescriptor(
+    //     in_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
+    //     in_n, in_c, in_h, in_w));
+
+    setTensorDesc(in_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
+                  in_n, in_c, in_h, in_w);
 
     double *in_data = input.d_data.get();
 
     // filter
     const int filt_k = 1;
     const int filt_c = 1;
-    const int filt_h = kernel.n_rows;
-    const int filt_w = kernel.n_cols;
+    const int filt_h = kernel.n_cols;
+    const int filt_w = kernel.n_rows;
 
     cudnnFilterDescriptor_t filt_desc;
     CUDNN_CALL(cudnnCreateFilterDescriptor(&filt_desc));
@@ -64,19 +106,16 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     double *filt_data = kernel.d_data.get();
 
     // convolution
-    const int pad_h = kernel.n_rows / 2;
-    const int pad_w = kernel.n_cols / 2;
-    const int str_h = 1;
-    const int str_w = 1;
-    const int dil_h = 1;
-    const int dil_w = 1;
-
     cudnnConvolutionDescriptor_t conv_desc;
     CUDNN_CALL(cudnnCreateConvolutionDescriptor(&conv_desc));
-    CUDNN_CALL(cudnnSetConvolution2dDescriptor(
-        conv_desc,
-        pad_h, pad_w, str_h, str_w, dil_h, dil_w,
-        CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE));
+
+    const int convDims = 2;
+    int padA[convDims] = { kernel.n_cols / 2,  kernel.n_rows / 2};
+    int filterStrideA[convDims] = {1,1};
+    int upscaleA[convDims] = {1,1};
+    CUDNN_CALL(cudnnSetConvolutionNdDescriptor(
+        conv_desc,convDims, padA, filterStrideA, 
+        upscaleA, CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE));
 
     // output
     int out_n;
@@ -84,35 +123,48 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     int out_h;
     int out_w;
 
-    CUDNN_CALL(cudnnGetConvolution2dForwardOutputDim(
+    const int tensorDims = 4;
+    int tensorOuputDimA[tensorDims];
+    CUDNN_CALL(cudnnGetConvolutionNdForwardOutputDim(
         conv_desc, in_desc, filt_desc,
-        &out_n, &out_c, &out_h, &out_w));
+        tensorDims, tensorOuputDimA));
+    
+    out_n = tensorOuputDimA[0]; out_c = tensorOuputDimA[1];
+    out_h = tensorOuputDimA[2]; out_w = tensorOuputDimA[3];
+
+    // std::cout << " out_n " << out_n << " out_c " << out_c;
+    // std::cout << " out_h " << out_h << " out_w " << out_w << std::endl;
 
     cudnnTensorDescriptor_t out_desc;
     CUDNN_CALL(cudnnCreateTensorDescriptor(&out_desc));
-    CUDNN_CALL(cudnnSetTensor4dDescriptor(
-        out_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
-        out_n, out_c, out_h, out_w));
+    
+    setTensorDesc(out_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
+                   out_n, out_c, out_h, out_w);
 
     double *out_data;
     CSC(cudaMalloc(
         &out_data, out_n * out_c * out_h * out_w * sizeof(double)));
 
     // algorithm
-    cudnnConvolutionFwdAlgoPerf_t algo;
-    int perf_count;
-    CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm_v7(
+    cudnnConvolutionFwdAlgo_t algo;
+    int requestedAlgoCount = CUDNN_CONVOLUTION_FWD_ALGO_COUNT;
+    int returnedAlgoCount = -1;
+    cudnnConvolutionFwdAlgoPerf_t results[2 * CUDNN_CONVOLUTION_FWD_ALGO_COUNT];
+    CUDNN_CALL(cudnnFindConvolutionForwardAlgorithm(
         cudnn,
         in_desc, filt_desc, conv_desc, out_desc,
-        1, &perf_count, &algo));
+        requestedAlgoCount, &returnedAlgoCount, results));
+    algo = results[0].algo;
 
     // workspace
     size_t ws_size;
     CUDNN_CALL(cudnnGetConvolutionForwardWorkspaceSize(
-        cudnn, in_desc, filt_desc, conv_desc, out_desc, algo.algo, &ws_size));
+        cudnn, in_desc, filt_desc, conv_desc, out_desc, algo, &ws_size));
 
     double *ws_data;
-    CSC(cudaMalloc(&ws_data, ws_size));
+    if (ws_size!=0)
+        CSC(cudaMalloc(&ws_data, ws_size));
+    
 
     // perform
     double alpha = 1.0;
@@ -121,13 +173,14 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CUDNN_CALL(cudnnConvolutionForward(
         cudnn,
         &alpha, in_desc, in_data, filt_desc, filt_data,
-        conv_desc, algo.algo, ws_data, ws_size,
+        conv_desc, algo, ws_data, ws_size,
         &beta, out_desc, out_data));
 
-    auto out = cuda::CuMatrixD(out_data, out_w, out_h);
+    auto out = cuda::CuMatrixD(out_data, out_h, out_w);
 
     // finalizing
-    CSC(cudaFree(ws_data));
+    if (ws_size!=0)
+        CSC(cudaFree(ws_data));
     CUDNN_CALL(cudnnDestroyTensorDescriptor(out_desc));
     CUDNN_CALL(cudnnDestroyConvolutionDescriptor(conv_desc));
     CUDNN_CALL(cudnnDestroyFilterDescriptor(filt_desc));
@@ -138,14 +191,13 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
 }
 
 template <typename functor>
-void _unary_operator(const cuda::CuMatrixD &input,cuda::CuMatrixD &output, functor unary_f)
+void _unary_operator(const cuda::CuMatrixD &input, cuda::CuMatrixD &output, functor unary_f)
 {
     thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
     thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
     thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.d_data.get());
     thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_output_start, unary_f);
 }
-
 
 template <typename T>
 struct power
@@ -164,7 +216,6 @@ cuda::CuMatrixD cuda::pow(const cuda::CuMatrixD &input, double pow)
     _unary_operator(input, res, power<double>(pow));
     return res;
 }
-
 
 cuda::CuMatrixD cuda::pow(cuda::CuMatrixD &&input, double pow)
 {
@@ -298,7 +349,6 @@ struct multiply_by_constant
     }
 };
 
-
 cuda::CuMatrixD cuda::operator*(const cuda::CuMatrixD &mat, double constant)
 {
     cuda::CuMatrixD out(mat.n_cols, mat.n_rows);
@@ -336,7 +386,6 @@ struct thrshold_lower_functor
         return x;
     }
 };
-
 
 cuda::CuMatrixD cuda::threshold_lower(const cuda::CuMatrixD &input, double threshold, double substitute)
 {

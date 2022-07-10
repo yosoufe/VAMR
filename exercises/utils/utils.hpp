@@ -73,9 +73,10 @@ void visualize_matrix_as_image(Eigen::MatrixXd mat);
 template <typename T1, typename T2>
 bool are_matrices_close(const T1 &first, const T2 &second)
 {
-    return (first.cols() == second.cols() &&
-            first.rows() == second.rows() &&
-            (first - second).norm() < 1e-5);
+    if (first.cols() != second.cols() ||
+        first.rows() != second.rows())
+        return false;
+    return (first - second).norm() < 1e-5;
 }
 
 #if WITH_CUDA

@@ -37,8 +37,8 @@ TEST(UtilsTest, cuda_img)
     SortedImageFiles image_files(in_data_root);
     auto src_img = cv::imread(image_files[0].path(), cv::IMREAD_GRAYSCALE);
     Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
-    std::cout << eigen_img.Flags << std::endl;
-    std::cout << (eigen_img.Flags & Eigen::RowMajorBit) << std::endl;
+    // std::cout << eigen_img.Flags << std::endl;
+    // std::cout << (eigen_img.Flags & Eigen::RowMajorBit) << std::endl;
     auto d_eigen_img = cuda::eigen_to_cuda(eigen_img);
     auto hd_eigen_img = cuda::cuda_to_eigen(d_eigen_img);
     EXPECT_TRUE(are_matrices_close(hd_eigen_img, eigen_img));
@@ -52,24 +52,39 @@ TEST(UtilsTest, cuda_sobel_kernel)
     EXPECT_TRUE(are_matrices_close(gpu_copied_kernel, cpu_sobel_kernel_x));
 }
 
+void cuda_correlation_test(size_t kernel_size, size_t n_rows, size_t n_cols, bool debug)
+{
+    size_t patch_size = kernel_size;
+    Eigen::MatrixXd kernel = Eigen::MatrixXd::Random(patch_size, patch_size);
+    Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(n_rows, n_cols);
+    auto correlated = correlation(matrix, kernel);
+    cuda::CuMatrixD cuda_kernel = cuda::eigen_to_cuda(kernel);
+    cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
+    cuda::CuMatrixD cuda_correlated = cuda::correlation(cuda_matrix, cuda_kernel);
+    auto cuda_correlated_cpu = cuda::cuda_to_eigen(cuda_correlated);
+
+    size_t s = patch_size/2;
+    size_t l = std::min(matrix.cols(), matrix.rows()) - (2 * s);
+    if (debug)
+    {
+        std::cout << s << " " << l << std::endl;
+        std::cout << "cpu correlated:\n"
+                    << correlated << std::endl;
+        std::cout << "gpu correlated:\n"
+                    << cuda_correlated_cpu << std::endl;
+    }
+    EXPECT_TRUE(are_matrices_close(
+        cuda_correlated_cpu.block(s,s,l,l),
+        correlated.block(s,s,l,l)));
+    
+}
+
 TEST(UtilsTest, cuda_correlation)
 {
     for (int i = 0; i < 10; ++i)
     {
-        Eigen::MatrixXd kernel = sobel_x_kernel();
-        Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(5, 5);
-        auto correlated = correlation(matrix, kernel);
-        cuda::CuMatrixD cuda_kernel = cuda::sobel_x_kernel();
-        cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
-        cuda::CuMatrixD cuda_correlated = cuda::correlation(cuda_matrix, cuda_kernel);
-        auto cuda_correlated_cpu = cuda::cuda_to_eigen(cuda_correlated);
-        EXPECT_TRUE(are_matrices_close(
-            cuda_correlated_cpu.block(1,1,3,3),
-            correlated.block(1,1,3,3)));
-        // std::cout << "cpu correlated:\n"
-        //           << correlated << std::endl;
-        // std::cout << "gpu correlated:\n"
-        //           << cuda_correlated_cpu << std::endl;
+        cuda_correlation_test(3, 5, 6, false);
+        cuda_correlation_test(3, 5, 5, false);
     }
 }
 

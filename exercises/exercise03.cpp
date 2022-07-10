@@ -159,7 +159,7 @@ int main_test()
 
 int main()
 {
-    return main_test();
+    // return main_test();
     // return main_cpu();
-    // return main_gpu();
+    return main_gpu();
 }
