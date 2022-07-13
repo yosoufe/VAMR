@@ -11,14 +11,14 @@ TEST(keypoint_tracking, calculate_Is)
         7, 8, 9;
     calculate_Is(input, 3, sI_xx, sI_yy, sI_xy);
 
-    Eigen::MatrixXd expected_I = Eigen::MatrixXd::Zero(3,3);
-    expected_I(1,1) = 8*8;
+    Eigen::MatrixXd expected_I = Eigen::MatrixXd::Zero(3, 3);
+    expected_I(1, 1) = 8 * 8;
     EXPECT_TRUE(are_matrices_close(expected_I, sI_xx));
 
-    expected_I(1,1) = 24*24;
+    expected_I(1, 1) = 24 * 24;
     EXPECT_TRUE(are_matrices_close(expected_I, sI_yy));
 
-    expected_I(1,1) = 24*8;
+    expected_I(1, 1) = 24 * 8;
     EXPECT_TRUE(are_matrices_close(expected_I, sI_xy));
 }
 
@@ -38,7 +38,7 @@ TEST(keypoint_tracking, calculate_Is_gpu)
         auto hd_sI_xx = cuda::cuda_to_eigen(d_sI_xx);
         auto hd_sI_yy = cuda::cuda_to_eigen(d_sI_yy);
         auto hd_sI_xy = cuda::cuda_to_eigen(d_sI_xy);
-        
+
         EXPECT_TRUE(are_matrices_close(hd_sI_xx,
                                        h_sI_xx));
         EXPECT_TRUE(are_matrices_close(hd_sI_yy,
@@ -91,6 +91,28 @@ TEST(keypoint_tracking, shi_tomasi_score)
         // std::cout << "d_score GPU\n"
         //           << hd_score << std::endl;
     }
+}
+
+TEST(keypoint_tracking, non_maximum_suppression)
+{
+    Eigen::MatrixXd input(4, 5);
+    input << 10, 1, 3, 6, 10,
+        2, 3, 7, 3, 1,
+        5, 4, 4, 1, 2,
+        4, 1, 9, 0, 3;
+    int patch_size = 3;
+
+    Eigen::MatrixXd expected(4, 5);
+    expected << 10, 0, 0, 0, 10,
+        0, 0, 7, 0, 0,
+        5, 0, 0, 0, 0,
+        0, 0, 9, 0, 3;
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    auto d_output = cuda::non_maximum_suppression(d_input, patch_size);
+    auto hd_output = cuda::cuda_to_eigen(d_output);
+    EXPECT_TRUE(are_matrices_close(hd_output, expected));
+    // std::cout << hd_output << std::endl;
 }
 
 #endif

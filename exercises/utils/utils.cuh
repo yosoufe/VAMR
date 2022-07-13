@@ -46,10 +46,10 @@ inline void _cudnn_error(cudnnStatus_t err, const char *file_name, const int lin
 #define CUDNN_CALL(call) _cudnn_error((call), __FILE__, __LINE__)
 
 __host__ __device__ int
-get_index_rowwise(int row, int col, int n_cols, int stride);
+get_index_rowwise(int row, int col, int n_cols, int stride = 1);
 
 __host__ __device__ int
-get_index_colwise(int row, int col, int n_rows, int stride);
+get_index_colwise(int row, int col, int n_rows, int stride = 1);
 
 __host__ __device__ thrust::tuple<int, int>
 get_2d_index_rowwise(int index_1d, int n_cols);
