@@ -42,3 +42,8 @@ cuda::CuMatrixD cuda::shi_tomasi(const cuda::CuMatrixD &img, size_t patch_size)
     score = threshold_lower(std::move(score), 0, 0);
     return score;
 }
+
+cuda::CuMatrixD cuda::non_maximum_suppression(const cuda::CuMatrixD &input, size_t patch_size)
+{
+    
+}

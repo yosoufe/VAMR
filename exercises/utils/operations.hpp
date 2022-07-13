@@ -79,6 +79,8 @@ namespace cuda
 
     CuMatrixD threshold_lower(const CuMatrixD &input, double threshold, double substitute);
     CuMatrixD threshold_lower(CuMatrixD &&input, double threshold, double substitute);
+
+    void zero_borders(CuMatrixD &input, int s_row, int s_col, int l_row, int l_col);
 }
 
 

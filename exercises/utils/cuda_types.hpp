@@ -51,6 +51,11 @@ namespace cuda
         int n_rows;
         int n_cols;
         void free();
+
+        int n_elements() const
+        {
+            return n_rows * n_cols;
+        }
     };
 
     using CuMatrixD = CuMatrix<double>;

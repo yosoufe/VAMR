@@ -142,6 +142,35 @@ namespace cuda
      * @return Eigen::MatrixXd
      */
     CuMatrixD shi_tomasi(const CuMatrixD &img, size_t patch_size);
+
+    /**
+     * @brief applies non_maximum suppression to the score matrix
+     * 
+     * In each patch, if the center is the max, keep the values, otherwise 
+     * assigns zeros to the center.
+     * 
+     * @param input         The input matrix
+     * @param patch_size    patch size
+     * @return CuMatrixD    The output result
+     */
+    CuMatrixD non_maximum_suppression(const CuMatrixD &input, size_t patch_size);
+    CuMatrixD non_maximum_suppression(CuMatrixD &&input, size_t patch_size);
+
+    /**
+     * @brief Select keypoints from the score image.
+     * The non-maximum suppression is applied with a box of
+     * size (2 radius +1) * (2 radius + 1)
+     *
+     * @param score The score image
+     * @param num   Number of best keypoints to select
+     * @param radius  The radius for non-maximum suppression
+     * @return CuMatrixD in shape of (2 x num)
+     */
+    CuMatrixD select_keypoints(
+        const CuMatrixD &score,
+        size_t num,
+        size_t radius);
+
 }
 
 #endif

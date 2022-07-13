@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <cudnn.h>
+#include <thrust/tuple.h>
 
 /**
  * @brief      CUDA safe call.
@@ -44,11 +45,17 @@ inline void _cudnn_error(cudnnStatus_t err, const char *file_name, const int lin
 
 #define CUDNN_CALL(call) _cudnn_error((call), __FILE__, __LINE__)
 
-__device__ int
+__host__ __device__ int
 get_index_rowwise(int row, int col, int n_cols, int stride);
 
-__device__ int
+__host__ __device__ int
 get_index_colwise(int row, int col, int n_rows, int stride);
+
+__host__ __device__ thrust::tuple<int, int>
+get_2d_index_rowwise(int index_1d, int n_cols);
+
+__host__ __device__ thrust::tuple<int, int>
+get_2d_index_colwise(int index_1d, int n_rows);
 
 template <typename T>
 __global__ void print_cuda_eigen(T *data, int cols, int rows)

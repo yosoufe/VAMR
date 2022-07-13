@@ -38,15 +38,13 @@ TEST(keypoint_tracking, calculate_Is_gpu)
         auto hd_sI_xx = cuda::cuda_to_eigen(d_sI_xx);
         auto hd_sI_yy = cuda::cuda_to_eigen(d_sI_yy);
         auto hd_sI_xy = cuda::cuda_to_eigen(d_sI_xy);
-        size_t s = 1 + patch_size / 2;
-        size_t l = std::min(h_img.cols(), h_img.rows()) - (2 * s);
-        EXPECT_TRUE(are_matrices_close(hd_sI_xx.block(s, s, l, l),
-                                       h_sI_xx.block(s, s, l, l)));
-        EXPECT_TRUE(are_matrices_close(hd_sI_yy.block(s, s, l, l),
-                                       h_sI_yy.block(s, s, l, l)));
-        EXPECT_TRUE(are_matrices_close(hd_sI_xy.block(s, s, l, l),
-                                       h_sI_xy.block(s, s, l, l)));
-        // std::cout << s << " " << l << std::endl;
+        
+        EXPECT_TRUE(are_matrices_close(hd_sI_xx,
+                                       h_sI_xx));
+        EXPECT_TRUE(are_matrices_close(hd_sI_yy,
+                                       h_sI_yy));
+        EXPECT_TRUE(are_matrices_close(hd_sI_xy,
+                                       h_sI_xy));
         // std::cout << "sI_xx CPU\n"
         //           << h_sI_xx << std::endl<< std::endl;
         // std::cout << "sI_xx GPU\n"
@@ -56,7 +54,7 @@ TEST(keypoint_tracking, calculate_Is_gpu)
 
 TEST(keypoint_tracking, harris_score)
 {
-    for (int i = 0; i < 100; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         Eigen::MatrixXd h_img = Eigen::MatrixXd::Random(10, 10);
         cuda::CuMatrixD d_img = cuda::eigen_to_cuda(h_img);
@@ -65,10 +63,8 @@ TEST(keypoint_tracking, harris_score)
         auto h_score = harris(h_img, patch_size, kappa);
         auto d_score = harris(d_img, patch_size, kappa);
         auto hd_score = cuda::cuda_to_eigen(d_score);
-        size_t s = 1 + patch_size / 2;
-        size_t l = h_img.cols() - (2 * s);
-        EXPECT_TRUE(are_matrices_close(hd_score.block(s, s, l, l),
-                                       h_score.block(s, s, l, l)));
+        EXPECT_TRUE(are_matrices_close(hd_score,
+                                       h_score));
 
         // std::cout << "h_score CPU\n"
         //           << h_score << std::endl;
@@ -87,10 +83,8 @@ TEST(keypoint_tracking, shi_tomasi_score)
         auto h_score = shi_tomasi(h_img, patch_size);
         auto d_score = shi_tomasi(d_img, patch_size);
         auto hd_score = cuda::cuda_to_eigen(d_score);
-        size_t s = 1 + patch_size / 2;
-        size_t l = h_img.cols() - (2 * s);
-        EXPECT_TRUE(are_matrices_close(hd_score.block(s, s, l, l),
-                                       h_score.block(s, s, l, l)));
+        EXPECT_TRUE(are_matrices_close(hd_score,
+                                       h_score));
 
         // std::cout << "h_score CPU\n"
         //           << h_score << std::endl;

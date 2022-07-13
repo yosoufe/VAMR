@@ -63,25 +63,21 @@ void cuda_correlation_test(size_t kernel_size, size_t n_rows, size_t n_cols, boo
     cuda::CuMatrixD cuda_correlated = cuda::correlation(cuda_matrix, cuda_kernel);
     auto cuda_correlated_cpu = cuda::cuda_to_eigen(cuda_correlated);
 
-    size_t s = patch_size/2;
-    size_t l = std::min(matrix.cols(), matrix.rows()) - (2 * s);
     if (debug)
     {
-        std::cout << s << " " << l << std::endl;
         std::cout << "cpu correlated:\n"
-                    << correlated << std::endl;
+                  << correlated << std::endl;
         std::cout << "gpu correlated:\n"
-                    << cuda_correlated_cpu << std::endl;
+                  << cuda_correlated_cpu << std::endl;
     }
     EXPECT_TRUE(are_matrices_close(
-        cuda_correlated_cpu.block(s,s,l,l),
-        correlated.block(s,s,l,l)));
-    
+        cuda_correlated_cpu,
+        correlated));
 }
 
 TEST(UtilsTest, cuda_correlation)
 {
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         cuda_correlation_test(3, 5, 6, false);
         cuda_correlation_test(3, 5, 5, false);
@@ -90,13 +86,13 @@ TEST(UtilsTest, cuda_correlation)
 
 TEST(UtilsTest, cuda_ew_square)
 {
-    for (int i = 0; i< 100; ++i)
+    for (int i = 0; i < 100; ++i)
     {
         Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(500, 500);
         auto cpu_squared = matrix.array().square().matrix();
         cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
-        auto squared = cuda::pow(cuda_matrix,2.0);                              // out of place squared
-        auto in_place_cuda_squared = cuda::pow(std::move(cuda_matrix), 2.0);    // in place squared
+        auto squared = cuda::pow(cuda_matrix, 2.0);                          // out of place squared
+        auto in_place_cuda_squared = cuda::pow(std::move(cuda_matrix), 2.0); // in place squared
         EXPECT_EQ(in_place_cuda_squared.d_data.get(), cuda_matrix.d_data.get());
         auto gpu_squared = cuda::cuda_to_eigen(squared);
         auto gpu_inplace_squared = cuda::cuda_to_eigen(in_place_cuda_squared);
@@ -107,7 +103,7 @@ TEST(UtilsTest, cuda_ew_square)
 
 TEST(UtilsTest, ew_multiplication)
 {
-    for (int i = 0; i< 10; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         Eigen::MatrixXd m1 = Eigen::MatrixXd::Random(500, 500);
         Eigen::MatrixXd m2 = Eigen::MatrixXd::Random(500, 500);
@@ -117,7 +113,7 @@ TEST(UtilsTest, ew_multiplication)
         auto cuda_product = cuda_m1 * cuda_m2;
         auto cuda_product_on_cpu = cuda::cuda_to_eigen(cuda_product);
         EXPECT_TRUE(are_matrices_close(cuda_product_on_cpu, cpu_ew_product));
-        auto res_1 = (cuda_m1 * cuda_m2) * cuda_m1; 
+        auto res_1 = (cuda_m1 * cuda_m2) * cuda_m1;
         auto res_2 = (cuda_m1 * cuda_m2) * (cuda_m1 * cuda_m2);
         auto res_3 = cuda_m2 * (cuda_m1 * cuda_m2);
         // std::cout << "cpu squared\n" << cpu_squared << std::endl;
@@ -125,5 +121,22 @@ TEST(UtilsTest, ew_multiplication)
     }
 }
 
+TEST(UtilsTest, cuda_zero_borders)
+{
+    size_t rows = 10, cols = 8;
+    size_t s_row = 2, s_col = 1, l_row = 5, l_col = 7;
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(rows, cols);
+    Eigen::MatrixXd expected_output = Eigen::MatrixXd::Zero(rows, cols);
+    expected_output.block(s_row, s_col, l_row, l_col) = input.block(s_row, s_col, l_row, l_col);
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    cuda::zero_borders(d_input, s_row, s_col, l_row, l_col);
+    auto hd_output = cuda::cuda_to_eigen(d_input);
+    EXPECT_TRUE(are_matrices_close(hd_output, expected_output));
+
+    // printf("s_row %ld, s_col %ld, l_row %ld, l_col %ld.\n", s_row, s_col, l_row, l_col);
+    // std::cout << "input\n" << input << std::endl;
+    // std::cout << "output\n" << hd_output << std::endl;
+}
 
 #endif

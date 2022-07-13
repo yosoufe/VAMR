@@ -5,6 +5,8 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include <thrust/transform.h>
+#include <thrust/sequence.h>
+#include <thrust/iterator/zip_iterator.h>
 
 #include "operations.cuh"
 #include "operations.hpp"
@@ -66,7 +68,7 @@ void setTensorDesc(cudnnTensorDescriptor_t &tensorDesc,
 cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMatrixD &kernel)
 {
     /**
-     * in CUDNN it seems it is 
+     * in CUDNN it seems it is
      * height <-> number of columns
      * weight <-> number of rows.
      */
@@ -110,11 +112,11 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CUDNN_CALL(cudnnCreateConvolutionDescriptor(&conv_desc));
 
     const int convDims = 2;
-    int padA[convDims] = { kernel.n_cols / 2,  kernel.n_rows / 2};
-    int filterStrideA[convDims] = {1,1};
-    int upscaleA[convDims] = {1,1};
+    int padA[convDims] = {kernel.n_cols / 2, kernel.n_rows / 2};
+    int filterStrideA[convDims] = {1, 1};
+    int upscaleA[convDims] = {1, 1};
     CUDNN_CALL(cudnnSetConvolutionNdDescriptor(
-        conv_desc,convDims, padA, filterStrideA, 
+        conv_desc, convDims, padA, filterStrideA,
         upscaleA, CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE));
 
     // output
@@ -128,18 +130,20 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     CUDNN_CALL(cudnnGetConvolutionNdForwardOutputDim(
         conv_desc, in_desc, filt_desc,
         tensorDims, tensorOuputDimA));
-    
-    out_n = tensorOuputDimA[0]; out_c = tensorOuputDimA[1];
-    out_h = tensorOuputDimA[2]; out_w = tensorOuputDimA[3];
+
+    out_n = tensorOuputDimA[0];
+    out_c = tensorOuputDimA[1];
+    out_h = tensorOuputDimA[2];
+    out_w = tensorOuputDimA[3];
 
     // std::cout << " out_n " << out_n << " out_c " << out_c;
     // std::cout << " out_h " << out_h << " out_w " << out_w << std::endl;
 
     cudnnTensorDescriptor_t out_desc;
     CUDNN_CALL(cudnnCreateTensorDescriptor(&out_desc));
-    
+
     setTensorDesc(out_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
-                   out_n, out_c, out_h, out_w);
+                  out_n, out_c, out_h, out_w);
 
     double *out_data;
     CSC(cudaMalloc(
@@ -162,9 +166,8 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         cudnn, in_desc, filt_desc, conv_desc, out_desc, algo, &ws_size));
 
     double *ws_data;
-    if (ws_size!=0)
+    if (ws_size != 0)
         CSC(cudaMalloc(&ws_data, ws_size));
-    
 
     // perform
     double alpha = 1.0;
@@ -176,10 +179,17 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         conv_desc, algo, ws_data, ws_size,
         &beta, out_desc, out_data));
 
+    // zeros out the elements that are calculated by the padding
     auto out = cuda::CuMatrixD(out_data, out_h, out_w);
+    int s_row = kernel.n_rows / 2;
+    int s_col = kernel.n_cols / 2;
+    int l_row = input.n_rows - 2 * s_row;
+    int l_col = input.n_cols - 2 * s_col;
+
+    zero_borders(out, s_row, s_col, l_row, l_col);
 
     // finalizing
-    if (ws_size!=0)
+    if (ws_size != 0)
         CSC(cudaFree(ws_data));
     CUDNN_CALL(cudnnDestroyTensorDescriptor(out_desc));
     CUDNN_CALL(cudnnDestroyConvolutionDescriptor(conv_desc));
@@ -398,4 +408,57 @@ cuda::CuMatrixD cuda::threshold_lower(cuda::CuMatrixD &&input, double threshold,
 {
     _unary_operator(input, input, thrshold_lower_functor<double>(threshold, substitute));
     return input;
+}
+
+template <typename T>
+struct ZeroBorderOperator
+{
+    int n_rows, n_cols;
+    int s_row, s_col, l_row, l_col;
+    ZeroBorderOperator(int n_rows, int n_cols,
+                       int s_row, int s_col,
+                       int l_row, int l_col) : n_rows(n_rows),
+                                               n_cols(n_cols),
+                                               s_row(s_row),
+                                               s_col(s_col),
+                                               l_row(l_row),
+                                               l_col(l_col)
+    {
+    }
+
+    template <typename Tuple>
+    __host__ __device__ T operator()(Tuple t)
+    {
+        int index = thrust::get<1>(t);
+        T value = thrust::get<0>(t);
+        auto idx = get_2d_index_colwise(index, n_rows);
+        auto row = thrust::get<0>(idx);
+        auto col = thrust::get<1>(idx);
+
+        if (col < s_col || col >= s_col + l_col || row < s_row || row >= s_row + l_row)
+            return T(0.0);
+        else
+            return value;
+    }
+};
+
+auto create_indcies(const cuda::CuMatrixD &input)
+{
+    thrust::device_ptr<int> d_output = thrust::device_malloc<int>(input.n_elements());
+    thrust::sequence(thrust::device, d_output, d_output + input.n_elements());
+    return d_output;
+}
+
+void cuda::zero_borders(cuda::CuMatrixD &input, int s_row, int s_col, int l_row, int l_col)
+{
+    auto d_indices_start = create_indcies(input);
+    auto &output = input;
+    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
+    thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
+    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.d_data.get());
+    ZeroBorderOperator<double> ops(input.n_rows, input.n_cols, s_row, s_col, l_row, l_col);
+    thrust::transform(thrust::cuda::par,
+                      thrust::make_zip_iterator(thrust::make_tuple(d_vec_start, d_indices_start)),
+                      thrust::make_zip_iterator(thrust::make_tuple(d_vec_end, d_indices_start + input.n_elements())),
+                      d_output_start, ops);
 }
