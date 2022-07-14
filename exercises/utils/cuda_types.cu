@@ -12,6 +12,7 @@ void cuda::CuMatrixDeleter<T>::operator()(T *p) const
         // or exit. CSC might exit.
         // std::cout << "freeing gpu memory" << std::endl;
         CSC(cudaFree(p));
+        p = nullptr;
     }
 }
 
@@ -37,6 +38,14 @@ cuda::CuMatrix<T>::CuMatrix(int cols, int rows) : n_cols(cols), n_rows(rows)
     CSC(cudaMalloc(&ptr, number_of_bytes));
     d_data = std::shared_ptr<T>(ptr,
                                 cuda::CuMatrixDeleter<T>());
+}
+
+template <typename T>
+cuda::CuMatrix<T> cuda::CuMatrix<T>::clone() const
+{
+    cuda::CuMatrix<T> output(n_cols, n_rows);
+    CSC(cudaMemcpy(output.d_data.get(), d_data.get(), sizeof(T)*n_elements(), cudaMemcpyDeviceToDevice));
+    return output;
 }
 
 template struct cuda::CuMatrixDeleter<double>;

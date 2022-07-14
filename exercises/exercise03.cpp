@@ -106,16 +106,16 @@ int main_gpu()
         // auto end_time = second(); 
         // std::cout << "elapsed gpu: " << end_time - start_time << std::endl;
 
-        viz_harris_shi_tomasi_scores(src_img,
-                                     cuda::cuda_to_eigen(shi_tomasi_score),
-                                     cuda::cuda_to_eigen(harris_score));
+        // viz_harris_shi_tomasi_scores(src_img,
+        //                              cuda::cuda_to_eigen(shi_tomasi_score),
+        //                              cuda::cuda_to_eigen(harris_score));
 
         // Part 2: Select keypoints
-        // auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
-        // auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
-        // viz_key_points(src_img,
-        //                shi_tomasi_score, harris_score,
-        //                shi_tomasi_kps, harris_kps);
+        auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
+        auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
+        viz_key_points(src_img,
+                       cuda::cuda_to_eigen(shi_tomasi_score), cuda::cuda_to_eigen(harris_score),
+                       shi_tomasi_kps, harris_kps);
 
         // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
         // auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);

@@ -56,6 +56,8 @@ namespace cuda
         {
             return n_rows * n_cols;
         }
+
+        CuMatrix clone() const;
     };
 
     using CuMatrixD = CuMatrix<double>;

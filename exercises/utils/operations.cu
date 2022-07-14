@@ -442,7 +442,7 @@ struct ZeroBorderOperator
     }
 };
 
-auto create_indcies(const cuda::CuMatrixD &input)
+thrust::device_ptr<int> cuda::create_indices(const cuda::CuMatrixD &input)
 {
     thrust::device_ptr<int> d_output = thrust::device_malloc<int>(input.n_elements());
     thrust::sequence(thrust::device, d_output, d_output + input.n_elements());
@@ -451,7 +451,7 @@ auto create_indcies(const cuda::CuMatrixD &input)
 
 void cuda::zero_borders(cuda::CuMatrixD &input, int s_row, int s_col, int l_row, int l_col)
 {
-    auto d_indices_start = create_indcies(input);
+    auto d_indices_start = cuda::create_indices(input);
     auto &output = input;
     thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
     thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;

@@ -173,4 +173,40 @@ TEST(keypoint_tracking, non_maximum_suppression)
         test_non_maximum_suppression(Eigen::MatrixXd::Random(1025, 800).array() + 1, 3, false);
 }
 
+void test_sort(Eigen::MatrixXd& input)
+{
+    std::cout << "\ninput before sort\n" << input << std::endl;
+    auto d_input = cuda::eigen_to_cuda(input);
+    cuda::CuMatrixD indicies;
+    auto d_output = cuda::sort_matrix(d_input, indicies);
+    std::cout << "before sort\n" << cuda::cuda_to_eigen(d_input) << std::endl;
+    std::cout << "after sort\n" << cuda::cuda_to_eigen(d_output) << std::endl;
+    std::cout << "indicies\n" << cuda::cuda_to_eigen(indicies) << std::endl;
+}
+
+TEST(keypoint_tracking, sort_matrix)
+{
+    Eigen::MatrixXd input(4, 5);
+    for (int i = 0; i<input.size(); ++i)
+        input(i) = i;
+    test_sort(input);
+}
+
+TEST(keypoint_tracking, select_keypoint_gpu)
+{
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(4,4).array() + 1;
+    int num = 2;
+    int radius = 1;
+    auto expected = select_keypoints(input, num, radius);
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    auto output = cuda::select_keypoints(d_input, num, radius);
+    EXPECT_TRUE(are_matrices_close(output, expected));
+
+    // std::cout << "input\n" << input << std::endl;
+    // std::cout << "expected\n" << expected << std::endl;
+    // std::cout << "res\n" << d_output << std::endl;
+
+}
+
 #endif

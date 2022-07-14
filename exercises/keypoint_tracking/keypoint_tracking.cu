@@ -3,7 +3,15 @@
 #include "utils.cuh"
 #include "operations.hpp"
 #include "utils.cuh"
+#include "operations.cuh"
 #include <cooperative_groups.h>
+
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+#include <thrust/device_ptr.h>
+#include <thrust/tuple.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 namespace cg = cooperative_groups;
 
@@ -222,7 +230,6 @@ __global__ void non_maximum_suppression_kernel_3(double *input, int n_rows, int 
     if (sh_row < halo_half || sh_col < halo_half || sh_row >= blockDim.x - halo_half || sh_col >= blockDim.y - halo_half)
         return;
 
-
     auto &center = shared[get_index_colwise(sh_row, sh_col, n_rows_shared)];
     int output_idx = get_index_colwise(row, col, n_rows);
 
@@ -272,4 +279,66 @@ cuda::CuMatrixD cuda::non_maximum_suppression_3(const cuda::CuMatrixD &input, si
     CLE();
     CSC(cudaDeviceSynchronize());
     return output;
+}
+
+__global__ void index_conversion(int *idx, double *output, int n_rows, int n_cols)
+{
+    int index_1d = threadIdx.x + blockDim.x * blockIdx.x;
+    if (index_1d >= n_rows * n_cols)
+        return;
+
+    auto res = get_2d_index_colwise(idx[index_1d], n_rows);
+    auto row = thrust::get<0>(res);
+    auto col = thrust::get<1>(res);
+
+    auto res_row_index = get_index_colwise(0, index_1d, 2);
+    auto res_col_index = get_index_colwise(1, index_1d, 2);
+
+    output[res_row_index] = col;
+    output[res_col_index] = row;
+}
+
+void _sort_matrix(cuda::CuMatrixD &input,
+                  cuda::CuMatrixD &indicies_output)
+{
+    auto indices = cuda::create_indices(input);
+    auto key_start = thrust::device_pointer_cast(input.d_data.get());
+    auto key_end = key_start + input.n_elements();
+    thrust::sort_by_key(thrust::cuda::par, key_start, key_end, indices, thrust::greater<double>());
+
+    indicies_output = cuda::CuMatrixD(input.n_elements(), 2);
+    index_conversion<<<input.n_elements() / 1024 + 1, 1024>>>(indices.get(),
+                                                              indicies_output.d_data.get(),
+                                                              input.n_rows,
+                                                              input.n_cols);
+}
+
+cuda::CuMatrixD cuda::sort_matrix(
+    cuda::CuMatrixD &&input,
+    cuda::CuMatrixD &indicies_output)
+{
+    _sort_matrix(input, indicies_output);
+    return input;
+}
+
+cuda::CuMatrixD cuda::sort_matrix(
+    const cuda::CuMatrixD &input,
+    cuda::CuMatrixD &indicies_output)
+{
+    auto output_values = input.clone();
+    _sort_matrix(output_values, indicies_output);
+    return output_values;
+}
+
+Eigen::MatrixXd cuda::select_keypoints(
+    const cuda::CuMatrixD &score,
+    size_t num,
+    size_t radius)
+{
+    int patch_size = radius * 2 + 1;
+    cuda::CuMatrixD indicies;
+
+    cuda::sort_matrix(cuda::non_maximum_suppression_1(score, patch_size), indicies);
+    // keys are scores and values are indicies.
+    return cuda::cuda_to_eigen(indicies).block(0, 0, 2, min(num, (size_t)score.n_elements()));
 }

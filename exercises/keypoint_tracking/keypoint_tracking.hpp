@@ -176,6 +176,28 @@ namespace cuda
     CuMatrixD non_maximum_suppression_3(const CuMatrixD &input, size_t patch_size);
 
     /**
+     * @brief sort the matrix in place and returns the sorted one. 
+     * 
+     * @param input             The input matrix, it will be sorted inplace.
+     * @param indicies_output   The indicies before sort (2 x n_elements()).
+     * @return CuMatrixD        The same input after sort. It points to the same location as input.
+     */
+    CuMatrixD sort_matrix(
+        CuMatrixD &&input,
+        CuMatrixD &indicies_output);
+    
+    /**
+     * @brief Sort out of place
+     * 
+     * @param input             input matrix,
+     * @param indicies_output   indicies of the sorted elements in the input (2 x n_elements())
+     * @return CuMatrixD        returns sorted matrix.
+     */
+    CuMatrixD sort_matrix(
+        const CuMatrixD &input,
+        CuMatrixD &indicies_output);
+
+    /**
      * @brief Select keypoints from the score image.
      * The non-maximum suppression is applied with a box of
      * size (2 radius +1) * (2 radius + 1)
@@ -183,9 +205,9 @@ namespace cuda
      * @param score The score image
      * @param num   Number of best keypoints to select
      * @param radius  The radius for non-maximum suppression
-     * @return CuMatrixD in shape of (2 x num)
+     * @return Eigen::MatrixXd in shape of (2 x num)
      */
-    CuMatrixD select_keypoints(
+    Eigen::MatrixXd select_keypoints(
         const CuMatrixD &score,
         size_t num,
         size_t radius);
