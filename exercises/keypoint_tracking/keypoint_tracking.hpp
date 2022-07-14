@@ -36,7 +36,7 @@ Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kap
  */
 Eigen::MatrixXd shi_tomasi(const Eigen::MatrixXd &img, size_t patch_size);
 
-Eigen::MatrixXd non_maximum_suppression(const Eigen::MatrixXd &img,size_t patch_size);
+Eigen::MatrixXd non_maximum_suppression(const Eigen::MatrixXd &img, size_t patch_size);
 
 /**
  * @brief Select keypoints from the score image.
@@ -147,32 +147,33 @@ namespace cuda
 
     /**
      * @brief applies non_maximum suppression to the score matrix
-     * 
-     * In each patch, if the center is the max, keep the values, otherwise 
+     *
+     * In each patch, if the center is the max, keep the values, otherwise
      * assigns zeros to the center.
-     * 
+     *
+     * This is using global memory in GPU.
+     *
+     * @param input         The input matrix
+     * @param patch_size    patch size
+     * @return CuMatrixD    The output result
+     */
+    CuMatrixD non_maximum_suppression_1(const CuMatrixD &input, size_t patch_size);
+
+    /**
+     * @brief applies non_maximum suppression to the score matrix
+     *
+     * In each patch, if the center is the max, keep the values, otherwise
+     * assigns zeros to the center.
+     *
      * This is using shared memory in GPU.
-     * 
+     *
      * @param input         The input matrix
      * @param patch_size    patch size
      * @return CuMatrixD    The output result
      */
     CuMatrixD non_maximum_suppression_2(const CuMatrixD &input, size_t patch_size);
 
-
-    /**
-     * @brief applies non_maximum suppression to the score matrix
-     * 
-     * In each patch, if the center is the max, keep the values, otherwise 
-     * assigns zeros to the center.
-     * 
-     * This is using global memory in GPU.
-     * 
-     * @param input         The input matrix
-     * @param patch_size    patch size
-     * @return CuMatrixD    The output result
-     */
-    CuMatrixD non_maximum_suppression_1(const CuMatrixD &input, size_t patch_size);
+    CuMatrixD non_maximum_suppression_3(const CuMatrixD &input, size_t patch_size);
 
     /**
      * @brief Select keypoints from the score image.
