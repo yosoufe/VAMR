@@ -151,6 +151,47 @@ Eigen::MatrixXd harris(const Eigen::MatrixXd &img, size_t patch_size, double kap
     return harris_score;
 }
 
+Eigen::MatrixXd non_maximum_suppression(
+    const Eigen::MatrixXd &input,
+    size_t patch_size)
+{
+    int radius = patch_size / 2;
+    Eigen::MatrixXd output = Eigen::MatrixXd::Zero(input.rows(), input.cols());
+
+    for (int center_row = 0; center_row < input.rows(); ++center_row)
+    {
+        for (int center_col = 0; center_col < input.cols(); ++center_col)
+        {
+            auto center = input(center_row, center_col);
+            bool suppress = false;
+            for(int comp_row = center_row - radius; comp_row <= center_row + radius ; ++comp_row)
+            {
+                if (comp_row < 0 || comp_row >= input.rows())
+                    continue;
+                
+                for(int comp_col = center_col - radius; comp_col <= center_col + radius ; ++comp_col)
+                {
+                    if (comp_col < 0 || comp_col >= input.cols())
+                        continue;
+                    
+                    auto compare = input(comp_row, comp_col);
+
+                    if (compare > center)
+                    {
+                        suppress = true;
+                        break;
+                    }
+                }
+                if (suppress)
+                    break;
+            }
+            if (!suppress)
+                output(center_row,center_col) = input(center_row, center_col);
+        }
+    }
+    return output;
+}
+
 cv::Mat viz_harris_shi_tomasi_scores(
     const cv::Mat &img,
     const Eigen::MatrixXd &shi_tomasi_score,

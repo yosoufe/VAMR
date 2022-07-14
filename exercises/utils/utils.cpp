@@ -241,9 +241,39 @@ void visualize_matrix_as_image(Eigen::MatrixXd mat)
     cv::waitKey(0);
 }
 
+bool are_matrices_close(const Eigen::MatrixXd &first, const Eigen::MatrixXd &second)
+{
+    if (first.cols() != second.cols() ||
+        first.rows() != second.rows())
+        return false;
+    return (first - second).norm() < 1e-5;
+}
+
+bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &second)
+{
+    if (first.cols() != second.cols() ||
+        first.rows() != second.rows())
+        return false;
+    return (first - second).norm() < 1e-5;
+}
+
+std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd& input)
+{
+    std::vector<Eigen::Index> indicies;
+    for(Eigen::Index i=0; i<input.size(); ++i)
+        if(abs(input(i)) > 0)
+            indicies.push_back(i);
+    return indicies;
+}
+
 double
-second(void) {
+second(void)
+{
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
 }
+
+#if WITH_CUDA
+
+#endif

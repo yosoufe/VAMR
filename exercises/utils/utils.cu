@@ -22,6 +22,7 @@ get_2d_index_rowwise(int index_1d, int n_cols)
     int col = index_1d % n_cols;
     return thrust::tuple<int, int>(row, col);
 }
+
 __host__ __device__ thrust::tuple<int, int>
 get_2d_index_colwise(int index_1d, int n_rows)
 {

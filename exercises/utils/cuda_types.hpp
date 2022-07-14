@@ -68,4 +68,6 @@ namespace cuda
     MatrixT<T> cuda_to_eigen(const CuMatrix<T> &cuda_eigen);
 }
 
+bool are_matrices_close(const cuda::CuMatrixD &first, const Eigen::MatrixXd &second);
+
 #endif

@@ -75,3 +75,9 @@ MatrixT<T> cuda::cuda_to_eigen(const cuda::CuMatrix<T> &cuda_eigen)
 // instantiate template function above
 template MatrixT<double> cuda::cuda_to_eigen(const cuda::CuMatrix<double> &cuda_eigen);
 template MatrixT<float> cuda::cuda_to_eigen(const cuda::CuMatrix<float> &cuda_eigen);
+
+bool are_matrices_close(const cuda::CuMatrixD &first, const Eigen::MatrixXd &second)
+{
+    auto host_matrix = cuda::cuda_to_eigen(first);
+    return are_matrices_close(host_matrix, second);
+}

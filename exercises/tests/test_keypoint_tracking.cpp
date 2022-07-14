@@ -22,6 +22,26 @@ TEST(keypoint_tracking, calculate_Is)
     EXPECT_TRUE(are_matrices_close(expected_I, sI_xy));
 }
 
+TEST(keypoint_tracking, non_maximum_suppression_cpu)
+{
+    Eigen::MatrixXd input(4, 5);
+    input << 10, 1, 3, 6, 10,
+        2, 3, 7, 3, 1,
+        5, 4, 4, 1, 2,
+        4, 1, 9, 0, 3;
+    int patch_size = 3;
+
+    Eigen::MatrixXd expected(4, 5);
+    expected << 10, 0, 0, 0, 10,
+        0, 0, 7, 0, 0,
+        5, 0, 0, 0, 0,
+        0, 0, 9, 0, 3;
+
+    auto output = non_maximum_suppression(input, patch_size);
+    EXPECT_TRUE(are_matrices_close(output, expected));
+    std::cout << output << std::endl;
+}
+
 #if WITH_CUDA
 
 TEST(keypoint_tracking, calculate_Is_gpu)
@@ -93,6 +113,48 @@ TEST(keypoint_tracking, shi_tomasi_score)
     }
 }
 
+void debug_non_maximum_suppression(cuda::CuMatrixD d_output, Eigen::MatrixXd expected)
+{
+
+    auto hd_output = cuda::cuda_to_eigen(d_output);
+    Eigen::MatrixXd diff = hd_output - expected;
+    auto non_zero_indicies = find_non_zero_indicies(diff);
+    std::cout << "printing " << non_zero_indicies.size() << " indicies\n";
+    for (auto &idx : non_zero_indicies)
+        printf("(%ld, %ld, %f = %f - %f)\n",
+               idx % expected.rows(),
+               idx / expected.rows(),
+               diff(idx),
+               hd_output(idx), 
+               expected(idx));
+
+    std::cout << "\ndiff\n" << diff << std::endl;
+    std::cout << "\nexpected\n" << expected << std::endl;
+    std::cout << "\noutput\n" << hd_output << std::endl;
+}
+
+void test_non_maximum_suppression(Eigen::MatrixXd input, int patch_size, bool debug = false)
+{
+    auto start = second();
+    Eigen::MatrixXd expected = non_maximum_suppression(input, patch_size);
+    printf("\n\nCPU time %f\n", second()- start);
+    
+    auto d_input = cuda::eigen_to_cuda(input);
+
+    start = second();
+    auto d_output_global = cuda::non_maximum_suppression_1(d_input, patch_size);
+    printf("GPU time using global memory %f\n", second()- start);
+    EXPECT_TRUE(are_matrices_close(d_output_global, expected));
+
+    start = second();
+    auto d_output_shared = cuda::non_maximum_suppression_2(d_input, patch_size);
+    printf("GPU time using shared memory %f\n", second()- start);
+    EXPECT_TRUE(are_matrices_close(d_output_shared, expected));
+
+    if (debug)
+        debug_non_maximum_suppression(d_output_shared, expected);
+}
+
 TEST(keypoint_tracking, non_maximum_suppression)
 {
     Eigen::MatrixXd input(4, 5);
@@ -100,19 +162,10 @@ TEST(keypoint_tracking, non_maximum_suppression)
         2, 3, 7, 3, 1,
         5, 4, 4, 1, 2,
         4, 1, 9, 0, 3;
-    int patch_size = 3;
-
-    Eigen::MatrixXd expected(4, 5);
-    expected << 10, 0, 0, 0, 10,
-        0, 0, 7, 0, 0,
-        5, 0, 0, 0, 0,
-        0, 0, 9, 0, 3;
-
-    auto d_input = cuda::eigen_to_cuda(input);
-    auto d_output = cuda::non_maximum_suppression(d_input, patch_size);
-    auto hd_output = cuda::cuda_to_eigen(d_output);
-    EXPECT_TRUE(are_matrices_close(hd_output, expected));
-    // std::cout << hd_output << std::endl;
+    test_non_maximum_suppression(input, 3);
+    test_non_maximum_suppression(Eigen::MatrixXd::Random(3000, 4000).array() + 1, 3, false);
+    for(int i = 0 ; i < 10; ++i)
+        test_non_maximum_suppression(Eigen::MatrixXd::Random(1025, 800).array() + 1, 3, false);
 }
 
 #endif
