@@ -58,6 +58,18 @@ namespace cuda
         }
 
         CuMatrix clone() const;
+
+        /**
+         * @brief similar to Eigen::Matrix::block but 
+         * currently it always involves copying the data in GPU.
+         * 
+         * @param row 
+         * @param col 
+         * @param height 
+         * @param width 
+         * @return CuMatrix 
+         */
+        CuMatrix block(int row, int col, int height, int width) const;
     };
 
     using CuMatrixD = CuMatrix<double>;
@@ -68,6 +80,8 @@ namespace cuda
 
     template <typename T>
     MatrixT<T> cuda_to_eigen(const CuMatrix<T> &cuda_eigen);
+
+
 }
 
 bool are_matrices_close(const cuda::CuMatrixD &first, const Eigen::MatrixXd &second);

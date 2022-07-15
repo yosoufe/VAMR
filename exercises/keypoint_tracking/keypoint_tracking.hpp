@@ -176,8 +176,8 @@ namespace cuda
     CuMatrixD non_maximum_suppression_3(const CuMatrixD &input, size_t patch_size);
 
     /**
-     * @brief sort the matrix in place and returns the sorted one. 
-     * 
+     * @brief sort the matrix in place and returns the sorted one.
+     *
      * @param input             The input matrix, it will be sorted inplace.
      * @param indicies_output   The indicies before sort (2 x n_elements()).
      * @return CuMatrixD        The same input after sort. It points to the same location as input.
@@ -185,10 +185,10 @@ namespace cuda
     CuMatrixD sort_matrix(
         CuMatrixD &&input,
         CuMatrixD &indicies_output);
-    
+
     /**
      * @brief Sort out of place
-     * 
+     *
      * @param input             input matrix,
      * @param indicies_output   indicies of the sorted elements in the input (2 x n_elements())
      * @return CuMatrixD        returns sorted matrix.
@@ -205,12 +205,27 @@ namespace cuda
      * @param score The score image
      * @param num   Number of best keypoints to select
      * @param radius  The radius for non-maximum suppression
-     * @return Eigen::MatrixXd in shape of (2 x num)
+     * @return Eigen::MatrixXd in shape of (2 x n_rows * n_cols)
      */
-    Eigen::MatrixXd select_keypoints(
+    cuda::CuMatrixD select_keypoints(
         const CuMatrixD &score,
-        size_t num,
         size_t radius);
+
+    /**
+     * @brief This is a bit differnt than cpu
+     * impplementation. 
+     * 
+     * @param img                           input image.
+     * @param sorted_pixels_based_on_scores index of the pixels in the order of their scores in desending order
+     * @param num_keypoints_to_consider     number of keypoints to consider. (not all of them).
+     * @param descriptor_radius             radius of the descriptor.
+     * @return cuda::CuMatrixD              (2r+1)^2xN matrix of descriptors
+     */
+    cuda::CuMatrixD describe_keypoints(
+        const cuda::CuMatrixD &img,
+        const cuda::CuMatrixD &sorted_pixels_based_on_scores,
+        int num_keypoints_to_consider,
+        int descriptor_radius);
 
 }
 

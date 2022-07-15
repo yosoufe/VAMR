@@ -39,7 +39,7 @@ TEST(keypoint_tracking, non_maximum_suppression_cpu)
 
     auto output = non_maximum_suppression(input, patch_size);
     EXPECT_TRUE(are_matrices_close(output, expected));
-    std::cout << output << std::endl;
+    // std::cout << output << std::endl;
 }
 
 #if WITH_CUDA
@@ -125,35 +125,38 @@ void debug_non_maximum_suppression(cuda::CuMatrixD d_output, Eigen::MatrixXd exp
                idx % expected.rows(),
                idx / expected.rows(),
                diff(idx),
-               hd_output(idx), 
+               hd_output(idx),
                expected(idx));
 
-    std::cout << "\ndiff\n" << diff << std::endl;
-    std::cout << "\nexpected\n" << expected << std::endl;
-    std::cout << "\noutput\n" << hd_output << std::endl;
+    std::cout << "\ndiff\n"
+              << diff << std::endl;
+    std::cout << "\nexpected\n"
+              << expected << std::endl;
+    std::cout << "\noutput\n"
+              << hd_output << std::endl;
 }
 
 void test_non_maximum_suppression(Eigen::MatrixXd input, int patch_size, bool debug = false)
 {
     auto start = second();
     Eigen::MatrixXd expected = non_maximum_suppression(input, patch_size);
-    printf("\n\nCPU time %f\n", second()- start);
-    
+    printf("\n\nCPU time %f\n", second() - start);
+
     auto d_input = cuda::eigen_to_cuda(input);
 
     start = second();
     auto output = cuda::non_maximum_suppression_1(d_input, patch_size);
-    printf("GPU time using global memory %f\n", second()- start);
+    printf("GPU time using global memory %f\n", second() - start);
     EXPECT_TRUE(are_matrices_close(output, expected));
 
     start = second();
     output = cuda::non_maximum_suppression_2(d_input, patch_size);
-    printf("GPU time using shared memory1 %f\n", second()- start);
+    printf("GPU time using shared memory1 %f\n", second() - start);
     EXPECT_TRUE(are_matrices_close(output, expected));
 
     start = second();
     output = cuda::non_maximum_suppression_3(d_input, patch_size);
-    printf("GPU time using shared memory2 %f\n", second()- start);
+    printf("GPU time using shared memory2 %f\n", second() - start);
     EXPECT_TRUE(are_matrices_close(output, expected));
 
     if (debug)
@@ -169,44 +172,73 @@ TEST(keypoint_tracking, non_maximum_suppression)
         4, 1, 9, 0, 3;
     test_non_maximum_suppression(input, 3);
     test_non_maximum_suppression(Eigen::MatrixXd::Random(3000, 4000).array() + 1, 3, false);
-    for(int i = 0 ; i < 10; ++i)
+    for (int i = 0; i < 10; ++i)
         test_non_maximum_suppression(Eigen::MatrixXd::Random(1025, 800).array() + 1, 3, false);
 }
 
-void test_sort(Eigen::MatrixXd& input)
+void test_sort(Eigen::MatrixXd &input)
 {
-    std::cout << "\ninput before sort\n" << input << std::endl;
+    std::cout << "\ninput before sort\n"
+              << input << std::endl;
     auto d_input = cuda::eigen_to_cuda(input);
     cuda::CuMatrixD indicies;
     auto d_output = cuda::sort_matrix(d_input, indicies);
-    std::cout << "before sort\n" << cuda::cuda_to_eigen(d_input) << std::endl;
-    std::cout << "after sort\n" << cuda::cuda_to_eigen(d_output) << std::endl;
-    std::cout << "indicies\n" << cuda::cuda_to_eigen(indicies) << std::endl;
+    // std::cout << "before sort\n" << cuda::cuda_to_eigen(d_input) << std::endl;
+    std::cout << "after sort\n"
+              << cuda::cuda_to_eigen(d_output) << std::endl;
+    std::cout << "indicies\n"
+              << cuda::cuda_to_eigen(indicies) << std::endl;
 }
 
 TEST(keypoint_tracking, sort_matrix)
 {
     Eigen::MatrixXd input(4, 5);
-    for (int i = 0; i<input.size(); ++i)
+    for (int i = 0; i < input.size(); ++i)
         input(i) = i;
     test_sort(input);
 }
 
 TEST(keypoint_tracking, select_keypoint_gpu)
 {
-    Eigen::MatrixXd input = Eigen::MatrixXd::Random(4,4).array() + 1;
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(4, 4).array() + 1;
     int num = 2;
     int radius = 1;
     auto expected = select_keypoints(input, num, radius);
 
     auto d_input = cuda::eigen_to_cuda(input);
-    auto output = cuda::select_keypoints(d_input, num, radius);
-    EXPECT_TRUE(are_matrices_close(output, expected));
+    auto output = cuda::select_keypoints(d_input, radius);
+    EXPECT_TRUE(are_matrices_close(output.block(0, 0, 2, num), expected));
 
     // std::cout << "input\n" << input << std::endl;
     // std::cout << "expected\n" << expected << std::endl;
-    // std::cout << "res\n" << d_output << std::endl;
+    // std::cout << "output\n" << cuda::cuda_to_eigen(output) << std::endl;
+}
 
+TEST(keypoint_tracking, describe_keypoints)
+{
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(1800, 900).array() + 1;
+    int num = 6;
+    int radius = 5;
+    int descriptor_radius = 1;
+
+    auto keypoints = select_keypoints(input, num, radius);
+    auto descriptors = describe_keypoints(input, keypoints, descriptor_radius);
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    auto d_keypoints = cuda::select_keypoints(d_input, radius);
+    auto d_descriptors = cuda::describe_keypoints(d_input, d_keypoints, num, descriptor_radius);
+
+    auto hd_descriptors = cuda::cuda_to_eigen(d_descriptors);
+    EXPECT_TRUE(are_matrices_close(hd_descriptors, descriptors));
+
+    // print_shape(descriptors);
+    // print_shape(hd_descriptors);
+    // std::cout << "keypoints\n"
+    //           << keypoints << std::endl;
+    // std::cout << "expected\n"
+    //           << descriptors << std::endl;
+    // std::cout << "output\n"
+    //           << hd_descriptors << std::endl;
 }
 
 #endif

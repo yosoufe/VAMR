@@ -31,6 +31,45 @@ TEST(UtilsTest, cuda_eigen)
     }
 }
 
+void test_cuda_block(int n_rows_original,
+                     int n_cols_original,
+                     int start_row,
+                     int start_col,
+                     int block_height,
+                     int block_width)
+{
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(n_rows_original, n_cols_original);
+    Eigen::MatrixXd expected = input.block(start_row, start_col, block_height, block_width);
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    auto d_output = d_input.block(start_row, start_col, block_height, block_width);
+    EXPECT_TRUE(are_matrices_close(d_output, expected));
+
+    // std::cout << "input\n"
+    //           << input << std::endl;
+    // std::cout << "expected\n"
+    //           << expected << std::endl;
+    // std::cout << "output\n"
+    //           << cuda::cuda_to_eigen(d_output) << std::endl;
+}
+
+TEST(UtilsTest, cuda_block)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        auto start = second();
+        test_cuda_block(10, 9, 1, 1, 8, 8);
+        std::cout << "time (8,8): " << second() - start << std::endl;
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        auto start = second();
+        test_cuda_block(1000, 1000, 1, 1, 1000-1, 1000-1);
+        std::cout << "time (1000,1000): " << second() - start << std::endl;
+    }
+}
+
 TEST(UtilsTest, cuda_img)
 {
     std::string in_data_root = "../../data/ex03/";

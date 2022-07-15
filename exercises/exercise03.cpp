@@ -103,7 +103,7 @@ int main_gpu()
         auto cuda_eigen_img = cuda::eigen_to_cuda(eigen_img);
         auto shi_tomasi_score = cuda::shi_tomasi(cuda_eigen_img, patch_size);
         auto harris_score = cuda::harris(cuda_eigen_img, patch_size, harris_kappa);
-        // auto end_time = second(); 
+        // auto end_time = second();
         // std::cout << "elapsed gpu: " << end_time - start_time << std::endl;
 
         // viz_harris_shi_tomasi_scores(src_img,
@@ -111,19 +111,33 @@ int main_gpu()
         //                              cuda::cuda_to_eigen(harris_score));
 
         // Part 2: Select keypoints
-        auto shi_tomasi_kps = select_keypoints(shi_tomasi_score, num_keypoints, non_maximum_suppression_radius);
-        auto harris_kps = select_keypoints(harris_score, num_keypoints, non_maximum_suppression_radius);
-        viz_key_points(src_img,
-                       cuda::cuda_to_eigen(shi_tomasi_score), cuda::cuda_to_eigen(harris_score),
-                       shi_tomasi_kps, harris_kps);
+        auto shi_tomasi_kps = cuda::select_keypoints(shi_tomasi_score, non_maximum_suppression_radius);
+        auto harris_kps = cuda::select_keypoints(harris_score, non_maximum_suppression_radius);
+        auto h_shi_tomasi_score = cuda::cuda_to_eigen(shi_tomasi_score);
+        auto h_harris_score = cuda::cuda_to_eigen(harris_score);
+        auto h_shi_tomasi_kps = cuda::cuda_to_eigen(shi_tomasi_kps).block(0, 0, 2, num_keypoints);
+        auto h_harris_kps = cuda::cuda_to_eigen(harris_kps).block(0, 0, 2, num_keypoints);
+
+        // viz_key_points(
+        //     src_img,
+        //     h_shi_tomasi_score, h_harris_score,
+        //     h_shi_tomasi_kps, h_harris_kps);
 
         // Part 3 - Describe keypoints and show 16 strongest keypoint descriptors
-        // auto shi_tomasi_descriptors = describe_keypoints(eigen_img, shi_tomasi_kps, descriptor_radius);
-        // auto harris_descriptors = describe_keypoints(eigen_img, harris_kps, descriptor_radius);
-        // viz_descriptors(src_img,
-        //                 shi_tomasi_score, harris_score,
-        //                 shi_tomasi_kps, harris_kps,
-        //                 shi_tomasi_descriptors, harris_descriptors);
+        auto shi_tomasi_descriptors = cuda::describe_keypoints(
+            cuda_eigen_img,
+            shi_tomasi_kps,
+            num_keypoints,
+            descriptor_radius);
+        auto harris_descriptors = cuda::describe_keypoints(
+            cuda_eigen_img,
+            harris_kps,
+            num_keypoints,
+            descriptor_radius);
+        viz_descriptors(src_img,
+                        h_shi_tomasi_score, h_harris_score,
+                        h_shi_tomasi_kps, h_harris_kps,
+                        cuda::cuda_to_eigen(shi_tomasi_descriptors), cuda::cuda_to_eigen(harris_descriptors));
     }
 
     return 0;

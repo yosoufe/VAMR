@@ -330,9 +330,8 @@ cuda::CuMatrixD cuda::sort_matrix(
     return output_values;
 }
 
-Eigen::MatrixXd cuda::select_keypoints(
+cuda::CuMatrixD cuda::select_keypoints(
     const cuda::CuMatrixD &score,
-    size_t num,
     size_t radius)
 {
     int patch_size = radius * 2 + 1;
@@ -340,5 +339,68 @@ Eigen::MatrixXd cuda::select_keypoints(
 
     cuda::sort_matrix(cuda::non_maximum_suppression_1(score, patch_size), indicies);
     // keys are scores and values are indicies.
-    return cuda::cuda_to_eigen(indicies).block(0, 0, 2, min(num, (size_t)score.n_elements()));
+    return indicies;
+}
+
+__global__ void
+describe_keypoints_kernel(double *output,
+                          double *img,
+                          double *kps, int num_kp,
+                          int radius,
+                          int img_rows, int img_cols)
+{
+    // read coordinates from kps
+    int des_idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (des_idx >= num_kp)
+        return;
+
+    // read coordiantes
+    int col = kps[get_index_colwise(0, des_idx, 2)];
+    int row = kps[get_index_colwise(1, des_idx, 2)];
+    int desc_length = (2 * radius + 1) * (2 * radius + 1);
+
+    // loop over image around the coordinate within radius
+    int counter = 0;
+    for (int col_to_copy = col - radius; col_to_copy <= col + radius; ++col_to_copy)
+    {
+        for (int row_to_copy = row - radius; row_to_copy <= row + radius; ++row_to_copy)
+        {
+            // copy values to output descriptors
+            auto output_idx = get_index_colwise(counter++, des_idx, desc_length);
+            if (row_to_copy < 0 || row_to_copy >= img_rows ||
+                col_to_copy < 0 || col_to_copy >= img_cols)
+            {
+                output[output_idx] = 0;
+            }
+            else
+            {
+                output[output_idx] = img[get_index_colwise(row_to_copy, col_to_copy, img_rows)];
+            }
+        }
+    }
+}
+
+cuda::CuMatrixD cuda::describe_keypoints(
+    const cuda::CuMatrixD &img,
+    const cuda::CuMatrixD &sorted_pixels_based_on_scores,
+    int num_keypoints_to_consider,
+    int descriptor_radius)
+{
+    int descriptor_length = ::pow(2 * descriptor_radius + 1, 2);
+    cuda::CuMatrixD output(num_keypoints_to_consider, descriptor_length);
+
+    dim3 block_dim(min(1024, num_keypoints_to_consider));
+    dim3 grid_dim(num_keypoints_to_consider / block_dim.x + 1);
+
+    describe_keypoints_kernel<<<grid_dim, block_dim>>>(
+        output.d_data.get(),
+        img.d_data.get(),
+        sorted_pixels_based_on_scores.d_data.get(),
+        num_keypoints_to_consider,
+        descriptor_radius,
+        img.n_rows,
+        img.n_cols);
+
+    return output;
 }
