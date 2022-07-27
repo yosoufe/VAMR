@@ -36,7 +36,6 @@ auto create_Q(
     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(2 * num_corners, 12);
     for (size_t corner_idx = 0; corner_idx < num_corners; corner_idx++)
     {
-        // std::cout  << "res:" << std::endl << res << std::endl;
         double X_w = points_in_W(0, corner_idx);
         double Y_w = points_in_W(1, corner_idx);
         double Z_w = points_in_W(2, corner_idx);

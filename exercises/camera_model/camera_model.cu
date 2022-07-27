@@ -1,13 +1,6 @@
 #include "camera_model.hpp"
 #include "utils.cuh"
 
-__device__
-    size_t
-    get_index(int row, int col, int n_cols, size_t n_bytes_for_element)
-{
-    return (col + n_cols * row) * n_bytes_for_element;
-}
-
 __global__ void undistort_image_kernel(
     unsigned char *input, unsigned char *output,
     double u0, double v0,
@@ -24,11 +17,11 @@ __global__ void undistort_image_kernel(
     int u_d = c * (u - u0) + u0;
     int v_d = c * (v - v0) + v0;
 
-    auto undistorted_idx = get_index(v, u, n_cols, 3);
+    auto undistorted_idx = get_index_rowwise(v, u, n_cols, 3);
 
     if (u_d >= 0 && u_d < n_cols && v_d >= 0 && v_d < n_rows)
     {
-        auto distorted_idx = get_index(v_d, u_d, n_cols, 3);
+        auto distorted_idx = get_index_rowwise(v_d, u_d, n_cols, 3);
         output[undistorted_idx] = input[distorted_idx];
         output[undistorted_idx + 1] = input[distorted_idx + 1];
         output[undistorted_idx + 2] = input[distorted_idx + 2];

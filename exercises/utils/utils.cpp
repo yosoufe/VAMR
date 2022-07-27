@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include <fstream> // ifstream
+#include <sys/time.h>
 
 std::ifstream read_file(std::string path)
 {
@@ -34,7 +35,8 @@ Eigen::MatrixXd read_matrix(std::string file_path, char delimiter)
             std::string section;
             if (!std::getline(line_stream, section, delimiter))
                 break;
-            if (section.empty()) continue; // ignore multiple delimiter
+            if (section.empty())
+                continue; // ignore multiple delimiter
             row.push_back(std::stod(section.c_str()));
         }
         data.push_back(row);
@@ -120,8 +122,7 @@ cv::Mat load_image_color(std::string image_path)
     return img;
 }
 
-void
-draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color, int lineType)
+void draw_circles(cv::Mat &src_img, const Eigen::Matrix2Xd &pts, int thinkness, const cv::Scalar &color, int lineType)
 {
     int num_pts = pts.cols();
     for (size_t pt_idx = 0; pt_idx < num_pts; pt_idx++)
@@ -157,12 +158,12 @@ cv::VideoWriter create_video_writer(const cv::Size &img_size, const std::string 
     return vid_writer;
 }
 
-cv::Mat convet_to_cv_to_show(const Eigen::MatrixXd& eigen_img)
+cv::Mat convert_to_cv_to_show(const Eigen::MatrixXd &eigen_img)
 {
     cv::Mat img_cv;
     cv::Mat img_cv_uchar;
     cv::eigen2cv(eigen_img, img_cv);
-    cv::normalize(img_cv,img_cv_uchar , 255,0, cv::NORM_MINMAX, 0);
+    cv::normalize(img_cv, img_cv_uchar, 255, 0, cv::NORM_MINMAX, 0);
     // img_cv.convertTo(img_cv_uchar, 0);
     // img_cv_uchar = img_cv;
     return img_cv_uchar;
@@ -184,26 +185,6 @@ cv::Mat eigen_2_cv(const Eigen::MatrixXd &eigen)
     return img;
 }
 
-Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd &kernel)
-{
-    size_t kernel_rv = kernel.rows() / 2;
-    size_t kernel_sv = kernel.rows();
-
-    size_t kernel_ru = kernel.cols() / 2;
-    size_t kernel_su = kernel.cols();
-
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(input.rows(), input.cols());
-    for (size_t v = kernel_rv; v < input.rows() - kernel_rv; v++)
-    {
-        for (size_t u = kernel_ru; u < input.cols() - kernel_ru; u++)
-        {
-            auto element_wise_prod = input.block(v - kernel_rv, u - kernel_ru, kernel_sv, kernel_su).array() * kernel.array();
-            res(v, u) = element_wise_prod.sum();
-        }
-    }
-    return res;
-}
-
 void show(const cv::Mat &img, std::string window_name)
 {
     cv::namedWindow(window_name, cv::WINDOW_NORMAL);
@@ -212,25 +193,87 @@ void show(const cv::Mat &img, std::string window_name)
     cv::waitKey(0);
 }
 
-std::string cv_type2str(int type) {
-  std::string r;
+std::string cv_type2str(int type)
+{
+    std::string r;
 
-  uchar depth = type & CV_MAT_DEPTH_MASK;
-  uchar chans = 1 + (type >> CV_CN_SHIFT);
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
 
-  switch ( depth ) {
-    case CV_8U:  r = "8U"; break;
-    case CV_8S:  r = "8S"; break;
-    case CV_16U: r = "16U"; break;
-    case CV_16S: r = "16S"; break;
-    case CV_32S: r = "32S"; break;
-    case CV_32F: r = "32F"; break;
-    case CV_64F: r = "64F"; break;
-    default:     r = "User"; break;
-  }
+    switch (depth)
+    {
+    case CV_8U:
+        r = "8U";
+        break;
+    case CV_8S:
+        r = "8S";
+        break;
+    case CV_16U:
+        r = "16U";
+        break;
+    case CV_16S:
+        r = "16S";
+        break;
+    case CV_32S:
+        r = "32S";
+        break;
+    case CV_32F:
+        r = "32F";
+        break;
+    case CV_64F:
+        r = "64F";
+        break;
+    default:
+        r = "User";
+        break;
+    }
 
-  r += "C";
-  r += (chans+'0');
+    r += "C";
+    r += (chans + '0');
 
-  return r;
+    return r;
 }
+
+void visualize_matrix_as_image(Eigen::MatrixXd mat)
+{
+    auto mat_cv = convert_to_cv_to_show(mat);
+    cv::imshow("output", mat_cv);
+    cv::waitKey(0);
+}
+
+bool are_matrices_close(const Eigen::MatrixXd &first, const Eigen::MatrixXd &second)
+{
+    if (first.cols() != second.cols() ||
+        first.rows() != second.rows())
+        return false;
+    return (first - second).norm() < 1e-5;
+}
+
+bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &second)
+{
+    if (first.cols() != second.cols() ||
+        first.rows() != second.rows())
+        return false;
+    return (first - second).norm() < 1e-5;
+}
+
+std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd& input)
+{
+    std::vector<Eigen::Index> indicies;
+    for(Eigen::Index i=0; i<input.size(); ++i)
+        if(abs(input(i)) > 0)
+            indicies.push_back(i);
+    return indicies;
+}
+
+double
+second(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+}
+
+#if WITH_CUDA
+
+#endif

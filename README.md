@@ -1,24 +1,66 @@
-# 🚧 Under Construction 🚧
-
 # Vision Algorithms for Mobile Robotics
 
-C++ impelementation of the exercises of the "Vision Algorithm for Mobile Robotics" at ETH Zurich ([The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html)).
+## **🚧 Under Construction 🚧**
+
+C++ implementation of the exercises of the "Vision Algorithm for Mobile Robotics" at ETH Zurich ([The Course Website](http://rpg.ifi.uzh.ch/teaching2020.html)).
 
 If there are any questions, feel free to open an issue in this github repository.
 
 ## requirements
 
 - Developed on Ubuntu 20.04
-- Nvidia GPU
-- latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
 - docker
-- [Nvidia docker container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#)
+- [Nvidia docker container runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#) and
+- Nvidia GPU and latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
+  - I only know how to run a GUI application within docker with NVIDIA GPUs.
+  - I have also started to implement the algorithms with CUDA as well.
+    - **DISCLAIMER**: I am only learning CUDA, Don't use my coding style as reference just because I work for NVIDIA. I am not doing any CUDA programing at NVIDIA.
 - Python 3 and pip
 - **NO** MATLAB:
   - The official course is doing all the exercises in MATLAB and since I do not have MATLAB License, I am doing it in C++. The second reason is, **all the jobs in robotics require strong C++ knowledge**, so I am practicing C++.
-    The followings are inside the docker image:
-    - Using Eigen library for linear algebra.
-    - Using OpenCV and VTK only for reading, writing of image and video files and visualization. The rest are coded from scratch.
+- The following libraries are used and already installed in the Docker Image:
+  - Eigen library for linear algebra.
+  - OpenCV and VTK only for reading, writing of image/video files and 2D/3D visualization.
+
+## setup and build docker images
+
+`cli.py` is a helper command line tool to build and run docker image.
+
+```bash
+# to install the cli.py's dependencies
+python -m pip install -r requirements.txt
+```
+
+
+1. Build the `cudagl:11.7.0-devel-ubuntu20.04` docker image
+
+    Note: I am not familiar with `buildx` that is being used in `cuda` repo. This is the only way
+    that I could build the image without pushing the image to a docker registry.
+    ```bash
+    # clone this repo wherever you like, better not to be inside this repo.
+    git clone git@gitlab.com:nvidia/container-images/cuda.git
+    cd cuda
+
+    sed -i "s/\ --pull\ /\ /g" build.sh
+    sed -i "s/run_cmd docker buildx create --use/\echo \"\"#/g" build.sh
+    ./build.sh --image-name cudagl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl
+    # to remove intermediate images
+    docker rmi $(docker images --filter=reference="cudagl/build-intermediate:*" -q)
+    docker rmi $(docker images --filter=reference="cudagl:*base*" -q)
+    docker rmi $(docker images --filter=reference="cudagl:*runtime*" -q)
+
+
+    # YOUR_DOCKER_HUB_USER=yosoufe
+    # sed -i "s/\/build-intermediate/_build-intermediate/g" build.sh
+    # ./build.sh --image-name ${YOUR_DOCKER_HUB_USER}/cgl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl --push
+    ```
+
+    Now you should have `cudagl:11.7.0-devel-ubuntu20.04` in your `docker image ls`.
+
+2. Download CUDNN ".deb" file from nvidia website into `docker_extra` folder. This is tested with CUDNN 8.4.1.50
+3. Download NVIDIA Nsight from https://developer.nvidia.com/nsight-systems into `docker_extra` folder.
+  I have tested with `Nsight Systems 2022.2.1 (Linux Host .deb Installer)`.
+4. Now run `python cli.py build` in the root of this project.
 
 ## Usage
 
@@ -27,21 +69,8 @@ We are using docker, We are installing all the requirements inside the docker an
 The container has [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) inside which you can open multiple terminals
 as tabs or split windows. Read the documentation of the [terminator](https://terminator-gtk3.readthedocs.io/en/latest/) to learn short keys.
 
-`cli.py` is a helper command line tool to build and run docker image.
 
 ```sh
-# to install the cli.py's dependencies
-python -m pip install -r requirements.txt
-
-# to build the docker image
-python cli.py build
-
-# or to pull the image from the dockerhub
-# instead of building it,
-# It can be faster than building,
-# Compiling opencv can take a long time.
-python cli.py pull
-
 # to run the docker image and have a terminal inside the docker image, we compile everything in the container
 # It will pull my image if you do not build it yourself.
 python cli.py run
@@ -52,7 +81,8 @@ python cli.py run
 ```bash
 cv VAMR
 mkdir -p output/ex{01..09}
-python cli.py run
+python cli.py run # this should start the container
+# now inside the container
 cd exercises
 mkdir build
 cd build
@@ -60,21 +90,35 @@ cmake ..
 make -j`nproc`
 ```
 
-# Exercises
+## Exercises
 
-## Exercise 1 - Augmented Reality Wireframe Cube
+### Directory Structure
+
+Exercise statements can be found at `exercises/statements/<Exercise directory>/statement.pdf`.
+For example, for exercise 1 the file is at `exercises/statements/Exercise 2 - PnP/statement.pdf`.
+
+The input data is not provided in this repo. You can download them from the course webpage at [here](http://rpg.ifi.uzh.ch/teaching2020.html) under section "Course Program, Slides, and Additional Reading Material". They should placed in `data/exXX/`. For example, the
+`images` directory for exercies 1 should be placed at `data/ex01/images`. You can also check the exercise main file where the
+main file expect to see the input files.
+
+The main function of each exercise file is implemented in `exercises/exerciseXX.cpp` for example the main file for
+exercise 1 is `exercises/exercise01.cpp`. Usually the algorithms are implemented as libraries and used with the main file.
+You can check the included header files in each `exerciseXX.cpp` to find out the name of the library. The library is implemented
+in a directory with the same name of the header file.
+
+The CUDA implementations are using `cuda` as their namespace and they are implemented in `*.cu` and `*.cuh` files.
+
+### Exercise 1 - Augmented Reality Wireframe Cube
 
 This is about camera and distortion models.
 
-- Problem statement: `exercises/statements/Exercise 1 - Augmented Reality Wireframe Cube/statement.pdf`.
-- solution is in `exercises/exercise01.cpp`.
 - Output Videos:
   - https://youtu.be/RD8uO2pETIE
   - https://youtu.be/Ba9SmGKgBmU
 
 ![Output](exercises/statements/outputs/ex01.gif)
 
-## Exercise 2 - PnP Problem
+### Exercise 2 - PnP Problem
 
 This exercise is about the PnP (Perspective-n-Point) problem. We basically find the position and orientation of a calibrated camera based on known points in world and their known correspondences in the image frame.
 
@@ -87,7 +131,7 @@ The following video shows the calculated pose and orientation of the camera rela
 
 ![Output](exercises/statements/outputs/ex02.gif)
 
-## Exercise 3 - Simple Keypoint Tracker
+### Exercise 3 - Simple Keypoint Tracker
 
 - Problem statement: `exercises/statements/Exercise 3 - Simple Keypoint Tracker/statement.pdf`.
 - Solution: `exercises/exercise03.cpp`.
@@ -103,7 +147,7 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
 ![Output](exercises/statements/outputs/ex03-harris_shitomasi.png)
 
-## Exercise 4 - Simple SIFT Keypoint Detection and Matching
+### Exercise 4 - Simple SIFT Keypoint Detection and Matching
 
 - Problem statement: `exercises/statements/Exercise 4 - simple SIFT/statement.pdf`.
 - Solution: `exercises/exercise04.cpp`.
@@ -114,10 +158,11 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
   ![Output](exercises/statements/outputs/ex04-simple_sift.png)
 
-## Exercise 5 - Stereo Dense Reconstruction
+### Exercise 5 - Stereo Dense Reconstruction
 
 - Problem statement: `exercises/statements/Exercise 5 - Stereo Dense Reconstruction`.
 - Solution: `exercises/exercise05.cpp`.
+
   - left first image
     ![Disparity image for first frame](https://user-images.githubusercontent.com/7648675/143288423-132e50ef-0a4b-48f0-9532-4c5ccce54b9b.png)
   - Disparity image from left and right images
@@ -134,21 +179,20 @@ The following image shows the Harris and Shi-Tomasi scores, key points and descr
 
     https://user-images.githubusercontent.com/7648675/144346394-fddc5b30-3640-41db-ae77-8c951ad19c4e.mp4
 
-## Exercise 6 - Two-view Geometry
+### Exercise 6 - Two-view Geometry
 
 - Problem statement: `exercises/statements/Exercise 6 - Two-view Geometry`.
 - Solution: `exercises/exercise06.cpp`.
 - I developed unit tests using Google test framework, similar to the matlab test scripts provided by the exercise in `exercises/tests/test_two_view_geometry.cpp`.
-   To execute them after the compilation in the build directory:
-    ```bash
-    ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.linear_triangulation
-    ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.eight_point
-    # or the following to run all of the tests for exercise 06.
-    ./tests/two_view_geometry_tests
-    ```
+  To execute them after the compilation in the build directory:
+  ```bash
+  ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.linear_triangulation
+  ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.eight_point
+  # or the following to run all of the tests for exercise 06.
+  ./tests/two_view_geometry_tests
+  ```
   - 3D Point cloud and camera poses calculated by 8-Point algorithm from given perfect feature matches (top view)
-     ![Point Cloud](exercises/statements/outputs/ex06-8_point_sfm.png)
-
+    ![Point Cloud](exercises/statements/outputs/ex06-8_point_sfm.png)
 
 ## Useful Commands
 
@@ -161,6 +205,7 @@ ffmpeg -i input.mp4 -vcodec libx264 -crf 28 output.mp4
 ```
 
 ### cv::Viz3d Key commands
+
 cv::Viz3d used for 3d visualizations and point cloud visualization. These shortkeys are useful to navigate the view.
 
 ```

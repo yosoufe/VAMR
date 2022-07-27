@@ -41,7 +41,7 @@ TEST(Two_View_Geometry, linear_triangulation)
 /* to run this test in the build directory, run the following
  * command:
  *
- * ./tests/two_view_geometry_tests --gtest_filter=Two_View_Geometry.eight_point
+ * ./tests/test_two_view_geometry --gtest_filter=Two_View_Geometry.eight_point
  */
 TEST(Two_View_Geometry, eight_point)
 {

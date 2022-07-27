@@ -8,11 +8,18 @@ if(CMAKE_CUDA_COMPILER)
     message(STATUS "CUDA found")
     enable_language(CUDA)
     add_compile_definitions(WITH_CUDA)
+    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 14)
+    # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
 else()
     message(STATUS "No CUDA support")
 endif()
 
-set(CMAKE_BUILD_TYPE Release)
+# If you need to compile for debug mode, 
+# change this to "Debug"
+# set(CMAKE_BUILD_TYPE Debug)
 
 # set_property(TARGET tgt PROPERTY CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD 17)
@@ -21,8 +28,9 @@ set (CMAKE_CXX_STANDARD 17)
 enable_testing()
 
 ################ 3rd Party Libraries ################
-find_package (Eigen3 REQUIRED NO_MODULE)
+find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(OpenCV REQUIRED)
+find_package(OpenMP)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 
@@ -47,7 +55,7 @@ endif()
 
 ############ Shared Library for Shared Functionalities between Exercises ############
 # utils library
-add_subdirectory(tools)
+add_subdirectory(utils)
 
 ########################### Exercises ###########################
 ###### exercise 01
@@ -61,8 +69,9 @@ add_executable(exercise02 exercise02.cpp)
 target_link_libraries (exercise02 pnp_dlt)
 
 ###### exercise 03
+add_subdirectory("keypoint_tracking")
 add_executable(exercise03 exercise03.cpp)
-target_link_libraries (exercise03 utils)
+target_link_libraries (exercise03 keypoint_tracking)
 
 ###### exercise 04
 add_library(sift sift.cpp sift.hpp image_gradient.cpp image_gradient.hpp)
