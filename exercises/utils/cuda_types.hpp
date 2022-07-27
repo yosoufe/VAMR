@@ -18,39 +18,38 @@ namespace cuda
      * @tparam T double or float.
      */
     template <typename T>
-    struct CuMatrix
+    class CuMatrix
     {
     public:
         /**
          * @brief empty matrix with zero size.
          * To make sure the object has a correct deleter
-         * 
-         * @return CuMatrix 
+         *
+         * @return CuMatrix
          */
         CuMatrix();
 
         /**
          * @brief Construct a new Cu Matrix object
-         * 
-         * @param ptr 
-         * @param n_cols 
-         * @param n_rows 
+         *
+         * @param ptr
+         * @param rows
+         * @param cols
          */
-        CuMatrix(T *ptr, int n_cols, int n_rows);
-        
+        CuMatrix(T *ptr, int rows, int cols);
+
         /**
          * @brief empty matrix with given rows and cols
-         * 
-         * @param cols 
-         * @param rows 
-         * @return CuMatrix 
+         *
+         * @param rows
+         * @param cols
+         * @return CuMatrix
          */
-        CuMatrix(int cols, int rows);
-        
-        std::shared_ptr<T> d_data;
-        int n_rows;
-        int n_cols;
-        void free();
+        CuMatrix(int rows, int cols);
+
+        T *data() const { return d_data.get(); }
+        int cols() const { return n_cols; }
+        int rows() const { return n_rows; }
 
         int n_elements() const
         {
@@ -58,18 +57,24 @@ namespace cuda
         }
 
         CuMatrix clone() const;
-
         /**
-         * @brief similar to Eigen::Matrix::block but 
+         * @brief similar to Eigen::Matrix::block but
          * currently it always involves copying the data in GPU.
-         * 
-         * @param row 
-         * @param col 
-         * @param height 
-         * @param width 
-         * @return CuMatrix 
+         *
+         * @param row
+         * @param col
+         * @param height
+         * @param width
+         * @return CuMatrix
          */
         CuMatrix block(int row, int col, int height, int width) const;
+
+        void free();
+    private:
+        std::shared_ptr<T> d_data;
+        int n_rows;
+        int n_cols;
+        
     };
 
     using CuMatrixD = CuMatrix<double>;
@@ -80,7 +85,6 @@ namespace cuda
 
     template <typename T>
     MatrixT<T> cuda_to_eigen(const CuMatrix<T> &cuda_eigen);
-
 
 }
 

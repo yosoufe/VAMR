@@ -22,18 +22,18 @@ cuda::CuMatrix<T>::CuMatrix() : cuda::CuMatrix<T>(nullptr, 0, 0)
 }
 
 template <typename T>
-cuda::CuMatrix<T>::CuMatrix(T *ptr, int n_cols, int n_rows) : d_data(
+cuda::CuMatrix<T>::CuMatrix(T *ptr, int rows, int cols) : d_data(
                                                                   std::shared_ptr<T>(ptr,
                                                                                      cuda::CuMatrixDeleter<T>())),
-                                                              n_cols(n_cols),
-                                                              n_rows(n_rows)
+                                                              n_rows(rows),
+                                                              n_cols(cols)
 {
 }
 
 template <typename T>
-cuda::CuMatrix<T>::CuMatrix(int cols, int rows) : n_cols(cols), n_rows(rows)
+cuda::CuMatrix<T>::CuMatrix(int rows, int cols) : n_rows(rows), n_cols(cols)
 {
-    int number_of_bytes = sizeof(T) * cols * rows;
+    int number_of_bytes = sizeof(T) * n_elements();
     T *ptr;
     CSC(cudaMalloc(&ptr, number_of_bytes));
     d_data = std::shared_ptr<T>(ptr,
@@ -43,8 +43,8 @@ cuda::CuMatrix<T>::CuMatrix(int cols, int rows) : n_cols(cols), n_rows(rows)
 template <typename T>
 cuda::CuMatrix<T> cuda::CuMatrix<T>::clone() const
 {
-    cuda::CuMatrix<T> output(n_cols, n_rows);
-    CSC(cudaMemcpy(output.d_data.get(), d_data.get(), sizeof(T) * n_elements(), cudaMemcpyDeviceToDevice));
+    cuda::CuMatrix<T> output(n_rows, n_cols);
+    CSC(cudaMemcpy(output.data(), d_data.get(), sizeof(T) * n_elements(), cudaMemcpyDeviceToDevice));
     return output;
 }
 
@@ -70,7 +70,7 @@ copy_block_kernel(T *src, T *dst,
 template <typename T>
 cuda::CuMatrix<T> cuda::CuMatrix<T>::block(int row, int col, int height, int width) const
 {
-    cuda::CuMatrix<T> output(width, height);
+    cuda::CuMatrix<T> output(height, width);
 
     // super slow for large matrices.
     auto using_stream_impl = [&]()
@@ -79,14 +79,14 @@ cuda::CuMatrix<T> cuda::CuMatrix<T>::block(int row, int col, int height, int wid
         int counter = 0;
         for (int current_col = col; current_col < col + width; ++current_col, ++counter)
         {
-            T *src = d_data.get() +
+            T *src = this->data() +
                      get_index_colwise(row, current_col, n_rows);
-            T *dst = output.d_data.get() +
+            T *dst = output.data() +
                      get_index_colwise(0, counter, height);
             CSC(cudaStreamCreate(&streams[counter]));
             CSC(cudaMemcpyAsync(dst, src, height * sizeof(T), cudaMemcpyDeviceToDevice, streams[counter]));
-            cudaDeviceSynchronize();
         }
+        cudaDeviceSynchronize();
     };
 
     auto using_kernel_impl = [&]()
@@ -100,7 +100,7 @@ cuda::CuMatrix<T> cuda::CuMatrix<T>::block(int row, int col, int height, int wid
         grid_dim.y = width / block_dim.y + 1;
 
         copy_block_kernel<T><<<grid_dim, block_dim>>>(
-            d_data.get(), output.d_data.get(),
+            d_data.get(), output.data(),
             n_rows,
             row, col,
             height, width);
@@ -124,9 +124,9 @@ cuda::CuMatrix<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
     T *output_ptr;
     CSC(cudaMalloc(&output_ptr, number_of_bytes));
     CSC(cudaMemcpy(output_ptr, eigen.data(), number_of_bytes, cudaMemcpyHostToDevice));
-    // print_cuda_eigen<T><<<1, 1>>>(cuda_eigen.d_data.get(), eigen.cols(), eigen.rows());
+    // print_cuda_eigen<T><<<1, 1>>>(cuda_eigen.data(), eigen.cols(), eigen.rows());
     cudaDeviceSynchronize();
-    return cuda::CuMatrix<T>(output_ptr, eigen.cols(), eigen.rows());
+    return cuda::CuMatrix<T>(output_ptr, eigen.rows(), eigen.cols());
 }
 
 // instantiate template function above
@@ -136,12 +136,12 @@ template cuda::CuMatrix<float> cuda::eigen_to_cuda<float>(const MatrixT<float> &
 template <typename T>
 MatrixT<T> cuda::cuda_to_eigen(const cuda::CuMatrix<T> &cuda_eigen)
 {
-    size_t s = cuda_eigen.n_cols * cuda_eigen.n_rows;
+    size_t s = cuda_eigen.n_elements();
     T *h_data = new T[s];
     int number_of_bytes = sizeof(T) * s;
-    CSC(cudaMemcpy(h_data, cuda_eigen.d_data.get(), number_of_bytes, cudaMemcpyDeviceToHost));
+    CSC(cudaMemcpy(h_data, cuda_eigen.data(), number_of_bytes, cudaMemcpyDeviceToHost));
     MatrixT<T> res;
-    res = MatrixT<T>::Map(h_data, cuda_eigen.n_rows, cuda_eigen.n_cols);
+    res = MatrixT<T>::Map(h_data, cuda_eigen.rows(), cuda_eigen.cols());
     return res;
 }
 

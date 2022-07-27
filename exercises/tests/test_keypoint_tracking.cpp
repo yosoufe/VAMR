@@ -46,7 +46,7 @@ TEST(keypoint_tracking, non_maximum_suppression_cpu)
 
 TEST(keypoint_tracking, calculate_Is_gpu)
 {
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         Eigen::MatrixXd h_img = Eigen::MatrixXd::Random(15, 16);
         cuda::CuMatrixD d_img = cuda::eigen_to_cuda(h_img);
@@ -65,10 +65,10 @@ TEST(keypoint_tracking, calculate_Is_gpu)
                                        h_sI_yy));
         EXPECT_TRUE(are_matrices_close(hd_sI_xy,
                                        h_sI_xy));
-        // std::cout << "sI_xx CPU\n"
-        //           << h_sI_xx << std::endl<< std::endl;
-        // std::cout << "sI_xx GPU\n"
-        //           << hd_sI_xx << std::endl;
+        // std::cout << "sI_xy CPU\n"
+        //           << h_sI_xy << std::endl<< std::endl;
+        // std::cout << "sI_xy GPU\n"
+        //           << hd_sI_xy << std::endl;
     }
 }
 
@@ -200,18 +200,20 @@ TEST(keypoint_tracking, sort_matrix)
 
 TEST(keypoint_tracking, select_keypoint_gpu)
 {
-    Eigen::MatrixXd input = Eigen::MatrixXd::Random(4, 4).array() + 1;
-    int num = 2;
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(10, 10).array() + 1;
+    int num = 3;
     int radius = 1;
     auto expected = select_keypoints(input, num, radius);
 
     auto d_input = cuda::eigen_to_cuda(input);
     auto output = cuda::select_keypoints(d_input, radius);
+    
+    std::cout << "input\n" << input << std::endl;
+    std::cout << "expected\n" << expected << std::endl;
+    std::cout << "output\n" << cuda::cuda_to_eigen(output) << std::endl;
+    
     EXPECT_TRUE(are_matrices_close(output.block(0, 0, 2, num), expected));
 
-    // std::cout << "input\n" << input << std::endl;
-    // std::cout << "expected\n" << expected << std::endl;
-    // std::cout << "output\n" << cuda::cuda_to_eigen(output) << std::endl;
 }
 
 TEST(keypoint_tracking, describe_keypoints)

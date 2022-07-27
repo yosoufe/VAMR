@@ -226,6 +226,24 @@ namespace cuda
         const cuda::CuMatrixD &sorted_pixels_based_on_scores,
         int num_keypoints_to_consider,
         int descriptor_radius);
+    
+    /**
+     * @brief Returns a 1xQ matrix where the i-th coefficient is the index of the
+     * database descriptor which matches to the i-th query descriptor.
+     * The descriptor vectors are num_kp X desc_size and num_kp X desc_size.
+     * matches(i) will be zero if there is no database descriptor
+     * with an SSD < lambda * min(SSD). No two non-zero elements of matches will
+     * be equal.
+     *
+     * @param query_descriptors (num_kp X desc_size)
+     * @param database_descriptors (num_kp X desc_size)
+     * @param match_lambda
+     * @return VectorXuI
+     */
+    VectorXuI match_descriptors(
+        const cuda::CuMatrixD &query_descriptors,
+        const cuda::CuMatrixD &database_descriptors,
+        double match_lambda);
 
 }
 

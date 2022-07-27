@@ -13,8 +13,8 @@ TEST(UtilsTest, cuda_eigen)
     {
         Eigen::MatrixXd double_matrix = Eigen::MatrixXd::Random(5, 5);
         auto cuda_eigen_double = cuda::eigen_to_cuda(double_matrix);
-        EXPECT_EQ(cuda_eigen_double.n_cols, double_matrix.cols());
-        EXPECT_EQ(cuda_eigen_double.n_rows, double_matrix.rows());
+        EXPECT_EQ(cuda_eigen_double.cols(), double_matrix.cols());
+        EXPECT_EQ(cuda_eigen_double.rows(), double_matrix.rows());
 
         auto new_double_matrix = cuda::cuda_to_eigen(cuda_eigen_double);
         EXPECT_EQ(new_double_matrix.cols(), double_matrix.cols());
@@ -23,8 +23,8 @@ TEST(UtilsTest, cuda_eigen)
 
         Eigen::MatrixXf float_matrix = Eigen::MatrixXf::Random(5, 5);
         auto cuda_eigen_float = cuda::eigen_to_cuda(float_matrix);
-        EXPECT_EQ(cuda_eigen_float.n_cols, float_matrix.cols());
-        EXPECT_EQ(cuda_eigen_float.n_rows, float_matrix.rows());
+        EXPECT_EQ(cuda_eigen_float.cols(), float_matrix.cols());
+        EXPECT_EQ(cuda_eigen_float.rows(), float_matrix.rows());
 
         auto new_float_matrix = cuda::cuda_to_eigen(cuda_eigen_float);
         EXPECT_TRUE(are_matrices_close(new_float_matrix, float_matrix));
@@ -132,7 +132,7 @@ TEST(UtilsTest, cuda_ew_square)
         cuda::CuMatrixD cuda_matrix = cuda::eigen_to_cuda(matrix);
         auto squared = cuda::pow(cuda_matrix, 2.0);                          // out of place squared
         auto in_place_cuda_squared = cuda::pow(std::move(cuda_matrix), 2.0); // in place squared
-        EXPECT_EQ(in_place_cuda_squared.d_data.get(), cuda_matrix.d_data.get());
+        EXPECT_EQ(in_place_cuda_squared.data(), cuda_matrix.data());
         auto gpu_squared = cuda::cuda_to_eigen(squared);
         auto gpu_inplace_squared = cuda::cuda_to_eigen(in_place_cuda_squared);
         EXPECT_TRUE(are_matrices_close(gpu_squared, cpu_squared));

@@ -14,6 +14,11 @@ target_link_libraries(test_utils
     pthread
 )
 
+add_test(
+    NAME test_utils
+    COMMAND test_utils
+)
+
 ### exercise 03
 add_executable(test_exercise03 test_keypoint_tracking.cpp)
 target_link_libraries(test_exercise03

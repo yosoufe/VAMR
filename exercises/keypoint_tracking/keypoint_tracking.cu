@@ -97,14 +97,14 @@ cuda::CuMatrixD cuda::non_maximum_suppression_1(const cuda::CuMatrixD &input, si
 {
     assert(patch_size % 2 == 1);
     int num_thread_1d = 32;
-    dim3 grid_dim(input.n_rows / num_thread_1d + 1, input.n_cols / num_thread_1d + 1);
+    dim3 grid_dim(input.rows() / num_thread_1d + 1, input.cols() / num_thread_1d + 1);
     dim3 block_dim(num_thread_1d, num_thread_1d);
-    cuda::CuMatrixD output(input.n_cols, input.n_rows);
-    non_maximum_suppression_kernel_1<<<grid_dim, block_dim>>>(input.d_data.get(),
-                                                              input.n_rows,
-                                                              input.n_cols,
+    cuda::CuMatrixD output(input.rows(), input.cols());
+    non_maximum_suppression_kernel_1<<<grid_dim, block_dim>>>(input.data(),
+                                                              input.rows(),
+                                                              input.cols(),
                                                               patch_size,
-                                                              output.d_data.get());
+                                                              output.data());
     CLE();
     CSC(cudaDeviceSynchronize());
     return output;
@@ -180,16 +180,16 @@ cuda::CuMatrixD cuda::non_maximum_suppression_2(const cuda::CuMatrixD &input, si
 {
     assert(patch_size % 2 == 1);
     int num_thread_1d = 32;
-    dim3 grid_dim(input.n_rows / num_thread_1d + 1, input.n_cols / num_thread_1d + 1);
+    dim3 grid_dim(input.rows() / num_thread_1d + 1, input.cols() / num_thread_1d + 1);
     dim3 block_dim(num_thread_1d, num_thread_1d);
 
-    cuda::CuMatrixD output(input.n_cols, input.n_rows);
+    cuda::CuMatrixD output(input.rows(), input.cols());
     int shared_mem_size = ::pow(num_thread_1d + patch_size - 1, 2) * sizeof(double);
-    non_maximum_suppression_kernel_2<<<grid_dim, block_dim, shared_mem_size>>>(input.d_data.get(),
-                                                                               input.n_rows,
-                                                                               input.n_cols,
+    non_maximum_suppression_kernel_2<<<grid_dim, block_dim, shared_mem_size>>>(input.data(),
+                                                                               input.rows(),
+                                                                               input.cols(),
                                                                                patch_size,
-                                                                               output.d_data.get());
+                                                                               output.data());
     CLE();
     CSC(cudaDeviceSynchronize());
     return output;
@@ -264,18 +264,18 @@ cuda::CuMatrixD cuda::non_maximum_suppression_3(const cuda::CuMatrixD &input, si
     int halo_size = patch_size - 1;
 
     int num_thread_1d = 32;
-    dim3 grid_dim((input.n_rows + halo_size) / num_thread_1d + 1,
-                  (input.n_cols + halo_size) / num_thread_1d + 1);
+    dim3 grid_dim((input.rows() + halo_size) / num_thread_1d + 1,
+                  (input.cols() + halo_size) / num_thread_1d + 1);
     dim3 block_dim(num_thread_1d,
                    num_thread_1d);
 
-    cuda::CuMatrixD output(input.n_cols, input.n_rows);
+    cuda::CuMatrixD output(input.rows(), input.cols());
     int shared_mem_size = ::pow(num_thread_1d + patch_size - 1, 2) * sizeof(double);
-    non_maximum_suppression_kernel_2<<<grid_dim, block_dim, shared_mem_size>>>(input.d_data.get(),
-                                                                               input.n_rows,
-                                                                               input.n_cols,
+    non_maximum_suppression_kernel_2<<<grid_dim, block_dim, shared_mem_size>>>(input.data(),
+                                                                               input.rows(),
+                                                                               input.cols(),
                                                                                patch_size,
-                                                                               output.d_data.get());
+                                                                               output.data());
     CLE();
     CSC(cudaDeviceSynchronize());
     return output;
@@ -302,15 +302,15 @@ void _sort_matrix(cuda::CuMatrixD &input,
                   cuda::CuMatrixD &indicies_output)
 {
     auto indices = cuda::create_indices(input);
-    auto key_start = thrust::device_pointer_cast(input.d_data.get());
+    auto key_start = thrust::device_pointer_cast(input.data());
     auto key_end = key_start + input.n_elements();
     thrust::sort_by_key(thrust::cuda::par, key_start, key_end, indices, thrust::greater<double>());
 
-    indicies_output = cuda::CuMatrixD(input.n_elements(), 2);
+    indicies_output = cuda::CuMatrixD(2, input.n_elements());
     index_conversion<<<input.n_elements() / 1024 + 1, 1024>>>(indices.get(),
-                                                              indicies_output.d_data.get(),
-                                                              input.n_rows,
-                                                              input.n_cols);
+                                                              indicies_output.data(),
+                                                              input.rows(),
+                                                              input.cols());
 }
 
 cuda::CuMatrixD cuda::sort_matrix(
@@ -388,19 +388,50 @@ cuda::CuMatrixD cuda::describe_keypoints(
     int descriptor_radius)
 {
     int descriptor_length = ::pow(2 * descriptor_radius + 1, 2);
-    cuda::CuMatrixD output(num_keypoints_to_consider, descriptor_length);
+    cuda::CuMatrixD output(descriptor_length, num_keypoints_to_consider);
 
     dim3 block_dim(min(1024, num_keypoints_to_consider));
     dim3 grid_dim(num_keypoints_to_consider / block_dim.x + 1);
 
     describe_keypoints_kernel<<<grid_dim, block_dim>>>(
-        output.d_data.get(),
-        img.d_data.get(),
-        sorted_pixels_based_on_scores.d_data.get(),
+        output.data(),
+        img.data(),
+        sorted_pixels_based_on_scores.data(),
         num_keypoints_to_consider,
         descriptor_radius,
-        img.n_rows,
-        img.n_cols);
+        img.rows(),
+        img.cols());
 
     return output;
+}
+
+VectorXuI cuda::match_descriptors(
+    const cuda::CuMatrixD &query_descriptors,
+    const cuda::CuMatrixD &database_descriptors,
+    double match_lambda)
+{
+
+    // Eigen::VectorXd dists(query_descriptors.cols());
+    // VectorXuI matches(query_descriptors.cols());
+
+    // for (size_t idx = 0; idx < query_descriptors.cols(); idx++)
+    // {
+    //     // dist is 1x200
+    //     Eigen::MatrixXd diff = database_descriptors.colwise() - query_descriptors.col(idx);
+    //     Eigen::VectorXd dist = diff.colwise().norm();
+
+    //     Eigen::MatrixXd::Index closest_kp_idx = 0;
+    //     dists(idx) = dist.minCoeff(&closest_kp_idx);
+    //     matches(idx) = (size_t)(closest_kp_idx);
+    // }
+
+    // double big_double = std::numeric_limits<double>::max();
+    // auto temp_score = (dists.array() == 0).select(big_double, dists);
+    // double min_non_zero_dist = temp_score.minCoeff();
+
+    // matches = (dists.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
+    // auto idx_uniques = index_of_uniques(matches);
+    // matches = (idx_uniques.array() == 1).select(matches, 0);
+
+    // return matches;
 }

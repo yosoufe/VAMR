@@ -79,8 +79,8 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     // input
     const int in_n = 1;
     const int in_c = 1;
-    const int in_h = input.n_cols;
-    const int in_w = input.n_rows;
+    const int in_h = input.cols();
+    const int in_w = input.rows();
 
     cudnnTensorDescriptor_t in_desc;
     CUDNN_CALL(cudnnCreateTensorDescriptor(&in_desc));
@@ -91,13 +91,13 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
     setTensorDesc(in_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE,
                   in_n, in_c, in_h, in_w);
 
-    double *in_data = input.d_data.get();
+    double *in_data = input.data();
 
     // filter
     const int filt_k = 1;
     const int filt_c = 1;
-    const int filt_h = kernel.n_cols;
-    const int filt_w = kernel.n_rows;
+    const int filt_h = kernel.cols();
+    const int filt_w = kernel.rows();
 
     cudnnFilterDescriptor_t filt_desc;
     CUDNN_CALL(cudnnCreateFilterDescriptor(&filt_desc));
@@ -105,14 +105,14 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         filt_desc, CUDNN_DATA_DOUBLE, CUDNN_TENSOR_NCHW,
         filt_k, filt_c, filt_h, filt_w));
 
-    double *filt_data = kernel.d_data.get();
+    double *filt_data = kernel.data();
 
     // convolution
     cudnnConvolutionDescriptor_t conv_desc;
     CUDNN_CALL(cudnnCreateConvolutionDescriptor(&conv_desc));
 
     const int convDims = 2;
-    int padA[convDims] = {kernel.n_cols / 2, kernel.n_rows / 2};
+    int padA[convDims] = {kernel.cols() / 2, kernel.rows() / 2};
     int filterStrideA[convDims] = {1, 1};
     int upscaleA[convDims] = {1, 1};
     CUDNN_CALL(cudnnSetConvolutionNdDescriptor(
@@ -180,11 +180,11 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
         &beta, out_desc, out_data));
 
     // zeros out the elements that are calculated by the padding
-    auto out = cuda::CuMatrixD(out_data, out_h, out_w);
-    int s_row = kernel.n_rows / 2;
-    int s_col = kernel.n_cols / 2;
-    int l_row = input.n_rows - 2 * s_row;
-    int l_col = input.n_cols - 2 * s_col;
+    auto out = cuda::CuMatrixD(out_data, out_w, out_h);
+    int s_row = kernel.rows() / 2;
+    int s_col = kernel.cols() / 2;
+    int l_row = input.rows() - 2 * s_row;
+    int l_col = input.cols() - 2 * s_col;
 
     zero_borders(out, s_row, s_col, l_row, l_col);
 
@@ -203,9 +203,9 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
 template <typename functor>
 void _unary_operator(const cuda::CuMatrixD &input, cuda::CuMatrixD &output, functor unary_f)
 {
-    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
-    thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
-    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.d_data.get());
+    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.data());
+    thrust::device_ptr<double> d_vec_end = d_vec_start + input.cols() * input.rows();
+    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.data());
     thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_output_start, unary_f);
 }
 
@@ -222,7 +222,7 @@ struct power
 
 cuda::CuMatrixD cuda::pow(const cuda::CuMatrixD &input, double pow)
 {
-    cuda::CuMatrixD res(input.n_cols, input.n_rows);
+    cuda::CuMatrixD res(input.rows(), input.cols());
     _unary_operator(input, res, power<double>(pow));
     return res;
 }
@@ -236,10 +236,10 @@ cuda::CuMatrixD cuda::pow(cuda::CuMatrixD &&input, double pow)
 template <typename functor>
 void _binary_operator(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2, cuda::CuMatrixD &output, functor binary_f)
 {
-    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.d_data.get());
-    thrust::device_ptr<double> e1 = s1 + i1.n_cols * i1.n_rows;
-    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.d_data.get());
-    thrust::device_ptr<double> output_ptr = thrust::device_pointer_cast(output.d_data.get());
+    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.data());
+    thrust::device_ptr<double> e1 = s1 + i1.n_elements();
+    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.data());
+    thrust::device_ptr<double> output_ptr = thrust::device_pointer_cast(output.data());
     thrust::transform(thrust::cuda::par, s1, e1, s2, output_ptr, binary_f);
 }
 
@@ -255,7 +255,7 @@ struct multiply_functor
 
 cuda::CuMatrixD cuda::operator*(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
 {
-    cuda::CuMatrixD out(i1.n_cols, i1.n_rows);
+    cuda::CuMatrixD out(i1.rows(), i1.cols());
     _binary_operator(i1, i2, out, multiply_functor<double>());
     return out;
 }
@@ -290,7 +290,7 @@ struct plus_functor
 
 cuda::CuMatrixD cuda::operator+(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
 {
-    cuda::CuMatrixD out(i1.n_cols, i1.n_rows);
+    cuda::CuMatrixD out(i1.rows(), i1.cols());
     _binary_operator(i1, i2, out, plus_functor<double>());
     return out;
 }
@@ -325,7 +325,7 @@ struct minus_functor
 
 cuda::CuMatrixD cuda::operator-(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2)
 {
-    cuda::CuMatrixD out(i1.n_cols, i1.n_rows);
+    cuda::CuMatrixD out(i1.rows(), i1.cols());
     _binary_operator(i1, i2, out, minus_functor<double>());
     return out;
 }
@@ -361,7 +361,7 @@ struct multiply_by_constant
 
 cuda::CuMatrixD cuda::operator*(const cuda::CuMatrixD &mat, double constant)
 {
-    cuda::CuMatrixD out(mat.n_cols, mat.n_rows);
+    cuda::CuMatrixD out(mat.rows(), mat.cols());
     _unary_operator(mat, out, multiply_by_constant<double>(constant));
     return out;
 }
@@ -399,7 +399,7 @@ struct thrshold_lower_functor
 
 cuda::CuMatrixD cuda::threshold_lower(const cuda::CuMatrixD &input, double threshold, double substitute)
 {
-    cuda::CuMatrixD out(input.n_cols, input.n_rows);
+    cuda::CuMatrixD out(input.rows(), input.cols());
     _unary_operator(input, out, thrshold_lower_functor<double>(threshold, substitute));
     return out;
 }
@@ -453,10 +453,10 @@ void cuda::zero_borders(cuda::CuMatrixD &input, int s_row, int s_col, int l_row,
 {
     auto d_indices_start = cuda::create_indices(input);
     auto &output = input;
-    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.d_data.get());
-    thrust::device_ptr<double> d_vec_end = d_vec_start + input.n_cols * input.n_rows;
-    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.d_data.get());
-    ZeroBorderOperator<double> ops(input.n_rows, input.n_cols, s_row, s_col, l_row, l_col);
+    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.data());
+    thrust::device_ptr<double> d_vec_end = d_vec_start + input.cols() * input.rows();
+    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.data());
+    ZeroBorderOperator<double> ops(input.rows(), input.cols(), s_row, s_col, l_row, l_col);
     thrust::transform(thrust::cuda::par,
                       thrust::make_zip_iterator(thrust::make_tuple(d_vec_start, d_indices_start)),
                       thrust::make_zip_iterator(thrust::make_tuple(d_vec_end, d_indices_start + input.n_elements())),
