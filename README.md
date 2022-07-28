@@ -14,7 +14,7 @@ If there are any questions, feel free to open an issue in this github repository
 - Nvidia GPU and latest Nvidia driver compatible with cuda 11.4 (tested with driver 470)
   - I only know how to run a GUI application within docker with NVIDIA GPUs.
   - I have also started to implement the algorithms with CUDA as well.
-    - **DISCLAIMER**: I am only learning CUDA.
+    - **DISCLAIMER**: I am only learning GPU Programming and CUDA.
 - Python 3 and pip
 - **NO** MATLAB:
   - The official course is doing all the exercises in MATLAB and since I do not have MATLAB License, I am doing it in C++. The second reason is, **all the jobs in robotics require strong C++ knowledge**, so I am practicing C++.
