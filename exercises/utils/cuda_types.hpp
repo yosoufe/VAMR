@@ -3,6 +3,7 @@
 #include "utils.hpp"
 
 #if WITH_CUDA
+
 namespace cuda
 {
     template <typename T>
@@ -51,10 +52,7 @@ namespace cuda
         int cols() const { return n_cols; }
         int rows() const { return n_rows; }
 
-        int n_elements() const
-        {
-            return n_rows * n_cols;
-        }
+        int n_elements() const { return n_rows * n_cols; }
 
         CuMatrix clone() const;
         /**
@@ -70,11 +68,11 @@ namespace cuda
         CuMatrix block(int row, int col, int height, int width) const;
 
         void free();
+
     private:
         std::shared_ptr<T> d_data;
         int n_rows;
         int n_cols;
-        
     };
 
     using CuMatrixD = CuMatrix<double>;

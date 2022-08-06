@@ -86,6 +86,9 @@ std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd& input);
 
 double second(void);
 
+
+void setup_back_track();
+
 #if WITH_CUDA
 
 

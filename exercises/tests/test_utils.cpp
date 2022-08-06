@@ -125,6 +125,7 @@ TEST(UtilsTest, cuda_correlation)
 
 TEST(UtilsTest, cuda_ew_square)
 {
+    setup_back_track();
     for (int i = 0; i < 100; ++i)
     {
         Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(500, 500);
@@ -137,6 +138,18 @@ TEST(UtilsTest, cuda_ew_square)
         auto gpu_inplace_squared = cuda::cuda_to_eigen(in_place_cuda_squared);
         EXPECT_TRUE(are_matrices_close(gpu_squared, cpu_squared));
         EXPECT_TRUE(are_matrices_close(gpu_inplace_squared, cpu_squared));
+    }
+}
+
+TEST(UtilsTest, cuda_norm)
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(500, 1);
+        double h_norm = matrix.norm();
+        cuda::CuMatrixD d_matrix = cuda::eigen_to_cuda(matrix);
+        auto d_norm = cuda::norm(d_matrix);
+        EXPECT_NEAR(h_norm, d_norm, 1e-10);
     }
 }
 

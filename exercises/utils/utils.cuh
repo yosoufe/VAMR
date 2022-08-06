@@ -17,8 +17,7 @@ inline void _safe_cuda_call(cudaError err, const char *file_name, const int line
     if (err != cudaSuccess)
     {
         fprintf(stderr, "\nFile: %s:%d\nReason: %s\n\n", file_name, line_number, cudaGetErrorString(err));
-        std::cin.get();
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("cuda call issue!");
     }
 }
 
@@ -38,7 +37,6 @@ inline void _cudnn_error(cudnnStatus_t err, const char *file_name, const int lin
     if (err != CUDNN_STATUS_SUCCESS)
     {
         fprintf(stderr, "\nCUDNN Error:  File: %s:%d\nReason: %s\n\n", file_name, line_number, cudnnGetErrorString(err));
-        std::cin.get();
         std::exit(1);
     }
 }

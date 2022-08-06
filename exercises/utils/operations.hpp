@@ -77,6 +77,8 @@ namespace cuda
      */
     CuMatrixD pow (const CuMatrixD &i1, double pow);
 
+    double norm(const CuMatrixD &input);
+
     CuMatrixD threshold_lower(const CuMatrixD &input, double threshold, double substitute);
     CuMatrixD threshold_lower(CuMatrixD &&input, double threshold, double substitute);
 

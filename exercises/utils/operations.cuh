@@ -2,6 +2,7 @@
 
 #include <thrust/device_ptr.h>
 #include "cuda_types.hpp"
+#include "cuda_types.cuh"
 
 namespace cuda
 {

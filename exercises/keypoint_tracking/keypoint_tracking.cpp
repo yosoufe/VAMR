@@ -68,14 +68,14 @@ VectorXuI index_of_uniques(const VectorXuI &src)
     VectorXuI uniques = VectorXuI::Ones(src.size());
     for (size_t idx = 0; idx < src.size(); idx++)
     {
-        if (mappp.find(src(idx)) != mappp.end())
+        if (mappp.find(src(idx)) == mappp.end())
         {
-            uniques(mappp[src(idx)]) = 0;
-            uniques(src(idx)) = 0;
+            mappp[src(idx)] = idx;
         }
         else
         {
-            mappp[src(idx)] = idx;
+            uniques(mappp[src(idx)]) = 0;
+            uniques(src(idx)) = 0;
         }
     }
     return uniques;

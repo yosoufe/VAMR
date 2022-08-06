@@ -203,9 +203,9 @@ cuda::CuMatrixD cuda::correlation(const cuda::CuMatrixD &input, const cuda::CuMa
 template <typename functor>
 void _unary_operator(const cuda::CuMatrixD &input, cuda::CuMatrixD &output, functor unary_f)
 {
-    thrust::device_ptr<double> d_vec_start = thrust::device_pointer_cast(input.data());
-    thrust::device_ptr<double> d_vec_end = d_vec_start + input.cols() * input.rows();
-    thrust::device_ptr<double> d_output_start = thrust::device_pointer_cast(output.data());
+    auto d_vec_start = cuda::thrust_ptr_begin(input);
+    auto d_vec_end = cuda::thrust_ptr_end(input);
+    auto d_output_start = cuda::thrust_ptr_begin(output);
     thrust::transform(thrust::cuda::par, d_vec_start, d_vec_end, d_output_start, unary_f);
 }
 
@@ -233,13 +233,23 @@ cuda::CuMatrixD cuda::pow(cuda::CuMatrixD &&input, double pow)
     return input;
 }
 
+double cuda::norm(const cuda::CuMatrixD &input)
+{
+    auto squared = cuda::pow(input, 2);
+    auto sum_of_squared = thrust::reduce(
+        thrust::cuda::par,
+        cuda::thrust_ptr_begin(squared), 
+        cuda::thrust_ptr_end(squared));
+    return std::sqrt(sum_of_squared);
+}
+
 template <typename functor>
 void _binary_operator(const cuda::CuMatrixD &i1, const cuda::CuMatrixD &i2, cuda::CuMatrixD &output, functor binary_f)
 {
-    thrust::device_ptr<double> s1 = thrust::device_pointer_cast(i1.data());
-    thrust::device_ptr<double> e1 = s1 + i1.n_elements();
-    thrust::device_ptr<double> s2 = thrust::device_pointer_cast(i2.data());
-    thrust::device_ptr<double> output_ptr = thrust::device_pointer_cast(output.data());
+    auto s1 = cuda::thrust_ptr_begin(i1);
+    auto e1 = cuda::thrust_ptr_end(i1);
+    auto s2 = cuda::thrust_ptr_begin(i2);
+    auto output_ptr = cuda::thrust_ptr_begin(output);
     thrust::transform(thrust::cuda::par, s1, e1, s2, output_ptr, binary_f);
 }
 

@@ -2,6 +2,11 @@
 #include <fstream> // ifstream
 #include <sys/time.h>
 
+// backtrace
+#include <signal.h>
+#include <execinfo.h>
+#include <unistd.h>
+
 std::ifstream read_file(std::string path)
 {
     std::ifstream fin(path);
@@ -257,11 +262,11 @@ bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &sec
     return (first - second).norm() < 1e-5;
 }
 
-std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd& input)
+std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd &input)
 {
     std::vector<Eigen::Index> indicies;
-    for(Eigen::Index i=0; i<input.size(); ++i)
-        if(abs(input(i)) > 0)
+    for (Eigen::Index i = 0; i < input.size(); ++i)
+        if (abs(input(i)) > 0)
             indicies.push_back(i);
     return indicies;
 }
@@ -272,6 +277,31 @@ second(void)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+}
+
+void seg_fault_handler(int sig)
+{
+    #define FRAME_SIZE 1024
+    void *last_frames[FRAME_SIZE];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(last_frames, FRAME_SIZE);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(last_frames, size, STDERR_FILENO);
+    exit(1);
+}
+
+void setup_back_track()
+{
+    signal(SIGSEGV, seg_fault_handler);
+    signal(SIGTERM, seg_fault_handler);
+    signal(SIGINT, seg_fault_handler);
+    signal(SIGILL, seg_fault_handler);
+    signal(SIGABRT, seg_fault_handler);
+    // std::cout << "back trace setup complete" << std::endl;
 }
 
 #if WITH_CUDA
