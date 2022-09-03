@@ -62,10 +62,10 @@ Eigen::MatrixXd describe_keypoints(
     return res;
 }
 
-VectorXuI index_of_uniques(const VectorXuI &src)
+VectorXI index_of_uniques(const VectorXI &src)
 {
     std::unordered_map<size_t, size_t> mappp;
-    VectorXuI uniques = VectorXuI::Ones(src.size());
+    VectorXI uniques = VectorXI::Ones(src.size());
     for (size_t idx = 0; idx < src.size(); idx++)
     {
         if (mappp.find(src(idx)) == mappp.end())
@@ -81,14 +81,14 @@ VectorXuI index_of_uniques(const VectorXuI &src)
     return uniques;
 }
 
-VectorXuI match_descriptors(
+VectorXI match_descriptors(
     const Eigen::MatrixXd &query_descriptors,
     const Eigen::MatrixXd &database_descriptors,
     double match_lambda)
 {
 
     Eigen::VectorXd dists(query_descriptors.cols());
-    VectorXuI matches(query_descriptors.cols());
+    VectorXI matches(query_descriptors.cols());
 
     for (size_t idx = 0; idx < query_descriptors.cols(); idx++)
     {
@@ -105,9 +105,9 @@ VectorXuI match_descriptors(
     auto temp_score = (dists.array() == 0).select(big_double, dists);
     double min_non_zero_dist = temp_score.minCoeff();
 
-    matches = (dists.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
+    matches = (dists.array() >= (match_lambda * min_non_zero_dist)).select(KPTS_NO_MATCH, matches);
     auto idx_uniques = index_of_uniques(matches);
-    matches = (idx_uniques.array() == 1).select(matches, 0);
+    matches = (idx_uniques.array() == 1).select(matches, KPTS_NO_MATCH);
 
     return matches;
 }
@@ -333,7 +333,7 @@ cv::Mat viz_descriptors(
 }
 
 cv::Mat viz_matches(const cv::Mat &src_img,
-                    const VectorXuI &matches,
+                    const VectorXI &matches,
                     const Eigen::MatrixXd &curr_kps,
                     const Eigen::MatrixXd &prev_kps)
 {
@@ -345,7 +345,7 @@ cv::Mat viz_matches(const cv::Mat &src_img,
                        cv::Point(curr_kps(0, idx), curr_kps(1, idx)),
                        cv::Scalar(0, 0, 255),
                        cv::MARKER_TILTED_CROSS, 10, 2);
-        if (matches(idx) == 0)
+        if (matches(idx) == KPTS_NO_MATCH)
             continue;
         cv::line(color_img,
                  cv::Point(curr_kps(0, idx), curr_kps(1, idx)),

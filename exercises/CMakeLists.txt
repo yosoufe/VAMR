@@ -6,14 +6,35 @@ include(CheckLanguage)
 check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
     message(STATUS "CUDA found")
+    set(CUDA_AVAILABLE True)
     enable_language(CUDA)
     add_compile_definitions(WITH_CUDA)
     set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
     set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 14)
-    # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
+    # example to use cuda from source with cmake:
+    # https://github.com/NVIDIA/thrust/blob/main/examples/cmake/add_subdir/CMakeLists.txt
+    find_package(Thrust 2.1.0.0 REQUIRED CONFIG
+        NO_DEFAULT_PATH
+        HINTS
+            "/3rdparty/thrust/thrust/cmake"
+        )
+    
+    set(THRUST_REQUIRED_SYSTEMS CPP CUDA) # Options are: CPP, CUDA, TBB or OMP.
+    add_subdirectory(/3rdparty/thrust thrust)
+    thrust_create_target(ThrustCUDA HOST CPP DEVICE CUDA)
+
+    thrust_update_system_found_flags() # required due to CMake scoping rules
+    set(THRSUT_LIB_FROM_SOURCE ThrustCUDA)
+    message(STATUS "THRUST VERSION: ${THRUST_VERSION}")
+    message(STATUS "CUB VERSION: ${CUB_VERSION}")
+    message(STATUS "THRUST_CUDA_FOUND: ${THRUST_CUDA_FOUND}")
+    message(STATUS "CUDA_AVAILABLE: ${CUDA_AVAILABLE}")
 else()
+    set(THRSUT_LIB_FROM_SOURCE "")
+    set(CUDA_AVAILABLE False)
     message(STATUS "No CUDA support")
 endif()
 
@@ -49,7 +70,7 @@ add_executable(imageBasics practices/imageBasics.cpp)
 target_link_libraries(imageBasics ${OpenCV_LIBS})
 
 # cuda library example
-if(CMAKE_CUDA_COMPILER)
+if(CUDA_AVAILABLE)
     add_subdirectory("practices/cuda_practice")
 endif()
 

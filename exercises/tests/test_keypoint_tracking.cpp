@@ -207,13 +207,15 @@ TEST(keypoint_tracking, select_keypoint_gpu)
 
     auto d_input = cuda::eigen_to_cuda(input);
     auto output = cuda::select_keypoints(d_input, radius);
-    
-    std::cout << "input\n" << input << std::endl;
-    std::cout << "expected\n" << expected << std::endl;
-    std::cout << "output\n" << cuda::cuda_to_eigen(output) << std::endl;
-    
-    EXPECT_TRUE(are_matrices_close(output.block(0, 0, 2, num), expected));
 
+    std::cout << "input\n"
+              << input << std::endl;
+    std::cout << "expected\n"
+              << expected << std::endl;
+    std::cout << "output\n"
+              << cuda::cuda_to_eigen(output) << std::endl;
+
+    EXPECT_TRUE(are_matrices_close(output.block(0, 0, 2, num), expected));
 }
 
 TEST(keypoint_tracking, describe_keypoints)
@@ -241,6 +243,84 @@ TEST(keypoint_tracking, describe_keypoints)
     //           << descriptors << std::endl;
     // std::cout << "output\n"
     //           << hd_descriptors << std::endl;
+}
+
+void test_calculate_square_difference_to_kps_database(const Eigen::MatrixXd& query, const Eigen::MatrixXd& database)
+{
+    auto d_query = cuda::eigen_to_cuda(query);
+    auto d_database = cuda::eigen_to_cuda(database);
+
+    auto d_res = cuda::test_calculate_difference_to_kps_database(d_query, d_database);
+    auto hd_res = cuda::cuda_to_eigen(d_res);
+    // std::cout << "d_res\n" << hd_res << std::endl;
+
+    Eigen::MatrixXd h_res = query.replicate(1,database.cols()) - database;
+    h_res = h_res.array() * h_res.array();
+    // std::cout << "h_res\n" << h_res << std::endl;
+    EXPECT_TRUE(are_matrices_close(hd_res, h_res));
+}
+
+TEST(keypoint_tracking, test_calculate_square_difference_to_kps_database)
+{
+    Eigen::MatrixXd query(10, 1);
+    Eigen::MatrixXd database(10, 6);
+
+    query << Eigen::MatrixXd::Ones(10, 1) * 1;
+    
+    database << Eigen::MatrixXd::Ones(10, 1) * 6,
+        Eigen::MatrixXd::Ones(10, 1) * 3,
+        Eigen::MatrixXd::Ones(10, 1) * 1,
+        Eigen::MatrixXd::Ones(10, 1) * 5,
+        Eigen::MatrixXd::Ones(10, 1) * 4,
+        Eigen::MatrixXd::Ones(10, 1) * 2;
+    
+    // std::cout << "query\n" << query << std::endl;
+    // std::cout << "database\n" << database << std::endl;
+    test_calculate_square_difference_to_kps_database(query, database);
+
+    query = Eigen::MatrixXd::Random(100, 1);
+    database = Eigen::MatrixXd::Random(100, 20);
+    test_calculate_square_difference_to_kps_database(query, database);
+
+    query = Eigen::MatrixXd::Random(5000, 1);
+    database = Eigen::MatrixXd::Random(5000, 20000);
+    test_calculate_square_difference_to_kps_database(query, database);
+    
+}
+
+TEST(keypoint_tracking, test_calculate_sum_kernel)
+{
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(1025, 1025);
+    // Eigen::MatrixXd input = Eigen::MatrixXd::Random(3, 10);
+    Eigen::MatrixXd h_res = input.colwise().sum();
+    cuda::CuMatrixD d_input = cuda::eigen_to_cuda(input);
+    cuda::CuMatrixD d_res = cuda::test_calculate_sum_kernel(d_input);
+    Eigen::MatrixXd hd_res = cuda::cuda_to_eigen(d_res);
+    EXPECT_TRUE(are_matrices_close(d_res, h_res));
+
+    // std::cout << "input\n" << input << std::endl;
+    std::cout << d_res.rows() << ", " << d_res.cols() << std::endl;
+    std::cout << "h_res\n" << h_res.block(0,0,1,10) << std::endl;
+    std::cout << "d_res\n" << hd_res.block(0,0,1,10) << std::endl;
+}
+
+TEST(keypoint_tracking, find_closest_keypoints_kernel)
+{
+    Eigen::MatrixXd query(10, 1);
+    Eigen::MatrixXd database(10, 6);
+
+    query << Eigen::MatrixXd::Ones(10, 1) * 1;
+    
+    database << Eigen::MatrixXd::Ones(10, 1) * 6,
+        Eigen::MatrixXd::Ones(10, 1) * 3,
+        Eigen::MatrixXd::Ones(10, 1) * 1,
+        Eigen::MatrixXd::Ones(10, 1) * 5,
+        Eigen::MatrixXd::Ones(10, 1) * 4,
+        Eigen::MatrixXd::Ones(10, 1) * 2;
+    
+    std::cout << "query\n" << query << std::endl;
+    std::cout << "database\n" << database << std::endl;
+    EXPECT_TRUE(false);
 }
 
 #endif

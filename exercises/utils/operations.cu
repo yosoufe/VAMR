@@ -472,3 +472,63 @@ void cuda::zero_borders(cuda::CuMatrixD &input, int s_row, int s_col, int l_row,
                       thrust::make_zip_iterator(thrust::make_tuple(d_vec_end, d_indices_start + input.n_elements())),
                       d_output_start, ops);
 }
+
+
+__global__ void
+sum_kernel(
+    double* output,
+    double* input,
+    int num_items
+)
+{
+    void     *d_temp_storage = NULL;
+    size_t   temp_storage_bytes = 0;
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, input, output, num_items);
+    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, input, output, num_items);
+}
+
+cuda::CuMatrixD
+cuda::sum(const cuda::CuMatrixD& input)
+{
+    cuda::CuMatrixD output(input.rows(), input.cols());
+    sum_kernel<<<1,1>>>(output.data(), input.data(), input.n_elements());
+    CSC(cudaDeviceSynchronize());
+    return output;
+}
+
+__global__ void
+diff_kernel(
+    double* output,
+    double* input_1,
+    double* input_2,
+    int num_items
+)
+{
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    if (idx >= num_items)
+        return;
+    output[idx] = input_1[idx] - input_2[idx];
+}
+
+__global__ void
+difference_kernel(
+    double* output,
+    double* input_1,
+    double* input_2,
+    int num_items
+)
+{
+    dim3 block_dim(min(1024, num_items));
+    dim3 grid_dim(num_items / block_dim.x + 1);
+    diff_kernel<<<grid_dim, block_dim>>>(output, input_1, input_2, num_items);
+}
+
+cuda::CuMatrixD
+cuda::difference(const cuda::CuMatrixD& input_1, const cuda::CuMatrixD& input_2)
+{
+    cuda::CuMatrixD output(input_1.rows(), input_1.cols());
+    difference_kernel<<<1,1>>>(output.data(), input_1.data(), input_2.data(), input_1.n_elements());
+    CSC(cudaDeviceSynchronize());
+    return output;
+}

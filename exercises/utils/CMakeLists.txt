@@ -2,7 +2,7 @@ set (TARGET_NAME utils)
 
 set(SRC utils.cpp folder_manager.cpp operations.cpp cuda_types.cpp)
 
-if(CMAKE_CUDA_COMPILER)
+if(CUDA_AVAILABLE)
     list(APPEND SRC utils.cu operations.cu cuda_types.cu)
 endif()
 

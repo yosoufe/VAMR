@@ -1,7 +1,7 @@
 set (TARGET_NAME camera_model)
 set (SRC camera_model.cpp camera_model.hpp)
 
-if(CMAKE_CUDA_COMPILER)
+if(CUDA_AVAILABLE)
     list(APPEND SRC camera_model.cu)
 endif()
 

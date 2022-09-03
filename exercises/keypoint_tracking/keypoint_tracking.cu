@@ -12,6 +12,9 @@
 #include <thrust/tuple.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/device_malloc.h>
+
+#include <cub/cub.cuh>
 
 namespace cg = cooperative_groups;
 
@@ -405,33 +408,212 @@ cuda::CuMatrixD cuda::describe_keypoints(
     return output;
 }
 
-VectorXuI cuda::match_descriptors(
+__global__ void
+calculate_columnwise_sum_kernel(
+    double *output,
+    double *input,
+    int num_rows,
+    int num_cols)
+{
+    int col = threadIdx.x + blockDim.x * blockIdx.x;
+    if (col >= num_cols)
+        return;
+    output[col] = 0;
+    double *sum_input = input + col * num_rows;
+    void *d_temp_storage = NULL;
+    size_t temp_storage_bytes = 0;
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
+    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
+}
+
+cuda::CuMatrixD
+cuda::test_calculate_sum_kernel(const cuda::CuMatrixD &matrix)
+{
+    cuda::CuMatrixD res{1, matrix.cols()};
+    // each thread is one column in squared differences
+    dim3 block_dim(min(1024, matrix.cols()));
+    dim3 grid_dim(matrix.cols() / block_dim.x + 1);
+    calculate_columnwise_sum_kernel<<<grid_dim, block_dim>>>(
+        res.data(),
+        matrix.data(),
+        matrix.rows(),
+        matrix.cols());
+    CLE();
+    CSC(cudaDeviceSynchronize());
+    return res;
+}
+
+__global__ void
+calcualte_square_difference_to_kps_database(
+    double *output,
+    double *query_descriptor,
+    double *database_descriptors,
+    int descriptor_length,
+    int n_database_descriptors)
+{
+    // x: elements in descriptor (row), y: each descriptor (col)
+    int query_row = threadIdx.x + blockDim.x * blockIdx.x;
+    int query_col = 0; // query has single column here
+
+    int database_row = query_row;
+    int database_col = threadIdx.y + blockDim.y * blockIdx.y;
+
+    int output_row = database_row, output_col = database_col;
+
+    if (database_row >= descriptor_length || database_col >= n_database_descriptors)
+        return;
+
+    double diff =
+        query_descriptor[get_index_colwise(query_row, query_col, descriptor_length)] -
+        database_descriptors[get_index_colwise(database_row, database_col, descriptor_length)];
+
+    output[get_index_colwise(output_row, output_col, descriptor_length)] = diff * diff;
+}
+
+cuda::CuMatrixD
+cuda::test_calculate_difference_to_kps_database(const cuda::CuMatrixD &query, const cuda::CuMatrixD &database)
+{
+    assert(query.rows() == database.rows());
+
+    cuda::CuMatrixD output(database.rows(), database.cols());
+
+    int descriptor_length = query.rows();
+    int n_database_descriptors = database.cols();
+
+    // x: elements in descriptor (row), y: each descriptor (col)
+    dim3 block_dim(min(32, descriptor_length), min(32, n_database_descriptors));
+    dim3 grid_dim(descriptor_length / block_dim.x + 1, n_database_descriptors / block_dim.y + 1);
+    calcualte_square_difference_to_kps_database<<<grid_dim, block_dim>>>(
+        output.data(),
+        query.data(),
+        database.data(),
+        descriptor_length,
+        n_database_descriptors);
+    CLE();
+    CSC(cudaDeviceSynchronize());
+    return output;
+}
+
+__device__ int
+cal_arg_min(double *input, int num_items)
+{
+    cub::KeyValuePair<int, double> out;
+    void *d_temp_storage = NULL;
+    size_t temp_storage_bytes = 0;
+    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, &out, num_items);
+    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, &out, num_items);
+    return out.key;
+}
+
+__global__ void
+find_closest_keypoints_kernel(
+    int *output,
+    int descriptor_length,
+    double *query_descriptors,
+    int n_query_descriptors,
+    double *database_descriptors,
+    int n_database_descriptors)
+{
+    // this runs for each query descriptor.
+    // query_idx_col is the same as query_idx
+    int query_idx_col = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (query_idx_col >= n_query_descriptors)
+        return;
+
+    double *query_descriptor = query_descriptors + query_idx_col * descriptor_length; // * sizeof(double)???
+
+    // calculate squared differences between this query descriptors
+    // and all of the database descriptors
+    // squared_diffs would be matrix in shape of (n_database_descriptors X descriptor_length)
+    double *squared_diffs;
+    int square_differences_size = n_database_descriptors * descriptor_length * sizeof(double);
+    cudaMalloc(&squared_diffs, square_differences_size);
+
+    // x: elements in descriptor (row), y: each database descriptor (col)
+    {
+        dim3 block_dim(min(64, descriptor_length), min(64, n_database_descriptors));
+        dim3 grid_dim(descriptor_length / block_dim.x + 1, n_database_descriptors / block_dim.y + 1);
+        calcualte_square_difference_to_kps_database<<<grid_dim, block_dim>>>(
+            squared_diffs,
+            query_descriptor,
+            database_descriptors,
+            descriptor_length,
+            n_database_descriptors);
+    }
+
+    // __syncthreads(); // needed??
+
+    // calculate the distance between this query descriptor and
+    // all of database descriptors, it is just columnwise sum of the differences
+    // or calculate reduce sum on squared_diffs
+    double *squared_dist;
+    int squared_dist_bytes = sizeof(double) * n_database_descriptors;
+    cudaMalloc(&squared_dist, squared_dist_bytes);
+    {
+        // each thread is one column in squared differences
+        dim3 block_dim(min(1024, n_database_descriptors));
+        dim3 grid_dim(n_database_descriptors / block_dim.x + 1);
+        calculate_columnwise_sum_kernel<<<grid_dim, block_dim>>>(
+            squared_dist,
+            squared_diffs,
+            descriptor_length,
+            n_database_descriptors);
+    }
+
+    // find arg of smallest distance
+    output[query_idx_col] = cal_arg_min(squared_dist, n_database_descriptors);
+}
+
+void filter_out_non_unique_matches(cuda::CuMatrixI &input)
+{
+    int *d_keys_in = input.data();
+    thrust::device_ptr<int> indicies = thrust::device_malloc<int>(input.n_elements());
+    thrust::sequence(thrust::device, indicies, indicies + input.n_elements());
+    int *d_values_in = indicies.get();
+    cuda::CuMatrixI keys_out(input.rows(), input.cols());
+    cuda::CuMatrixI values_out(input.rows(), input.cols());
+    int  *d_num_selected_out;
+    cudaMalloc(&d_num_selected_out, sizeof(int));
+
+    void *d_temp_storage = NULL;
+    size_t temp_storage_bytes = 0;
+    cub::DeviceSelect::UniqueByKey(d_temp_storage, temp_storage_bytes,
+                                   d_keys_in, d_values_in,
+                                   keys_out.data(), values_out.data(),
+                                   d_num_selected_out, input.n_elements());
+}
+
+cuda::CuMatrixI cuda::match_descriptors(
     const cuda::CuMatrixD &query_descriptors,
     const cuda::CuMatrixD &database_descriptors,
     double match_lambda)
 {
+    // output length is the same as the number of keypoints in query descriptors
+    // query_descriptors (desc_size X num_kp)
+    // database_descriptors (desc_size X num_kp)
 
-    // Eigen::VectorXd dists(query_descriptors.cols());
-    // VectorXuI matches(query_descriptors.cols());
+    // find the closest keypoint
+    // one thread for each query keypoint
+    // descriptors are columnwise. (like evey other CuMatrix)
+    int num_query_kpts = query_descriptors.cols();
+    dim3 block_dim(min(1024, num_query_kpts));
+    dim3 grid_dim(num_query_kpts / block_dim.x + 1);
+    cuda::CuMatrixI output(num_query_kpts, 1);
+    find_closest_keypoints_kernel<<<grid_dim, block_dim>>>(
+        output.data(),
+        query_descriptors.rows(),
+        query_descriptors.data(),
+        query_descriptors.cols(),
+        database_descriptors.data(),
+        database_descriptors.cols());
+    CLE();
+    CSC(cudaDeviceSynchronize());
 
-    // for (size_t idx = 0; idx < query_descriptors.cols(); idx++)
-    // {
-    //     // dist is 1x200
-    //     Eigen::MatrixXd diff = database_descriptors.colwise() - query_descriptors.col(idx);
-    //     Eigen::VectorXd dist = diff.colwise().norm();
+    // If the match is not unique, remove it.
+    filter_out_non_unique_matches(output);
 
-    //     Eigen::MatrixXd::Index closest_kp_idx = 0;
-    //     dists(idx) = dist.minCoeff(&closest_kp_idx);
-    //     matches(idx) = (size_t)(closest_kp_idx);
-    // }
-
-    // double big_double = std::numeric_limits<double>::max();
-    // auto temp_score = (dists.array() == 0).select(big_double, dists);
-    // double min_non_zero_dist = temp_score.minCoeff();
-
-    // matches = (dists.array() >= (match_lambda * min_non_zero_dist)).select(0, matches);
-    // auto idx_uniques = index_of_uniques(matches);
-    // matches = (idx_uniques.array() == 1).select(matches, 0);
-
-    // return matches;
+    return output;
 }

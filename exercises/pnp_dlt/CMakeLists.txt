@@ -1,7 +1,7 @@
 set (TARGET_NAME pnp_dlt)
 set (SRC pnp_dlt.cpp pnp_dlt.hpp)
 
-if(CMAKE_CUDA_COMPILER)
+if(CUDA_AVAILABLE)
     # list(APPEND SRC .cu)
 endif()
 

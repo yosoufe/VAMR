@@ -32,7 +32,7 @@ python -m pip install -r requirements.txt
 ```
 
 
-1. Build the `cudagl:11.7.0-devel-ubuntu20.04` docker image
+1. Build the `cudagl:11.7.1-devel-ubuntu20.04` docker image
 
     Note: I am not familiar with `buildx` that is being used in `cuda` repo. This is the only way
     that I could build the image without pushing the image to a docker registry.
@@ -43,7 +43,7 @@ python -m pip install -r requirements.txt
 
     sed -i "s/\ --pull\ /\ /g" build.sh
     sed -i "s/run_cmd docker buildx create --use/\echo \"\"#/g" build.sh
-    ./build.sh --image-name cudagl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl
+    ./build.sh --image-name cudagl --cuda-version 11.7.1 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl
     # to remove intermediate images
     docker rmi $(docker images --filter=reference="cudagl/build-intermediate:*" -q)
     docker rmi $(docker images --filter=reference="cudagl:*base*" -q)
@@ -55,9 +55,9 @@ python -m pip install -r requirements.txt
     # ./build.sh --image-name ${YOUR_DOCKER_HUB_USER}/cgl --cuda-version 11.7.0 --os ubuntu --os-version 20.04 --arch x86_64 --cudagl --push
     ```
 
-    Now you should have `cudagl:11.7.0-devel-ubuntu20.04` in your `docker image ls`.
+    Now you should have `cudagl:11.7.1-devel-ubuntu20.04` in your `docker image ls`.
 
-2. Download CUDNN ".deb" file from nvidia website into `docker_extra` folder. This is tested with CUDNN 8.4.1.50
+2. Download CUDNN ".deb" file from nvidia website into `docker_extra` folder. This is tested with CUDNN 8.4.1.50 and 8.5.0.96.
 3. Download NVIDIA Nsight from https://developer.nvidia.com/nsight-systems into `docker_extra` folder.
   I have tested with `Nsight Systems 2022.2.1 (Linux Host .deb Installer)`.
 4. Now run `python cli.py build` in the root of this project.

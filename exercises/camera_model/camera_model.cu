@@ -55,9 +55,7 @@ cv::Mat cuda::undistort_image(const cv::Mat &src_img,
     CSC(cudaMemcpy(d_input, src_img.data, number_of_bytes, cudaMemcpyHostToDevice));
 
     undistort_image_kernel<<<src_img.rows, src_img.cols>>>(d_input, d_output, u0, v0, d1, d2);
-    CLE();
-    cudaDeviceSynchronize();
-    CLE();
+    CSC(cudaDeviceSynchronize());
 
     CSC(cudaMemcpy(res.data, d_output, number_of_bytes, cudaMemcpyDeviceToHost));
     CSC(cudaFree(d_input));

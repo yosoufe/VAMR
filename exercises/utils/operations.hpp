@@ -7,7 +7,6 @@ Eigen::MatrixXd correlation(const Eigen::MatrixXd &input, const Eigen::MatrixXd 
 Eigen::MatrixXd sobel_x_kernel();
 Eigen::MatrixXd sobel_y_kernel();
 
-
 #if WITH_CUDA
 namespace cuda
 {
@@ -16,10 +15,10 @@ namespace cuda
     /**
      * @brief Cross correlation, with 0 padding at the input matrix
      * The output matrix would be the size of the input.
-     * 
-     * @param input 
-     * @param kernel 
-     * @return CuMatrixD 
+     *
+     * @param input
+     * @param kernel
+     * @return CuMatrixD
      */
     CuMatrixD correlation(const CuMatrixD &input, const CuMatrixD &kernel);
 
@@ -27,55 +26,54 @@ namespace cuda
 
     /**
      * @brief elementwise multiplication
-     * 
-     * @param i1 
-     * @param i2 
-     * @return CuMatrixD 
+     *
+     * @param i1
+     * @param i2
+     * @return CuMatrixD
      */
-    CuMatrixD operator* (const CuMatrixD &i1, const CuMatrixD &i2);
-    CuMatrixD operator* (CuMatrixD &&i1, const CuMatrixD &i2);
-    CuMatrixD operator* (const CuMatrixD &i1, CuMatrixD &&i2);
-    CuMatrixD operator* (CuMatrixD &&i1, CuMatrixD &&i2);
+    CuMatrixD operator*(const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator*(CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator*(const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator*(CuMatrixD &&i1, CuMatrixD &&i2);
 
-    CuMatrixD operator+ (const CuMatrixD &i1, const CuMatrixD &i2);
-    CuMatrixD operator+ (CuMatrixD &&i1, const CuMatrixD &i2);
-    CuMatrixD operator+ (const CuMatrixD &i1, CuMatrixD &&i2);
-    CuMatrixD operator+ (CuMatrixD &&i1, CuMatrixD &&i2);
+    CuMatrixD operator+(const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator+(CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator+(const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator+(CuMatrixD &&i1, CuMatrixD &&i2);
 
-    CuMatrixD operator- (const CuMatrixD &i1, const CuMatrixD &i2);
-    CuMatrixD operator- (CuMatrixD &&i1, const CuMatrixD &i2);
-    CuMatrixD operator- (const CuMatrixD &i1, CuMatrixD &&i2);
-    CuMatrixD operator- (CuMatrixD &&i1, CuMatrixD &&i2);
-    
+    CuMatrixD operator-(const CuMatrixD &i1, const CuMatrixD &i2);
+    CuMatrixD operator-(CuMatrixD &&i1, const CuMatrixD &i2);
+    CuMatrixD operator-(const CuMatrixD &i1, CuMatrixD &&i2);
+    CuMatrixD operator-(CuMatrixD &&i1, CuMatrixD &&i2);
 
     /**
      * @brief multiplication by scalar
-     * 
-     * @param y 
-     * @param x 
-     * @return CuMatrixD 
+     *
+     * @param y
+     * @param x
+     * @return CuMatrixD
      */
-    CuMatrixD operator* (const CuMatrixD& mat, double constant);
-    CuMatrixD operator* (double constant, const CuMatrixD& mat);
-    CuMatrixD operator* (CuMatrixD&& mat, double constant);
-    CuMatrixD operator* (double constant, CuMatrixD&& mat);
+    CuMatrixD operator*(const CuMatrixD &mat, double constant);
+    CuMatrixD operator*(double constant, const CuMatrixD &mat);
+    CuMatrixD operator*(CuMatrixD &&mat, double constant);
+    CuMatrixD operator*(double constant, CuMatrixD &&mat);
 
     /**
      * @brief power function, in-place
-     * 
-     * @param i1 
-     * @param pow 
+     *
+     * @param i1
+     * @param pow
      */
     CuMatrixD pow(CuMatrixD &&input, double pow);
 
     /**
      * @brief power function, out-of-place
-     * 
-     * @param i1 
-     * @param pow 
-     * @return CuMatrixD 
+     *
+     * @param i1
+     * @param pow
+     * @return CuMatrixD
      */
-    CuMatrixD pow (const CuMatrixD &i1, double pow);
+    CuMatrixD pow(const CuMatrixD &i1, double pow);
 
     double norm(const CuMatrixD &input);
 
@@ -83,7 +81,21 @@ namespace cuda
     CuMatrixD threshold_lower(CuMatrixD &&input, double threshold, double substitute);
 
     void zero_borders(CuMatrixD &input, int s_row, int s_col, int l_row, int l_col);
-}
 
+    // CUP Based Operations, above are all thrust based
+    // The following operations are mostly used for testing
+    // The kernels of the following operations can
+    // be called in other kernels because they 
+    // are CUP based.
+    // thrust is only host side and cannot be 
+    // called on kernel.
+
+    // sum of all elements
+    CuMatrixD sum(const CuMatrixD &input);
+
+    // input_1 - input_2 (elementwise).
+    CuMatrixD difference(const CuMatrixD &input_1,
+                         const CuMatrixD &input_2);
+}
 
 #endif

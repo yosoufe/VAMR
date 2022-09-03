@@ -153,6 +153,7 @@ TEST(UtilsTest, cuda_norm)
     }
 }
 
+
 TEST(UtilsTest, ew_multiplication)
 {
     for (int i = 0; i < 10; ++i)
@@ -191,4 +192,41 @@ TEST(UtilsTest, cuda_zero_borders)
     // std::cout << "output\n" << hd_output << std::endl;
 }
 
+TEST(UtilsTest, cuda_cup_sum)
+{
+    for (int size = 100; size <= 100 * std::pow(10, 5) ; size *= 10)
+    {
+        // std::cout << "size: " << size << std::endl;
+        Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(size, 1);
+        double h_sum = matrix.sum();
+        cuda::CuMatrixD d_matrix = cuda::eigen_to_cuda(matrix);
+        auto d_sum = cuda::sum(d_matrix);
+        auto hd_sum = cuda::cuda_to_eigen(d_sum);
+        // printf("row: %d, cols: %d\n",d_sum.rows(), d_sum.cols());
+        // std::cout << matrix.block(0,0,10,1).transpose() << std::endl;
+        // std::cout << hd_sum.block(0,0,10,1).transpose() << std::endl;
+        EXPECT_NEAR(hd_sum(Eigen::last), h_sum, 1e-10);
+    }
+}
+
+
+
+TEST(UtilsTest, cuda_cup_difference)
+{
+    for (int size = 100; size <= 100 * std::pow(10, 5) ; size *= 10)
+    {
+        // std::cout << "size: " << size << std::endl;
+        Eigen::MatrixXd matrix_1 = Eigen::MatrixXd::Random(size, 1);
+        Eigen::MatrixXd matrix_2 = Eigen::MatrixXd::Random(size, 1);
+        auto h_res = matrix_1 - matrix_2;
+        cuda::CuMatrixD d_matrix_1 = cuda::eigen_to_cuda(matrix_1);
+        cuda::CuMatrixD d_matrix_2 = cuda::eigen_to_cuda(matrix_2);
+        auto d_res = cuda::difference(d_matrix_1, d_matrix_2);
+        auto hd_res = cuda::cuda_to_eigen(d_res);
+        // printf("row: %d, cols: %d\n",d_sum.rows(), d_sum.cols());
+        // std::cout << h_res.block(0,0,10,1).transpose() << std::endl;
+        // std::cout << hd_res.block(0,0,10,1).transpose() << std::endl;
+        EXPECT_TRUE(are_matrices_close(d_res, h_res));
+    }
+}
 #endif

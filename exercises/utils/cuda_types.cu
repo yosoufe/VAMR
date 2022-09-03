@@ -86,7 +86,7 @@ cuda::CuMatrix<T> cuda::CuMatrix<T>::block(int row, int col, int height, int wid
             CSC(cudaStreamCreate(&streams[counter]));
             CSC(cudaMemcpyAsync(dst, src, height * sizeof(T), cudaMemcpyDeviceToDevice, streams[counter]));
         }
-        cudaDeviceSynchronize();
+        CSC(cudaDeviceSynchronize());
     };
 
     auto using_kernel_impl = [&]()
@@ -112,10 +112,13 @@ cuda::CuMatrix<T> cuda::CuMatrix<T>::block(int row, int col, int height, int wid
     return output;
 }
 
-template struct cuda::CuMatrixDeleter<double>;
-template struct cuda::CuMatrixDeleter<float>;
-template struct cuda::CuMatrix<double>;
-template struct cuda::CuMatrix<float>;
+// instantiate template CuMatrix for some basic types
+template class cuda::CuMatrixDeleter<double>;
+template class cuda::CuMatrixDeleter<float>;
+template class cuda::CuMatrixDeleter<int>;
+template class cuda::CuMatrix<double>;
+template class cuda::CuMatrix<float>;
+template class cuda::CuMatrix<int>;
 
 template <typename T>
 cuda::CuMatrix<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
@@ -125,13 +128,14 @@ cuda::CuMatrix<T> cuda::eigen_to_cuda(const MatrixT<T> &eigen)
     CSC(cudaMalloc(&output_ptr, number_of_bytes));
     CSC(cudaMemcpy(output_ptr, eigen.data(), number_of_bytes, cudaMemcpyHostToDevice));
     // print_cuda_eigen<T><<<1, 1>>>(cuda_eigen.data(), eigen.cols(), eigen.rows());
-    cudaDeviceSynchronize();
+    CSC(cudaDeviceSynchronize());
     return cuda::CuMatrix<T>(output_ptr, eigen.rows(), eigen.cols());
 }
 
 // instantiate template function above
 template cuda::CuMatrix<double> cuda::eigen_to_cuda<double>(const MatrixT<double> &);
 template cuda::CuMatrix<float> cuda::eigen_to_cuda<float>(const MatrixT<float> &);
+template cuda::CuMatrix<int> cuda::eigen_to_cuda<int>(const MatrixT<int> &);
 
 template <typename T>
 MatrixT<T> cuda::cuda_to_eigen(const cuda::CuMatrix<T> &cuda_eigen)

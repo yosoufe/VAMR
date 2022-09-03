@@ -4,7 +4,9 @@
 #include "utils.hpp"
 #include "cuda_types.hpp"
 
-using VectorXuI = Eigen::Matrix<size_t, Eigen::Dynamic, 1>;
+#define KPTS_NO_MATCH -1 // when there is no match for a keypoints in the matching process
+
+using VectorXI = Eigen::Matrix<int, Eigen::Dynamic, 1>;
 
 void viz_score_image(
     const Eigen::MatrixXd &score,
@@ -79,9 +81,9 @@ Eigen::MatrixXd describe_keypoints(
  * @param query_descriptors (num_kp X desc_size)
  * @param database_descriptors (num_kp X desc_size)
  * @param match_lambda
- * @return VectorXuI
+ * @return VectorXI
  */
-VectorXuI match_descriptors(
+VectorXI match_descriptors(
     const Eigen::MatrixXd &query_descriptors,
     const Eigen::MatrixXd &database_descriptors,
     double match_lambda);
@@ -111,7 +113,7 @@ cv::Mat viz_descriptors(
     bool show_img = true);
 
 cv::Mat viz_matches(const cv::Mat &src_img,
-                    const VectorXuI &matches,
+                    const VectorXI &matches,
                     const Eigen::MatrixXd &curr_kps,
                     const Eigen::MatrixXd &prev_kps);
 
@@ -205,45 +207,72 @@ namespace cuda
      * @param score The score image
      * @param num   Number of best keypoints to select
      * @param radius  The radius for non-maximum suppression
-     * @return Eigen::MatrixXd in shape of (2 x n_rows * n_cols)
+     * @return Eigen::MatrixXd in shape of (2 X n_rows * n_cols)
      */
     cuda::CuMatrixD select_keypoints(
         const CuMatrixD &score,
         size_t radius);
 
     /**
-     * @brief This is a bit differnt than cpu
-     * impplementation. 
-     * 
+     * @brief This is a bit different than cpu
+     * implementation. sorted_pixels_based_on_scores is similar to 
+     * keypoints in the cpu implementation, except it is list of all 
+     * indicies in the image, and in the descending order for their 
+     * corner score.
+     * In cpu implementation, num_keypoints_to_consider is not needed since
+     * the dimension of keypoints defines the number.
+     *
      * @param img                           input image.
-     * @param sorted_pixels_based_on_scores index of the pixels in the order of their scores in desending order
+     * @param sorted_pixels_based_on_scores index of the pixels in the order of their scores in descending order
      * @param num_keypoints_to_consider     number of keypoints to consider. (not all of them).
      * @param descriptor_radius             radius of the descriptor.
-     * @return cuda::CuMatrixD              (2r+1)^2xN matrix of descriptors
+     * @return cuda::CuMatrixD              (descriptor length x N) matrix of descriptors,
+     *                                      descriptor length = (2r+1)^2,
+     *                                      N = num_keypoints_to_consider
      */
     cuda::CuMatrixD describe_keypoints(
         const cuda::CuMatrixD &img,
         const cuda::CuMatrixD &sorted_pixels_based_on_scores,
         int num_keypoints_to_consider,
         int descriptor_radius);
-    
+
     /**
      * @brief Returns a 1xQ matrix where the i-th coefficient is the index of the
      * database descriptor which matches to the i-th query descriptor.
-     * The descriptor vectors are num_kp X desc_size and num_kp X desc_size.
+     * The descriptor vectors are desc_size x num_kps.
      * matches(i) will be zero if there is no database descriptor
      * with an SSD < lambda * min(SSD). No two non-zero elements of matches will
      * be equal.
      *
-     * @param query_descriptors (num_kp X desc_size)
-     * @param database_descriptors (num_kp X desc_size)
+     * @param query_descriptors (desc_size X num_query_kps)
+     * @param database_descriptors (desc_size X num_database_kps)
      * @param match_lambda
-     * @return VectorXuI
+     * @return CuMatrixI in shape 0f (num of query keypoints X 1)
      */
-    VectorXuI match_descriptors(
+    cuda::CuMatrixI match_descriptors(
         const cuda::CuMatrixD &query_descriptors,
         const cuda::CuMatrixD &database_descriptors,
         double match_lambda);
+
+    /**
+     * @brief just for testing, don't use it outside of tests.
+     */
+    CuMatrixD
+    test_calculate_difference_to_kps_database(
+        const CuMatrixD &query,
+        const CuMatrixD &database);
+
+    /**
+     * @brief just for testing, don't use it outside of tests.
+     */
+    CuMatrixD
+    test_calculate_sum_kernel(const CuMatrixD &matrix);
+
+    /**
+     * @brief just for testing, don't use it outside of tests.
+     */
+    CuMatrixD
+    test_arg_min(const CuMatrixD &matrix);
 
 }
 

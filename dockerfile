@@ -1,5 +1,5 @@
 # FROM nvidia/cudagl:11.4.1-devel-ubuntu20.04
-FROM cudagl:11.7.0-devel-ubuntu20.04
+FROM cudagl:11.7.1-devel-ubuntu20.04
 
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -152,6 +152,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y terminator
 # install nsight
 COPY docker_extra/nsight-systems-* .
 RUN dpkg -i nsight-systems-*
+
+# clone latest thrust and cub
+# I need the most recent version that 
+# is not installed with CUDA toolkit
+RUN git clone --recursive https://github.com/NVIDIA/thrust.git
 
 RUN mkdir -p /code
 WORKDIR /code/exercises

@@ -16,7 +16,7 @@ namespace cuda
      * (on GPU) to the location of the Matrix
      * and dimensions of the matrix.
      *
-     * @tparam T double or float.
+     * @tparam T double, float or int.
      */
     template <typename T>
     class CuMatrix
@@ -32,6 +32,7 @@ namespace cuda
 
         /**
          * @brief Construct a new Cu Matrix object
+         * from raw GPU pointer.
          *
          * @param ptr
          * @param rows
@@ -41,6 +42,7 @@ namespace cuda
 
         /**
          * @brief empty matrix with given rows and cols
+         * Values are not initialized.
          *
          * @param rows
          * @param cols
@@ -77,6 +79,7 @@ namespace cuda
 
     using CuMatrixD = CuMatrix<double>;
     using CuMatrixF = CuMatrix<float>;
+    using CuMatrixI = CuMatrix<int>;
 
     template <typename T>
     CuMatrix<T> eigen_to_cuda(const MatrixT<T> &eigen);
