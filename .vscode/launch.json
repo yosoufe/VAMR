@@ -8,8 +8,8 @@
             "name": "debug a test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/exercises/build/tests/test_utils",
-            "args": ["--gtest_filter=UtilsTest.cuda_norm"],
+            "program": "${workspaceFolder}/exercises/build/tests/test_exercise03",
+            "args": ["--gtest_filter=keypoint_tracking.test_argmin"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
@@ -36,6 +36,27 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "C/C++: g++ build active file",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "g++ - debug specific",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/exercises/build/exercise03",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/exercises/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

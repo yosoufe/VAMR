@@ -2,7 +2,6 @@
 #include <cassert>
 #include "utils.cuh"
 #include "operations.hpp"
-#include "utils.cuh"
 #include "operations.cuh"
 #include <cooperative_groups.h>
 
@@ -85,7 +84,8 @@ __global__ void non_maximum_suppression_kernel_1(double *input, int n_rows, int 
             if (other_col == col && other_row == row)
                 continue;
 
-            auto &other = input[get_index_colwise(other_row, other_col, n_rows)];
+            int idx = get_index_colwise(other_row, other_col, n_rows);
+            auto &other = input[idx];
             if (center < other)
             {
                 output_el = 0;
@@ -310,10 +310,10 @@ void _sort_matrix(cuda::CuMatrixD &input,
     thrust::sort_by_key(thrust::cuda::par, key_start, key_end, indices, thrust::greater<double>());
 
     indicies_output = cuda::CuMatrixD(2, input.n_elements());
-    index_conversion<<<input.n_elements() / 1024 + 1, 1024>>>(indices.get(),
-                                                              indicies_output.data(),
-                                                              input.rows(),
-                                                              input.cols());
+    index_conversion<<<(input.n_elements() / 1024) + 1, 1024>>>(indices.get(),
+                                                                indicies_output.data(),
+                                                                input.rows(),
+                                                                input.cols());
 }
 
 cuda::CuMatrixD cuda::sort_matrix(
@@ -418,13 +418,19 @@ calculate_columnwise_sum_kernel(
     int col = threadIdx.x + blockDim.x * blockIdx.x;
     if (col >= num_cols)
         return;
+
     output[col] = 0;
-    double *sum_input = input + col * num_rows;
+    double *sum_input = &(input[col * num_rows]);
     void *d_temp_storage = NULL;
     size_t temp_storage_bytes = 0;
     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
+    cudaDeviceSynchronize();
+    printf("temp_storage_bytes %lu, col: %d\n", temp_storage_bytes, col);
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    // d_temp_storage = malloc(temp_storage_bytes);
     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
+    cudaDeviceSynchronize();
+    cudaFree(d_temp_storage);
 }
 
 cuda::CuMatrixD
@@ -456,10 +462,14 @@ calcualte_square_difference_to_kps_database(
     int query_row = threadIdx.x + blockDim.x * blockIdx.x;
     int query_col = 0; // query has single column here
 
+    if (query_row >= descriptor_length)
+        return;
+
     int database_row = query_row;
     int database_col = threadIdx.y + blockDim.y * blockIdx.y;
 
-    int output_row = database_row, output_col = database_col;
+    int output_row = database_row;
+    int output_col = database_col;
 
     if (database_row >= descriptor_length || database_col >= n_database_descriptors)
         return;
@@ -495,16 +505,30 @@ cuda::test_calculate_difference_to_kps_database(const cuda::CuMatrixD &query, co
     return output;
 }
 
-__device__ int
-cal_arg_min(double *input, int num_items)
+__global__ void
+cal_arg_min(double *input, int num_items, int* output)
 {
-    cub::KeyValuePair<int, double> out;
+    cub::KeyValuePair<int, double> *out;
+    cudaMalloc(&out, sizeof(cub::KeyValuePair<int, double>));
     void *d_temp_storage = NULL;
     size_t temp_storage_bytes = 0;
-    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, &out, num_items);
+    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, out, num_items);
+    temp_storage_bytes = temp_storage_bytes;
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, &out, num_items);
-    return out.key;
+    cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, input, out, num_items);
+    output[0] = out->key;
+    cudaFree(d_temp_storage);
+    cudaFree(out);
+}
+
+int
+cuda::test_arg_min(const CuMatrixD &matrix)
+{
+    cuda::CuMatrixI output(1,1);
+    cal_arg_min<<<1,1>>>(matrix.data(), matrix.n_elements(), output.data());
+    CSC(cudaDeviceSynchronize());
+    auto h_output = cuda::cuda_to_eigen(output);
+    return h_output(0);
 }
 
 __global__ void
@@ -523,7 +547,7 @@ find_closest_keypoints_kernel(
     if (query_idx_col >= n_query_descriptors)
         return;
 
-    double *query_descriptor = query_descriptors + query_idx_col * descriptor_length; // * sizeof(double)???
+    double *query_descriptor = &(query_descriptors[query_idx_col * descriptor_length]); // * sizeof(double)???
 
     // calculate squared differences between this query descriptors
     // and all of the database descriptors
@@ -531,7 +555,6 @@ find_closest_keypoints_kernel(
     double *squared_diffs;
     int square_differences_size = n_database_descriptors * descriptor_length * sizeof(double);
     cudaMalloc(&squared_diffs, square_differences_size);
-
     // x: elements in descriptor (row), y: each database descriptor (col)
     {
         dim3 block_dim(min(64, descriptor_length), min(64, n_database_descriptors));
@@ -562,28 +585,79 @@ find_closest_keypoints_kernel(
             descriptor_length,
             n_database_descriptors);
     }
-
     // find arg of smallest distance
-    output[query_idx_col] = cal_arg_min(squared_dist, n_database_descriptors);
+    // print_cuda_dev<double>(squared_diffs, descriptor_length, n_database_descriptors);
+    // print_cuda_dev<double>(squared_dist, 1, n_database_descriptors);
+    cal_arg_min<<<1,1>>>(squared_dist, n_database_descriptors, &output[query_idx_col]);
+    // cudaFree(squared_diffs);
+    // cudaFree(squared_dist);
+}
+
+cuda::CuMatrixI
+cuda::test_find_closest_keypoints_kernel(
+    const cuda::CuMatrixD &query_descriptors,
+    const cuda::CuMatrixD &database_descriptors)
+{
+    int num_query_kpts = query_descriptors.cols();
+    dim3 block_dim(min(1024, num_query_kpts));
+    dim3 grid_dim(num_query_kpts / block_dim.x + 1);
+    cuda::CuMatrixI output(num_query_kpts, 1);
+    find_closest_keypoints_kernel<<<grid_dim, block_dim>>>(
+        output.data(),
+        query_descriptors.rows(),
+        query_descriptors.data(),
+        query_descriptors.cols(),
+        database_descriptors.data(),
+        database_descriptors.cols());
+    CLE();
+    CSC(cudaDeviceSynchronize());
+    return output;
+}
+
+__global__ void
+filter_out_non_uniques(
+    int *output,
+    int *sorted_input, 
+    int *sorted_inds, 
+    int size)
+{
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    if (idx >= size)
+        return;
+
+    int prevIdx = idx - 1;
+    int nextIdx = idx + 1;
+    int currIdx = idx;
+
+    bool is_unique = true;
+
+    if ((prevIdx > 0 && sorted_input[currIdx] == sorted_input[prevIdx]) ||
+        nextIdx < size && sorted_input[currIdx] == sorted_input[nextIdx])
+    {
+        is_unique = false;
+    }
+
+    if (is_unique)
+        output[sorted_inds[idx]] = sorted_input[idx];
+    else
+        output[sorted_inds[idx]] = KPTS_NO_MATCH;
 }
 
 void filter_out_non_unique_matches(cuda::CuMatrixI &input)
 {
-    int *d_keys_in = input.data();
-    thrust::device_ptr<int> indicies = thrust::device_malloc<int>(input.n_elements());
-    thrust::sequence(thrust::device, indicies, indicies + input.n_elements());
-    int *d_values_in = indicies.get();
-    cuda::CuMatrixI keys_out(input.rows(), input.cols());
-    cuda::CuMatrixI values_out(input.rows(), input.cols());
-    int  *d_num_selected_out;
-    cudaMalloc(&d_num_selected_out, sizeof(int));
+    // sort the input, keep the indecies as value
+    // sort by key.
+    auto indices = cuda::create_indices(input);
+    auto key_start = thrust::device_pointer_cast(input.data());
+    auto key_end = key_start + input.n_elements();
+    thrust::sort_by_key(thrust::cuda::par, key_start, key_end, indices, thrust::greater<double>());
 
-    void *d_temp_storage = NULL;
-    size_t temp_storage_bytes = 0;
-    cub::DeviceSelect::UniqueByKey(d_temp_storage, temp_storage_bytes,
-                                   d_keys_in, d_values_in,
-                                   keys_out.data(), values_out.data(),
-                                   d_num_selected_out, input.n_elements());
+    auto is_unique_output = cuda::CuMatrixI(input.rows(), input.cols());
+    filter_out_non_uniques<<<(input.n_elements() / 1024) + 1, min(1024, input.n_elements())>>>(
+        is_unique_output.data(),
+        input.data(),
+        indices.get(),
+        input.n_elements());
 }
 
 cuda::CuMatrixI cuda::match_descriptors(

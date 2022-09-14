@@ -11,10 +11,11 @@ if(CMAKE_CUDA_COMPILER)
     add_compile_definitions(WITH_CUDA)
     set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
     set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 14)
-    # example to use cuda from source with cmake:
+    # set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_86,code=sm_86)
+    # example to use CUB & Thrust from source with cmake:
     # https://github.com/NVIDIA/thrust/blob/main/examples/cmake/add_subdir/CMakeLists.txt
     find_package(Thrust 2.1.0.0 REQUIRED CONFIG
         NO_DEFAULT_PATH

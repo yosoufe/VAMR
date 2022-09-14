@@ -5,7 +5,6 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include <thrust/transform.h>
-#include <thrust/sequence.h>
 #include <thrust/iterator/zip_iterator.h>
 
 #include "operations.cuh"
@@ -451,13 +450,6 @@ struct ZeroBorderOperator
             return value;
     }
 };
-
-thrust::device_ptr<int> cuda::create_indices(const cuda::CuMatrixD &input)
-{
-    thrust::device_ptr<int> d_output = thrust::device_malloc<int>(input.n_elements());
-    thrust::sequence(thrust::device, d_output, d_output + input.n_elements());
-    return d_output;
-}
 
 void cuda::zero_borders(cuda::CuMatrixD &input, int s_row, int s_col, int l_row, int l_col)
 {

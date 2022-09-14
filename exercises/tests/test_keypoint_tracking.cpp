@@ -290,7 +290,7 @@ TEST(keypoint_tracking, test_calculate_square_difference_to_kps_database)
 
 TEST(keypoint_tracking, test_calculate_sum_kernel)
 {
-    Eigen::MatrixXd input = Eigen::MatrixXd::Random(1025, 1025);
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(1025*3, 1025*5);
     // Eigen::MatrixXd input = Eigen::MatrixXd::Random(3, 10);
     Eigen::MatrixXd h_res = input.colwise().sum();
     cuda::CuMatrixD d_input = cuda::eigen_to_cuda(input);
@@ -304,23 +304,67 @@ TEST(keypoint_tracking, test_calculate_sum_kernel)
     std::cout << "d_res\n" << hd_res.block(0,0,1,10) << std::endl;
 }
 
+TEST(keypoint_tracking, test_argmin)
+{
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(200, 1);
+    Eigen::Index minRow, minCol;
+    input.minCoeff(&minRow, &minCol);
+    int expected = minRow;
+
+    // std::cout << "input\n" << input.transpose() << std::endl;
+    // std::cout << "expected: " << expected << std::endl;
+
+
+    auto d_input = cuda::eigen_to_cuda(input);
+    auto res = cuda::test_arg_min(d_input);
+
+    // std::cout << "res: " << res << std::endl;
+
+    EXPECT_EQ(res, expected);
+}
+
+
 TEST(keypoint_tracking, find_closest_keypoints_kernel)
 {
-    Eigen::MatrixXd query(10, 1);
-    Eigen::MatrixXd database(10, 6);
+    // {
+    //     Eigen::MatrixXd query(10, 1);
+    //     Eigen::MatrixXd database(10, 6);
 
-    query << Eigen::MatrixXd::Ones(10, 1) * 1;
+    //     query << Eigen::MatrixXd::Ones(10, 1) * 1;
+        
+    //     database << Eigen::MatrixXd::Ones(10, 1) * 6,
+    //         Eigen::MatrixXd::Ones(10, 1) * 3,
+    //         Eigen::MatrixXd::Ones(10, 1) * 1,
+    //         Eigen::MatrixXd::Ones(10, 1) * 5,
+    //         Eigen::MatrixXd::Ones(10, 1) * 4,
+    //         Eigen::MatrixXd::Ones(10, 1) * 2;
+        
+    //     std::cout << "query\n" << query << std::endl;
+    //     std::cout << "database\n" << database << std::endl;
+
+    //     auto d_query = cuda::eigen_to_cuda(query);
+    //     auto d_database = cuda::eigen_to_cuda(database);
+    //     auto d_res = cuda::test_find_closest_keypoints_kernel(d_query, d_database);
+
+    //     auto h_res = cuda::cuda_to_eigen(d_res);
+    //     std::cout << "res: " << h_res << std::endl;
+
+    //     EXPECT_EQ(h_res(0), 2);
+    // }
+
+    {
+        Eigen::MatrixXd query = Eigen::MatrixXd::Random(160, 200);
+        Eigen::MatrixXd database= Eigen::MatrixXd::Random(160, 200);
+
+        auto d_query = cuda::eigen_to_cuda(query);
+        auto d_database = cuda::eigen_to_cuda(database);
+        auto d_res = cuda::test_find_closest_keypoints_kernel(d_query, d_database);
+
+        auto h_res = cuda::cuda_to_eigen(d_res);
+        std::cout << "res: " << h_res << std::endl;
+    }
+
     
-    database << Eigen::MatrixXd::Ones(10, 1) * 6,
-        Eigen::MatrixXd::Ones(10, 1) * 3,
-        Eigen::MatrixXd::Ones(10, 1) * 1,
-        Eigen::MatrixXd::Ones(10, 1) * 5,
-        Eigen::MatrixXd::Ones(10, 1) * 4,
-        Eigen::MatrixXd::Ones(10, 1) * 2;
-    
-    std::cout << "query\n" << query << std::endl;
-    std::cout << "database\n" << database << std::endl;
-    EXPECT_TRUE(false);
 }
 
 #endif

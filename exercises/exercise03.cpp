@@ -24,7 +24,7 @@ int main_cpu()
     size_t descriptor_radius = 9;
     double match_lambda = 4;
 
-    for (int i = 0; i < 10; ++i)
+    // for (int i = 0; i < 10; ++i)
     {
         auto start_time = second();
         // Part 1: calculate corner response functions
@@ -93,7 +93,7 @@ int main_gpu()
     size_t descriptor_radius = 9;
     double match_lambda = 4;
 
-    for (int i = 0; i < 10; ++i)
+    // for (int i = 0; i < 10; ++i)
     {
         auto start_time = second();
         // Part 1: calculate corner response functions
@@ -134,6 +134,33 @@ int main_gpu()
         //                 h_shi_tomasi_descriptor, h_shi_tomasi_descriptions);
         
         std::cout << "elapsed gpu: " << second() - start_time << std::endl;
+    }
+
+    cv::VideoWriter video = create_video_writer(img_size, out_data_root + "keypoint_tracking_cuda.mp4");
+
+    cuda::CuMatrixD prev_desc;
+    cuda::CuMatrixD prev_kps;
+    for (auto &image_path : image_files)
+    {
+        cv::Mat src_img = cv::imread(image_path.path(), cv::IMREAD_GRAYSCALE);
+        Eigen::MatrixXd eigen_img = cv_2_eigen(src_img);
+        auto cuda_eigen_img = cuda::eigen_to_cuda(eigen_img);
+        auto harris_score = cuda::harris(cuda_eigen_img, patch_size, harris_kappa);
+        auto curr_kps = cuda::select_keypoints(harris_score, non_maximum_suppression_radius);
+        auto desc = cuda::describe_keypoints(cuda_eigen_img, curr_kps, num_keypoints, descriptor_radius);
+
+        if (prev_desc.n_elements() != 0)
+        {
+            auto matches = cuda::match_descriptors(desc, prev_desc, match_lambda);
+            video << viz_matches(
+                src_img,
+                cuda::cuda_to_eigen(matches), 
+                cuda::cuda_to_eigen(curr_kps), 
+                cuda::cuda_to_eigen(prev_kps));
+            return 0; // TODO: remove
+        }
+        prev_desc = std::move(desc);
+        prev_kps = std::move(curr_kps);
     }
 
     return 0;

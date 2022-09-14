@@ -268,10 +268,15 @@ namespace cuda
     CuMatrixD
     test_calculate_sum_kernel(const CuMatrixD &matrix);
 
+    CuMatrixI
+    test_find_closest_keypoints_kernel(
+        const CuMatrixD &query_descriptors,
+        const CuMatrixD &database_descriptors);
+
     /**
      * @brief just for testing, don't use it outside of tests.
      */
-    CuMatrixD
+    int
     test_arg_min(const CuMatrixD &matrix);
 
 }

@@ -8,4 +8,6 @@ endif()
 
 add_library(${TARGET_NAME} ${SRC})
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries (${TARGET_NAME} utils ${THRSUT_LIB_FROM_SOURCE})
+
+# TODO: what if there is no CUDA???
+target_link_libraries (${TARGET_NAME} utils ${THRSUT_LIB_FROM_SOURCE} -lcudadevrt)

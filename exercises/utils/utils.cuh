@@ -56,7 +56,23 @@ __host__ __device__ thrust::tuple<int, int>
 get_2d_index_colwise(int index_1d, int n_rows);
 
 template <typename T>
-__global__ void print_cuda_eigen(T *data, int cols, int rows)
+__global__ void print_cuda_eigen(T *data, int rows, int cols)
+{
+    printf("printing in cuda kernel:\n");
+    for (int row = 0; row < rows; ++row)
+    {
+        for (int col = 0; col < cols; ++col)
+        {
+            int idx = get_index_colwise(row, col, rows, 1);
+            printf("%d: ", idx);
+            printf("%f ,", float(data[idx]));
+        }
+        printf("\n");
+    }
+}
+
+template <typename T>
+__device__ void print_cuda_dev(T *data, int rows, int cols)
 {
     printf("printing in cuda kernel:\n");
     for (int row = 0; row < rows; ++row)

@@ -232,3 +232,18 @@ cv::Viz3d used for 3d visualizations and point cloud visualization. These shortk
     ALT + s, S   : turn stereo mode on/off
     ALT + f, F   : switch between maximized window mode and original size
 ```
+
+### debug cuda code
+
+Add the following to your `CMakeLists.txt` file
+
+```cmake
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
+```
+
+run your program with `compute-sanitizer` (or for older GPUS with `cuda-memcheck`)
+like the following
+
+```bash
+compute-sanitizer ./exercise03 | tee logs.txt
+```
