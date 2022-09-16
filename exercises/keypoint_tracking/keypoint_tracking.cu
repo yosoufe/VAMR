@@ -424,30 +424,42 @@ calculate_columnwise_sum_kernel(
     void *d_temp_storage = NULL;
     size_t temp_storage_bytes = 0;
     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
-    cudaDeviceSynchronize();
-    printf("temp_storage_bytes %lu, col: %d\n", temp_storage_bytes, col);
-    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    // if (col == 0)
+    //     printf("temp_storage_bytes %lu, col: %d\n", temp_storage_bytes, col);
+    
+    // d_temp_storage = malloc(temp_storage_bytes);
+    auto error = cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    if (error)
+        printf("error in cudaMalloc: %s, col: %d\n", cudaGetErrorString(error), col);
+    
+    __syncthreads();
     // d_temp_storage = malloc(temp_storage_bytes);
     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, sum_input, &(output[col]), num_rows);
+    __syncthreads();
     cudaDeviceSynchronize();
-    cudaFree(d_temp_storage);
+    free(d_temp_storage);
 }
 
 cuda::CuMatrixD
 cuda::test_calculate_sum_kernel(const cuda::CuMatrixD &matrix)
 {
-    cuda::CuMatrixD res{1, matrix.cols()};
+
+    // size_t pValue;
+    // cudaDeviceGetLimit(&pValue, cudaLimitMallocHeapSize); // 8388608
+    // ::std::cout << "heap size: "<< pValue << ::std::endl;
+
+    cuda::CuMatrixD output{1, matrix.cols()};
     // each thread is one column in squared differences
     dim3 block_dim(min(1024, matrix.cols()));
     dim3 grid_dim(matrix.cols() / block_dim.x + 1);
     calculate_columnwise_sum_kernel<<<grid_dim, block_dim>>>(
-        res.data(),
+        output.data(),
         matrix.data(),
         matrix.rows(),
         matrix.cols());
     CLE();
     CSC(cudaDeviceSynchronize());
-    return res;
+    return output;
 }
 
 __global__ void
@@ -554,10 +566,12 @@ find_closest_keypoints_kernel(
     // squared_diffs would be matrix in shape of (n_database_descriptors X descriptor_length)
     double *squared_diffs;
     int square_differences_size = n_database_descriptors * descriptor_length * sizeof(double);
-    cudaMalloc(&squared_diffs, square_differences_size);
+    auto error = cudaMalloc(&squared_diffs, square_differences_size);
+    if (error)
+        printf("find_closest_keypoints_kernel 01, cudaMalloc. query_idx_col: %d\n", query_idx_col);
     // x: elements in descriptor (row), y: each database descriptor (col)
     {
-        dim3 block_dim(min(64, descriptor_length), min(64, n_database_descriptors));
+        dim3 block_dim(min(32, descriptor_length), min(32, n_database_descriptors));
         dim3 grid_dim(descriptor_length / block_dim.x + 1, n_database_descriptors / block_dim.y + 1);
         calcualte_square_difference_to_kps_database<<<grid_dim, block_dim>>>(
             squared_diffs,
@@ -566,6 +580,7 @@ find_closest_keypoints_kernel(
             descriptor_length,
             n_database_descriptors);
     }
+    cudaDeviceSynchronize();
 
     // __syncthreads(); // needed??
 
@@ -574,7 +589,9 @@ find_closest_keypoints_kernel(
     // or calculate reduce sum on squared_diffs
     double *squared_dist;
     int squared_dist_bytes = sizeof(double) * n_database_descriptors;
-    cudaMalloc(&squared_dist, squared_dist_bytes);
+    error = cudaMalloc(&squared_dist, squared_dist_bytes);
+    if (error)
+        printf("find_closest_keypoints_kernel 02, cudaMalloc. query_idx_col: %d\n", query_idx_col);
     {
         // each thread is one column in squared differences
         dim3 block_dim(min(1024, n_database_descriptors));
@@ -585,12 +602,17 @@ find_closest_keypoints_kernel(
             descriptor_length,
             n_database_descriptors);
     }
+    cudaDeviceSynchronize();
     // find arg of smallest distance
-    // print_cuda_dev<double>(squared_diffs, descriptor_length, n_database_descriptors);
-    // print_cuda_dev<double>(squared_dist, 1, n_database_descriptors);
+    // if (query_idx_col == 0)
+    // {
+    //     print_cuda_dev<double>(squared_diffs, descriptor_length, n_database_descriptors);
+    //     print_cuda_dev<double>(squared_dist, 1, n_database_descriptors);
+    // }
     cal_arg_min<<<1,1>>>(squared_dist, n_database_descriptors, &output[query_idx_col]);
-    // cudaFree(squared_diffs);
-    // cudaFree(squared_dist);
+    cudaDeviceSynchronize();
+    cudaFree(squared_diffs);
+    cudaFree(squared_dist);
 }
 
 cuda::CuMatrixI
@@ -598,6 +620,7 @@ cuda::test_find_closest_keypoints_kernel(
     const cuda::CuMatrixD &query_descriptors,
     const cuda::CuMatrixD &database_descriptors)
 {
+    cudaDeviceSetLimit(cudaLimitMallocHeapSize, 80000000); // Default was 8388608
     int num_query_kpts = query_descriptors.cols();
     dim3 block_dim(min(1024, num_query_kpts));
     dim3 grid_dim(num_query_kpts / block_dim.x + 1);

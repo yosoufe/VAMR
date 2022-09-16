@@ -353,15 +353,18 @@ TEST(keypoint_tracking, find_closest_keypoints_kernel)
     // }
 
     {
-        Eigen::MatrixXd query = Eigen::MatrixXd::Random(160, 200);
         Eigen::MatrixXd database= Eigen::MatrixXd::Random(160, 200);
+        Eigen::MatrixXd query = Eigen::MatrixXd::Random(160, 200);
+        // Eigen::MatrixXd query = database.block(0,10, 160, 2);
+        std::cout << "database:\n" << database.block(0,0,5,15) << std::endl;
+        std::cout << "query:\n" << query.block(0,0,5,2) << std::endl;
 
         auto d_query = cuda::eigen_to_cuda(query);
         auto d_database = cuda::eigen_to_cuda(database);
         auto d_res = cuda::test_find_closest_keypoints_kernel(d_query, d_database);
 
         auto h_res = cuda::cuda_to_eigen(d_res);
-        std::cout << "res: " << h_res << std::endl;
+        std::cout << "res: " << h_res.transpose() << std::endl;
     }
 
     

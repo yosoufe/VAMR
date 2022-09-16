@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/exercises/build/tests/test_exercise03",
-            "args": ["--gtest_filter=keypoint_tracking.test_argmin"],
+            "args": ["--gtest_filter=keypoint_tracking.find_closest_keypoints_kernel"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
-#include "cuda_types.hpp"
 #include "operations.hpp"
-#include "utils.hpp"
 #include <Eigen/Dense>
 #include "folder_manager.hpp"
 

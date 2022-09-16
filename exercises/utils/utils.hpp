@@ -70,15 +70,6 @@ std::string cv_type2str(int type);
 
 void visualize_matrix_as_image(Eigen::MatrixXd mat);
 
-// template <typename T1, typename T2>
-// bool are_matrices_close(const T1 &first, const T2 &second)
-// {
-//     if (first.cols() != second.cols() ||
-//         first.rows() != second.rows())
-//         return false;
-//     return (first - second).norm() < 1e-5;
-// }
-
 bool are_matrices_close(const Eigen::MatrixXd &first, const Eigen::MatrixXd &second);
 bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &second);
 

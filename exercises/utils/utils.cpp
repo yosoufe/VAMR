@@ -251,7 +251,13 @@ bool are_matrices_close(const Eigen::MatrixXd &first, const Eigen::MatrixXd &sec
     if (first.cols() != second.cols() ||
         first.rows() != second.rows())
         return false;
-    return (first - second).norm() < 1e-5;
+    auto diff = first - second;
+    auto n_non_zero = (diff.cwiseAbs().array() > 1e-5).count();
+    if (n_non_zero)
+        std::cout << "# non equal elements: " << n_non_zero 
+        << ", # equal elements: " << (diff.cwiseAbs().array() < 1e-5).count() << std::endl;
+    // bool are_close = (first - second).norm() < 1e-5;
+    return n_non_zero == 0;
 }
 
 bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &second)
@@ -259,7 +265,11 @@ bool are_matrices_close(const Eigen::MatrixXf &first, const Eigen::MatrixXf &sec
     if (first.cols() != second.cols() ||
         first.rows() != second.rows())
         return false;
-    return (first - second).norm() < 1e-5;
+    auto diff = first - second;
+    auto n_non_zero = (diff.cwiseAbs().array() > 1e-5).count();
+    if (n_non_zero)
+        std::cout << "number of non equal elements: " << n_non_zero << std::endl;
+    return n_non_zero == 0;
 }
 
 std::vector<Eigen::Index> find_non_zero_indicies(const Eigen::MatrixXd &input)
